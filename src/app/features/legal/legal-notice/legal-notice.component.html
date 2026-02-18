@@ -1,0 +1,182 @@
+<div class="legal-container">
+  <!-- Hero Section -->
+  <section class="hero-section">
+    <div class="container">
+      <h1>
+        <i class="bi bi-file-text"></i>
+        Mentions Légales
+      </h1>
+      <p>Dernière mise à jour : {{ lastUpdated }}</p>
+    </div>
+  </section>
+
+  <!-- Content Section -->
+  <section class="content-section">
+    <div class="container">
+      <div class="legal-content">
+
+        <!-- Article 1 -->
+        <article class="legal-article">
+          <h2>1. Éditeur du Site</h2>
+          <p>
+            Le site web <strong>{{ company.name }}</strong> est édité par :
+          </p>
+          <ul>
+            <li><strong>Raison sociale :</strong> {{ company.legalName }}</li>
+            <li><strong>Forme juridique :</strong> {{ company.legalForm }}</li>
+            <li><strong>Siège social :</strong> {{ company.address }}</li>
+            <li><strong>RCCM :</strong> {{ company.rccm }}</li>
+            <li><strong>Capital social :</strong> {{ company.capital }}</li>
+            <li><strong>Email :</strong> <a [href]="'mailto:' + company.email">{{ company.email }}</a></li>
+            <li><strong>Téléphone :</strong> <a [href]="'tel:' + company.phone">{{ company.phone }}</a></li>
+          </ul>
+        </article>
+
+        <!-- Article 2 -->
+        <article class="legal-article">
+          <h2>2. Directeur de Publication</h2>
+          <p>
+            Le directeur de la publication du site est <strong>{{ director.name }}</strong>, 
+            en sa qualité de {{ director.title }}.
+          </p>
+          <p>
+            Le directeur de publication est responsable du contenu éditorial du site conformément 
+            aux dispositions légales en vigueur.
+          </p>
+        </article>
+
+        <!-- Article 3 -->
+        <article class="legal-article">
+          <h2>3. Hébergement</h2>
+          <p>
+            Le site <strong>{{ company.name }}</strong> est hébergé par :
+          </p>
+          <ul>
+            <li><strong>Hébergeur :</strong> {{ hosting.provider }}</li>
+            <li><strong>Adresse :</strong> {{ hosting.address }}</li>
+            <li><strong>Téléphone :</strong> {{ hosting.phone }}</li>
+            <li><strong>Site web :</strong> <a [href]="hosting.website" target="_blank" rel="noopener noreferrer">{{ hosting.website }}</a></li>
+          </ul>
+        </article>
+
+        <!-- Article 4 -->
+        <article class="legal-article">
+          <h2>4. Propriété Intellectuelle</h2>
+          <p>
+            L'ensemble du contenu du site <strong>{{ company.name }}</strong> (textes, images, vidéos, 
+            logos, icônes, sons, logiciels, bases de données, etc.) est la propriété exclusive de 
+            {{ company.legalName }} ou de ses partenaires.
+          </p>
+          <p>
+            Toute reproduction, représentation, modification, publication, adaptation de tout ou partie 
+            des éléments du site, quel que soit le moyen ou le procédé utilisé, est interdite, sauf 
+            autorisation écrite préalable de {{ company.legalName }}.
+          </p>
+          <p>
+            Toute exploitation non autorisée du site ou de l'un quelconque des éléments qu'il contient 
+            sera considérée comme constitutive d'une contrefaçon et poursuivie conformément aux 
+            dispositions légales en vigueur.
+          </p>
+          <h3>Marques et Logos</h3>
+          <p>
+            Les marques et logos figurant sur le site sont des marques déposées. Toute reproduction 
+            totale ou partielle de ces marques ou de ces logos sans autorisation préalable et écrite 
+            est strictement interdite.
+          </p>
+        </article>
+
+        <!-- Article 5 -->
+        <article class="legal-article">
+          <h2>5. Responsabilité</h2>
+          <p>
+            Les informations contenues sur ce site sont aussi précises que possible et le site est 
+            périodiquement remis à jour, mais peut toutefois contenir des inexactitudes, des omissions 
+            ou des lacunes.
+          </p>
+          <p>
+            {{ company.legalName }} ne pourra être tenue responsable des dommages directs ou indirects 
+            causés au matériel de l'utilisateur lors de l'accès au site, et résultant soit de 
+            l'utilisation d'un matériel ne répondant pas aux spécifications requises, soit de 
+            l'apparition d'un bug ou d'une incompatibilité.
+          </p>
+          <p>
+            {{ company.legalName }} ne pourra également être tenue responsable des dommages indirects 
+            (tels qu'une perte de marché ou perte d'une chance) consécutifs à l'utilisation du site.
+          </p>
+          <h3>Limitation de Responsabilité</h3>
+          <p>
+            La responsabilité de {{ company.legalName }} ne saurait être engagée en cas de force majeure 
+            ou de faits indépendants de sa volonté.
+          </p>
+        </article>
+
+        <!-- Article 6 -->
+        <article class="legal-article">
+          <h2>6. Liens Hypertextes</h2>
+          <p>
+            Le site {{ company.name }} peut contenir des liens hypertextes vers d'autres sites présents 
+            sur le réseau Internet. Les liens vers ces autres ressources vous font quitter le site 
+            {{ company.name }}.
+          </p>
+          <p>
+            {{ company.legalName }} n'a pas la possibilité de vérifier le contenu des sites ainsi 
+            visités et décline donc toute responsabilité de ce fait quant aux risques éventuels de 
+            contenus illicites.
+          </p>
+          <p>
+            L'utilisateur est seul responsable de l'utilisation qu'il fait des informations et contenus 
+            présents sur les sites tiers.
+          </p>
+        </article>
+
+        <!-- Article 7 -->
+        <article class="legal-article">
+          <h2>7. Protection des Données Personnelles</h2>
+          <p>
+            Conformément à la loi relative à l'informatique, aux fichiers et aux libertés, vous disposez 
+            d'un droit d'accès, de modification, de rectification et de suppression des données qui vous 
+            concernent.
+          </p>
+          <p>
+            Pour exercer ce droit, veuillez consulter notre 
+            <a routerLink="/legal/politique-confidentialite">Politique de Confidentialité</a> ou nous 
+            contacter à l'adresse : <a [href]="'mailto:' + company.email">{{ company.email }}</a>
+          </p>
+        </article>
+
+        <!-- Article 8 -->
+        <article class="legal-article">
+          <h2>8. Cookies</h2>
+          <p>
+            Le site {{ company.name }} utilise des cookies pour améliorer l'expérience utilisateur et 
+            analyser le trafic du site. Pour plus d'informations sur l'utilisation des cookies, 
+            veuillez consulter notre <a routerLink="/legal/politique-confidentialite">Politique de Confidentialité</a>.
+          </p>
+        </article>
+
+        <!-- Article 9 -->
+        <article class="legal-article">
+          <h2>9. Droit Applicable et Juridiction Compétente</h2>
+          <p>
+            Les présentes mentions légales sont régies par le droit togolais. En cas de litige et à 
+            défaut d'accord amiable, le litige sera porté devant les tribunaux compétents de Lomé (Togo).
+          </p>
+        </article>
+
+        <!-- Contact -->
+        <article class="legal-article">
+          <h2>10. Contact</h2>
+          <p>
+            Pour toute question concernant les mentions légales, vous pouvez nous contacter :
+          </p>
+          <ul>
+            <li><strong>Par email :</strong> <a [href]="'mailto:' + company.email">{{ company.email }}</a></li>
+            <li><strong>Par téléphone :</strong> <a [href]="'tel:' + company.phone">{{ company.phone }}</a></li>
+            <li><strong>Par courrier :</strong> {{ company.address }}</li>
+          </ul>
+        </article>
+
+      </div>
+    </div>
+  </section>
+</div>

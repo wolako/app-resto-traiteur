@@ -1,0 +1,101 @@
+<div class="verification-container">
+  <div class="container">
+    <div class="row justify-content-center">
+      <div class="col-md-8 col-lg-6">
+        <div class="verification-card">
+          <!-- Success Icon -->
+          <div class="success-icon">
+            <i class="bi bi-check-circle-fill"></i>
+          </div>
+
+          <!-- Main Message -->
+          <h2 class="mb-3">Inscription réussie ! 🎉</h2>
+          
+          <div class="alert alert-info mb-4">
+            <i class="bi bi-info-circle"></i>
+            <div>
+              <strong>Vérification d'email requise</strong>
+              <p class="mb-0 mt-2">
+                Un email de vérification a été envoyé à <strong>{{ email }}</strong>
+              </p>
+            </div>
+          </div>
+
+          <!-- Instructions -->
+          <div class="instructions">
+            <h5>
+              <i class="bi bi-list-check"></i>
+              Prochaines étapes :
+            </h5>
+            <ol>
+              <li>
+                <i class="bi bi-envelope-check"></i>
+                Vérifiez votre boîte de réception
+              </li>
+              <li>
+                <i class="bi bi-cursor-fill"></i>
+                Cliquez sur le lien de vérification dans l'email
+              </li>
+              <li>
+                <i class="bi bi-box-arrow-in-right"></i>
+                Connectez-vous à votre compte
+              </li>
+            </ol>
+          </div>
+
+          <!-- Important Notice -->
+          <div class="notice-box">
+            <i class="bi bi-exclamation-triangle"></i>
+            <div>
+              <strong>Important :</strong>
+              <ul>
+                <li>Le lien est valide pendant <strong>24 heures</strong></li>
+                <li>Vérifiez aussi vos <strong>spams/courrier indésirable</strong></li>
+                <li>Vous devez vérifier votre email pour pouvoir vous connecter</li>
+              </ul>
+            </div>
+          </div>
+
+          <!-- Resend Email Section -->
+          <div class="resend-section">
+            <p class="text-muted mb-2">Vous n'avez pas reçu l'email ?</p>
+            <button 
+              class="btn btn-outline-primary"
+              (click)="resendEmail()"
+              [disabled]="resending">
+              <span *ngIf="!resending">
+                <i class="bi bi-arrow-clockwise"></i>
+                Renvoyer l'email
+              </span>
+              <span *ngIf="resending">
+                <span class="spinner-border spinner-border-sm me-2"></span>
+                Envoi en cours...
+              </span>
+            </button>
+          </div>
+
+          <!-- Success Message -->
+          <div *ngIf="resendSuccess" class="alert alert-success mt-3">
+            <i class="bi bi-check-circle"></i>
+            Email renvoyé avec succès ! Vérifiez votre boîte de réception.
+          </div>
+
+          <!-- Actions -->
+          <div class="actions mt-4">
+            <button 
+              class="btn btn-primary btn-lg w-100"
+              (click)="goToLogin()">
+              <i class="bi bi-box-arrow-in-right"></i>
+              Se connecter
+            </button>
+            <p class="text-center mt-3 mb-0">
+              <small class="text-muted">
+                Après vérification de votre email, vous pourrez vous connecter
+              </small>
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

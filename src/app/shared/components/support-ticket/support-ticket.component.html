@@ -1,0 +1,105 @@
+<div class="support-container">
+      <h3><i class="bi bi-headset"></i> Support Technique</h3>
+
+      <!-- Badge Premium -->
+      <div *ngIf="isPremium" class="alert alert-success mb-3">
+        <i class="bi bi-star-fill"></i>
+        <strong>Support Prioritaire activé !</strong>
+        Réponse garantie sous 2 heures.
+      </div>
+
+      <!-- Formulaire création ticket -->
+      <div class="card mb-4">
+        <div class="card-header">
+          <h5><i class="bi bi-plus-circle"></i> Créer un ticket</h5>
+        </div>
+        <div class="card-body">
+          <form [formGroup]="ticketForm" (ngSubmit)="createTicket()">
+            <div class="mb-3">
+              <label class="form-label">Sujet *</label>
+              <input 
+                type="text" 
+                class="form-control" 
+                formControlName="subject"
+                placeholder="Décrivez brièvement votre problème"
+                maxlength="255">
+              <small class="text-muted">{{ ticketForm.get('subject')?.value?.length || 0 }}/255</small>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label">Message *</label>
+              <textarea 
+                class="form-control" 
+                formControlName="message"
+                rows="5"
+                placeholder="Détaillez votre problème..."></textarea>
+            </div>
+
+            <button 
+              type="submit" 
+              class="btn" 
+              [ngClass]="isPremium ? 'btn-warning' : 'btn-primary'"
+              [disabled]="ticketForm.invalid || loading">
+              <span *ngIf="loading" class="spinner-border spinner-border-sm me-2"></span>
+              <i class="bi bi-send" *ngIf="!loading"></i>
+              {{ isPremium ? 'Envoyer (prioritaire)' : 'Envoyer' }}
+            </button>
+          </form>
+        </div>
+      </div>
+
+      <!-- Liste des tickets -->
+      <div class="card">
+        <div class="card-header">
+          <h5><i class="bi bi-list"></i> Mes tickets</h5>
+        </div>
+        <div class="card-body">
+          <div *ngIf="tickets.length === 0" class="text-muted text-center">
+            Aucun ticket pour le moment
+          </div>
+
+          <div *ngFor="let ticket of tickets" class="ticket-item mb-3 p-3 border rounded">
+            <div class="d-flex justify-content-between align-items-start mb-2">
+              <div>
+                <h6 class="mb-1">{{ ticket.subject }}</h6>
+                <small class="text-muted">
+                  {{ ticket.created_at | date:'dd/MM/yyyy HH:mm' }}
+                </small>
+              </div>
+              <div>
+                <span class="badge me-1" 
+                      [ngClass]="{
+                        'bg-danger': ticket.priority === 'urgent',
+                        'bg-warning': ticket.priority === 'high',
+                        'bg-info': ticket.priority === 'normal'
+                      }">
+                  {{ ticket.priority }}
+                </span>
+                <span class="badge" 
+                      [ngClass]="{
+                        'bg-warning': ticket.status === 'open',
+                        'bg-primary': ticket.status === 'in_progress',
+                        'bg-success': ticket.status === 'resolved',
+                        'bg-secondary': ticket.status === 'closed'
+                      }">
+                  {{ getStatusLabel(ticket.status) }}
+                </span>
+                <span *ngIf="ticket.is_premium" class="badge bg-gold ms-1">
+                  <i class="bi bi-star-fill"></i> Premium
+                </span>
+              </div>
+            </div>
+
+            <p class="mb-2">{{ ticket.message }}</p>
+
+            <div *ngIf="ticket.response" class="response-box p-2 bg-light rounded">
+              <strong><i class="bi bi-reply"></i> Réponse :</strong>
+              <p class="mb-1">{{ ticket.response }}</p>
+              <small class="text-muted">
+                {{ ticket.responded_at | date:'dd/MM/yyyy HH:mm' }}
+              </small>
+            </div>
+          </div>
+        </div>
+    </div>
+</div>

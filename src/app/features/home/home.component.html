@@ -1,0 +1,459 @@
+<div class="home-container">
+
+  <!-- ── Hero Section ─────────────────────────────────────────── -->
+  <section class="hero-section">
+    <div class="hero-overlay"></div>
+    <div class="hero-particles">
+      <div class="particle"></div>
+      <div class="particle"></div>
+      <div class="particle"></div>
+      <div class="particle"></div>
+      <div class="particle"></div>
+    </div>
+    <div class="container">
+      <div class="hero-content">
+        <div class="logo-container">
+          <img src="assets/images/logo.svg" alt="Logo" class="hero-logo">
+        </div>
+        <h1 class="hero-title">Savourez l'Excellence Culinaire</h1>
+        <p class="hero-subtitle">
+          Découvrez les meilleurs restaurants et traiteurs à portée de clic
+        </p>
+        <div class="hero-features">
+          <div class="feature-item">
+            <i class="bi bi-clock-history"></i>
+            <span>Livraison Rapide</span>
+          </div>
+          <div class="feature-item">
+            <i class="bi bi-star-fill"></i>
+            <span>Qualité Premium</span>
+          </div>
+          <div class="feature-item">
+            <i class="bi bi-shield-check"></i>
+            <span>Paiement Sécurisé</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Filtres ──────────────────────────────────────────────── -->
+  <section class="filters-section">
+    <div class="container">
+      <div class="filters-wrapper">
+        <div class="row g-3 align-items-center">
+          <div class="col-md-5">
+            <div class="search-box">
+              <i class="bi bi-search"></i>
+              <input type="text" class="form-control"
+                     placeholder="Rechercher un établissement..."
+                     [(ngModel)]="searchTerm"
+                     (input)="applyFilters()">
+              <button class="search-btn" *ngIf="searchTerm" (click)="searchTerm = ''; applyFilters()">
+                <i class="bi bi-x-lg"></i>
+              </button>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="filter-group">
+              <i class="bi bi-building"></i>
+              <select class="form-select" [(ngModel)]="typeFilter" (change)="applyFilters()">
+                <option value="">Tous les types</option>
+                <option value="restaurant">🍽️ Restaurants</option>
+                <option value="traiteur">🎂 Traiteurs</option>
+              </select>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <div class="filter-group">
+              <i class="bi bi-funnel"></i>
+              <select class="form-select" [(ngModel)]="availabilityFilter" (change)="applyFilters()">
+                <option value="">Toute disponibilité</option>
+                <option value="available">✅ Disponibles maintenant</option>
+                <option value="open">🔓 Ouverts maintenant</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        <div class="results-count" *ngIf="!loading">
+          <i class="bi bi-check2-circle"></i>
+          <span>{{ filteredBusinesses.length }} établissement(s) trouvé(s)</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Loading ──────────────────────────────────────────────── -->
+  <div *ngIf="loading" class="loading-container">
+    <div class="loading-spinner">
+      <div class="spinner-circle"></div>
+      <div class="spinner-circle"></div>
+      <div class="spinner-circle"></div>
+    </div>
+    <p class="loading-text">Chargement des établissements...</p>
+  </div>
+
+  <!-- ── Grille des établissements ───────────────────────────── -->
+  <section class="businesses-section" *ngIf="!loading">
+    <div class="container">
+
+      <!-- État vide -->
+      <div *ngIf="filteredBusinesses.length === 0" class="empty-state">
+        <div class="empty-icon"><i class="bi bi-search"></i></div>
+        <h3>Aucun établissement trouvé</h3>
+        <p>Essayez de modifier vos critères de recherche</p>
+        <button class="btn btn-primary"
+                (click)="searchTerm = ''; typeFilter = ''; availabilityFilter = ''; applyFilters()">
+          <i class="bi bi-arrow-clockwise"></i> Réinitialiser les filtres
+        </button>
+      </div>
+
+      <!-- Cards -->
+      <div class="row g-4" *ngIf="filteredBusinesses.length > 0">
+        <div class="col-md-6 col-lg-4" *ngFor="let business of filteredBusinesses">
+          <div class="business-card">
+
+            <!-- Image -->
+            <div class="card-image">
+              <img [src]="getBusinessImage(business)"
+                   [alt]="business.name"
+                   (error)="onBusinessImageError($event, business.type)">
+              <div class="image-overlay">
+                <span class="business-type-badge">
+                  <i [class]="business.type === 'restaurant' ? 'bi bi-building' : 'bi bi-cake2'"></i>
+                  {{ business.type === 'restaurant' ? 'Restaurant' : 'Traiteur' }}
+                </span>
+                <span class="status-badge" [ngClass]="getBusinessBadgeClass(business)">
+                  <i [class]="getStatusIcon(business)"></i>
+                  {{ getBusinessStatus(business) }}
+                </span>
+              </div>
+            </div>
+
+            <!-- Titre + Note -->
+            <div class="card-header-custom">
+              <h5 class="business-name">{{ business.name }}</h5>
+
+              <!-- ✅ Bloc note — VISIBLE par tous, cliquable pour voir les avis -->
+              <div class="rating-block"
+                   (click)="viewReviews(business)"
+                   role="button"
+                   title="Cliquer pour voir tous les avis"
+                   style="cursor: pointer;">
+
+                <ng-container *ngIf="(business.reviews_count || 0) > 0; else noRating">
+                  <!-- Étoiles -->
+                  <div class="stars-inline">
+                    <i *ngFor="let s of getStarArray(business.average_rating || 0)"
+                       class="bi"
+                       [ngClass]="s.filled ? 'bi-star-fill text-warning' : 'bi-star text-muted'">
+                    </i>
+                  </div>
+                  <!-- Score numérique -->
+                  <span class="rating-score" [ngClass]="getRatingColorClass(business.average_rating || 0)">
+                    {{ business.average_rating || 0 | number:'1.1-1' }}
+                  </span>
+                  <!-- Nombre d'avis -->
+                  <small class="text-muted rating-count">
+                    ({{ business.reviews_count }} avis)
+                  </small>
+                </ng-container>
+
+                <!-- Aucun avis encore -->
+                <ng-template #noRating>
+                  <span class="text-muted small">
+                    <i class="bi bi-star"></i>
+                    Aucun avis — soyez le premier !
+                  </span>
+                </ng-template>
+              </div>
+            </div>
+
+            <!-- Infos -->
+            <div class="card-body">
+              <p class="business-description" *ngIf="business.description">
+                {{ business.description | slice:0:120 }}{{ (business.description.length || 0) > 120 ? '...' : '' }}
+              </p>
+
+              <div class="business-info-grid">
+                <div class="info-item" *ngIf="business.address">
+                  <i class="bi bi-geo-alt-fill"></i>
+                  <span>{{ business.address | slice:0:40 }}{{ (business.address.length || 0) > 40 ? '...' : '' }}</span>
+                </div>
+                <div class="info-item" *ngIf="business.phone">
+                  <i class="bi bi-telephone-fill"></i>
+                  <span>{{ business.phone }}</span>
+                </div>
+              </div>
+
+              <div class="business-hours">
+                <i [class]="business.type === 'restaurant' ? 'bi bi-clock-fill' : 'bi bi-calendar-check-fill'"></i>
+                <span *ngIf="business.type === 'restaurant'">
+                  {{ business.opening_hour }} - {{ business.closing_hour }}
+                </span>
+                <span *ngIf="business.type === 'traiteur'">
+                  {{ business.availability_start }} - {{ business.availability_end }}
+                </span>
+              </div>
+            </div>
+
+            <!-- Actions -->
+            <div class="card-footer-custom">
+              <button class="btn btn-primary btn-action"
+                      (click)="viewMenu(business)"
+                      [disabled]="!isBusinessAccessible(business)">
+                <i class="bi bi-book"></i>
+                <span>Menu</span>
+              </button>
+
+              <button class="btn btn-outline-primary btn-action"
+                      (click)="startChat(business)"
+                      [disabled]="!isBusinessAccessible(business)">
+                <i class="bi bi-chat-dots-fill"></i>
+                <span>Chat</span>
+              </button>
+
+              <!-- ✅ Bouton Avis — toujours actif, accessible à TOUS -->
+              <button class="btn btn-outline-warning btn-action"
+                      (click)="viewReviews(business)">
+                <i class="bi bi-star-fill"></i>
+                <span>
+                  Avis
+                  <span *ngIf="(business.reviews_count || 0) > 0"
+                        class="badge bg-warning text-dark ms-1">
+                    {{ business.reviews_count }}
+                  </span>
+                </span>
+              </button>
+
+              <button *ngIf="business.type === 'restaurant'"
+                      class="btn btn-success btn-action"
+                      (click)="makeReservation(business)"
+                      [disabled]="!isRestaurantOpen(business)">
+                <i class="bi bi-calendar-check"></i>
+                <span>Réserver</span>
+              </button>
+
+              <button *ngIf="business.type === 'traiteur'"
+                      class="btn btn-success btn-action"
+                      (click)="makeSpecialOrder(business)"
+                      [disabled]="!isCatererAvailable(business)">
+                <i class="bi bi-cart-plus"></i>
+                <span>Commander</span>
+              </button>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Modal Menu ─────────────────────────────────────────── -->
+  <div class="modal fade" id="menuModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+      <div class="modal-content">
+        <div class="modal-header">
+          <div class="modal-header-content">
+            <div class="business-info-header">
+              <h5 class="modal-title">
+                <i class="bi bi-book-fill"></i>
+                Menu — {{ selectedBusiness?.name }}
+              </h5>
+              <span class="business-type-label">
+                {{ selectedBusiness?.type === 'restaurant' ? 'Restaurant' : 'Traiteur' }}
+              </span>
+            </div>
+          </div>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+
+        <div class="modal-body">
+          <div *ngIf="loadingMenu" class="modal-loading">
+            <div class="loading-spinner">
+              <div class="spinner-circle"></div>
+              <div class="spinner-circle"></div>
+              <div class="spinner-circle"></div>
+            </div>
+            <p>Chargement du menu...</p>
+          </div>
+
+          <div *ngIf="!loadingMenu && selectedMenus.length === 0" class="empty-state-modal">
+            <i class="bi bi-inbox"></i>
+            <h4>Aucun menu disponible</h4>
+            <p>Cet établissement n'a pas encore ajouté de menu</p>
+          </div>
+
+          <div *ngIf="!loadingMenu && selectedMenus.length > 0" class="menus-container">
+            <div class="menu-category" *ngFor="let menu of selectedMenus; let i = index">
+              <div class="menu-header" (click)="toggleMenu(i)">
+                <div class="menu-title-group">
+                  <i class="bi bi-list-ul"></i>
+                  <h4>{{ menu.name }}</h4>
+                  <span class="items-count">{{ menu.items?.length || 0 }} plats</span>
+                </div>
+                <i class="bi" [ngClass]="activeMenuIndex === i ? 'bi-chevron-up' : 'bi-chevron-down'"></i>
+              </div>
+
+              <div class="menu-content" [class.active]="activeMenuIndex === i">
+                <p *ngIf="menu.description" class="menu-description">{{ menu.description }}</p>
+
+                <div class="menu-items-grid">
+                  <div class="menu-item-card" *ngFor="let item of menu.items"
+                       [class.unavailable]="!item.is_available">
+                    <div class="item-image-wrapper">
+                      <img [src]="getItemImage(item)" [alt]="item.name" class="item-image"
+                           (error)="onItemImageError($event, item.category)">
+                      <div class="image-gradient"></div>
+                      <span *ngIf="item.category" class="category-badge">
+                        {{ getCategoryLabel(item.category) }}
+                      </span>
+                      <div *ngIf="!item.is_available" class="unavailable-overlay">
+                        <span>Indisponible</span>
+                      </div>
+                    </div>
+
+                    <div class="item-details">
+                      <h6 class="item-name">{{ item.name }}</h6>
+                      <p *ngIf="item.description" class="item-description">{{ item.description }}</p>
+                      <div class="item-footer">
+                        <div class="item-price">
+                          <span class="price-amount">{{ item.price | number:'1.0-0' }}</span>
+                          <span class="price-currency">FCFA</span>
+                        </div>
+                        <button class="btn-add-to-cart"
+                                (click)="addToCart(item)"
+                                [disabled]="!item.is_available">
+                          <i class="bi bi-plus-circle-fill"></i>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-footer" *ngIf="cart.length > 0">
+          <div class="cart-summary-container">
+            <div class="cart-details">
+              <div class="cart-icon">
+                <i class="bi bi-cart-fill"></i>
+                <span class="cart-badge">{{ cart.length }}</span>
+              </div>
+              <div class="cart-info">
+                <span class="cart-label">Total</span>
+                <span class="cart-total">{{ getCartTotal() | number:'1.0-0' }} FCFA</span>
+              </div>
+            </div>
+            <div class="cart-actions">
+              <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                <i class="bi bi-arrow-left"></i> Continuer
+              </button>
+              <button type="button" class="btn btn-success btn-checkout" (click)="proceedToCheckout()">
+                <i class="bi bi-credit-card-fill"></i> Commander
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <app-testimonials></app-testimonials>
+
+  <!-- ── Modal Chat Invité ──────────────────────────────────── -->
+  <div class="modal fade" id="guestChatModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">
+            <i class="bi bi-chat-dots me-2"></i>
+            Démarrer une conversation
+          </h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div class="alert alert-info">
+            <i class="bi bi-info-circle me-2"></i>
+            Pour contacter <strong>{{ selectedBusiness?.name }}</strong>, veuillez renseigner vos informations :
+          </div>
+          <div class="mb-3">
+            <label class="form-label"><i class="bi bi-person me-1"></i> Votre nom</label>
+            <input type="text" class="form-control" [(ngModel)]="guestName"
+                   placeholder="Ex: Jean Dupont" [disabled]="isLoadingGuestChat">
+          </div>
+          <div class="mb-3">
+            <label class="form-label"><i class="bi bi-telephone me-1"></i> Votre téléphone</label>
+            <input type="tel" class="form-control" [(ngModel)]="guestPhone"
+                   placeholder="Ex: 90123456" [disabled]="isLoadingGuestChat">
+          </div>
+          <small class="text-muted">
+            <i class="bi bi-shield-check me-1"></i>
+            Vos informations sont uniquement utilisées pour cette conversation.
+          </small>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" [disabled]="isLoadingGuestChat">
+            <i class="bi bi-x-lg me-1"></i> Annuler
+          </button>
+          <button type="button" class="btn btn-primary" (click)="startGuestChat()"
+                  [disabled]="isLoadingGuestChat || !guestName.trim() || !guestPhone.trim()">
+            <span *ngIf="isLoadingGuestChat" class="spinner-border spinner-border-sm me-2"></span>
+            <i *ngIf="!isLoadingGuestChat" class="bi bi-chat-dots me-1"></i>
+            {{ isLoadingGuestChat ? 'Connexion...' : 'Démarrer le chat' }}
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Modal Avis ────────────────────────────────────────── -->
+  <!-- ✅ Accessible à TOUS : visiteurs, invités, clients connectés -->
+  <div class="modal fade" id="reviewsModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">
+            <i class="bi bi-star-fill text-warning me-2"></i>
+            Avis clients — {{ selectedBusinessForReviews?.name }}
+          </h5>
+
+          <!-- Note moyenne dans le header -->
+          <div class="d-flex align-items-center gap-2 ms-3"
+               *ngIf="selectedBusinessForReviews && (selectedBusinessForReviews.reviews_count || 0) > 0">
+            <span class="badge bg-warning text-dark fs-6">
+              {{ selectedBusinessForReviews.average_rating || 0 | number:'1.1-1' }}
+            </span>
+            <div>
+              <i *ngFor="let s of getStarArray(selectedBusinessForReviews.average_rating || 0)"
+                 class="bi"
+                 [ngClass]="s.filled ? 'bi-star-fill text-warning' : 'bi-star text-muted'">
+              </i>
+            </div>
+            <small class="text-muted">({{ selectedBusinessForReviews.reviews_count }} avis)</small>
+          </div>
+
+          <button type="button" class="btn-close ms-auto"
+                  data-bs-dismiss="modal"
+                  (click)="closeReviewsModal()">
+          </button>
+        </div>
+
+        <div class="modal-body">
+          <!-- ✅ Le composant gère lui-même :
+               - Visiteur non connecté  → formulaire invité (nom + téléphone)
+               - Client connecté        → formulaire client (directement)
+               - Restaurant/Traiteur    → message "seuls les clients peuvent noter"
+               - Déjà noté              → message de confirmation -->
+          <app-business-reviews
+            *ngIf="selectedBusinessForReviews"
+            [businessId]="selectedBusinessForReviews.id!">
+          </app-business-reviews>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>

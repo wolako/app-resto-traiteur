@@ -1,0 +1,28 @@
+<div class="order-list">
+    <div class="table-responsive">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Client</th>
+              <th>Montant</th>
+              <th>Statut</th>
+              <th>Date</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let order of orders">
+              <td>{{ order.id }}</td>
+              <td>{{ order.client_name }}</td>
+              <td>{{ order.total_amount }} FCFA</td>
+              <td>
+                <span class="badge bg-{{ getStatusColor(order.status) }}">
+                  {{ order.status }}
+                </span>
+              </td>
+              <td>{{ order.created_at | date:'short' }}</td>
+            </tr>
+          </tbody>
+        </table>
+    </div>
+</div>

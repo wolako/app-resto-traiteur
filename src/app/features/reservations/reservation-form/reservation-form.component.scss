@@ -1,0 +1,126 @@
+.reservation-container {
+  min-height: 100vh;
+  background: linear-gradient(to bottom, #f8f9fa 0%, #ffffff 100%);
+  padding: 40px 0;
+}
+
+.reservation-card {
+  background: white;
+  border-radius: 20px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  animation: fadeInUp 0.5s ease-out;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.card-header-reservation {
+  background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+  color: white;
+  padding: 40px 30px;
+  text-align: center;
+
+  i {
+    font-size: 4rem;
+    margin-bottom: 15px;
+    display: block;
+  }
+
+  h2 {
+    margin: 0 0 10px 0;
+    font-weight: 700;
+    font-size: 2rem;
+  }
+
+  .restaurant-name {
+    margin: 0;
+    font-size: 1.3rem;
+    font-weight: 500;
+    opacity: 0.95;
+  }
+}
+
+.card-body-reservation {
+  padding: 40px 30px;
+}
+
+// Success Message
+.success-message {
+  text-align: center;
+  padding: 40px 20px;
+
+  .success-icon {
+    i {
+      font-size: 5rem;
+      color: #28a745;
+      animation: scaleIn 0.5s ease-out;
+    }
+  }
+
+  h3 {
+    color: #28a745;
+    font-weight: 700;
+    margin: 20px 0 15px 0;
+    font-size: 2rem;
+  }
+
+  p {
+    color: #6c757d;
+    font-size: 1.1rem;
+    margin-bottom: 30px;
+    line-height: 1.6;
+  }
+
+  .btn {
+    padding: 12px 30px;
+    border-radius: 25px;
+    font-weight: 600;
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    transform: scale(0);
+  }
+  to {
+    transform: scale(1);
+  }
+}
+
+// Form Styles
+.form-label {
+  font-weight: 600;
+  color: #495057;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  i {
+    color: #28a745;
+    font-size: 1.1rem;
+  }
+}
+
+.form-control,
+.form-select {
+  border: 2px solid #e9ecef;
+  border-radius: 10px;
+  padding: 12px 15px;
+  font-size: 1rem;
+  transition: all 0.3s ease;
+
+  &:focus {
+    border-color: #28a745;
+    box-shadow: 0 0;
+  }
+}

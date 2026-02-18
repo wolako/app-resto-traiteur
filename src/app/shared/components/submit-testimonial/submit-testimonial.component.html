@@ -1,0 +1,259 @@
+<div class="submit-testimonial-container">
+  
+  <!-- Loading Eligibility -->
+  <div *ngIf="checkingEligibility" class="loading-state">
+    <div class="spinner-border text-primary" role="status">
+      <span class="visually-hidden">Chargement...</span>
+    </div>
+    <p class="mt-3 text-muted">Vérification de votre éligibilité...</p>
+  </div>
+
+  <!-- Non Éligible -->
+  <div *ngIf="!checkingEligibility && !isEligible" class="eligibility-error">
+    <div class="alert alert-warning">
+      <i class="bi bi-exclamation-triangle-fill me-2"></i>
+      <strong>Vous n'êtes pas encore éligible</strong>
+    </div>
+    
+    <div class="requirements-card">
+      <h5>
+        <i class="bi bi-clipboard-check"></i>
+        Critères d'éligibilité
+      </h5>
+      
+      <div class="requirement-item">
+        <div class="requirement-icon" [class.met]="accountAge >= 30">
+          <i class="bi" [ngClass]="accountAge >= 30 ? 'bi-check-circle-fill text-success' : 'bi-x-circle-fill text-danger'"></i>
+        </div>
+        <div class="requirement-text">
+          <strong>Compte actif depuis 30 jours minimum</strong>
+          <p class="mb-0">
+            Votre compte a {{ accountAge }} jour{{ accountAge > 1 ? 's' : '' }}
+            <span *ngIf="accountAge < 30" class="text-muted">
+              (encore {{ 30 - accountAge }} jour{{ (30 - accountAge) > 1 ? 's' : '' }} à attendre)
+            </span>
+          </p>
+        </div>
+      </div>
+
+      <div class="requirement-item">
+        <div class="requirement-icon" [class.met]="deliveredOrders >= 3">
+          <i class="bi" [ngClass]="deliveredOrders >= 3 ? 'bi-check-circle-fill text-success' : 'bi-x-circle-fill text-danger'"></i>
+        </div>
+        <div class="requirement-text">
+          <strong>Au moins 3 commandes livrées</strong>
+          <p class="mb-0">
+            Vous avez {{ deliveredOrders }} commande{{ deliveredOrders > 1 ? 's' : '' }} livrée{{ deliveredOrders > 1 ? 's' : '' }}
+            <span *ngIf="deliveredOrders < 3" class="text-muted">
+              (encore {{ 3 - deliveredOrders }} commande{{ (3 - deliveredOrders) > 1 ? 's' : '' }} nécessaire{{ (3 - deliveredOrders) > 1 ? 's' : '' }})
+            </span>
+          </p>
+        </div>
+      </div>
+
+      <div class="info-box mt-3">
+        <i class="bi bi-info-circle"></i>
+        <p class="mb-0">
+          Continuez à utiliser RestoTraiteur et revenez bientôt pour partager votre expérience !
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Éligible - Témoignage Approuvé -->
+  <div *ngIf="!checkingEligibility && isEligible && hasTestimonial && testimonial?.status === 'approved'" class="testimonial-approved">
+    <div class="alert alert-success">
+      <i class="bi bi-check-circle-fill me-2"></i>
+      <strong>Votre témoignage a été approuvé !</strong>
+    </div>
+
+    <div class="testimonial-display-card">
+      <div class="testimonial-header">
+        <div class="d-flex align-items-center gap-2">
+          <div class="stars">
+            <i *ngFor="let star of [1,2,3,4,5]" 
+               class="bi"
+               [ngClass]="star <= testimonial.rating ? 'bi-star-fill text-warning' : 'bi-star text-muted'">
+            </i>
+          </div>
+          <span class="rating-value">{{ testimonial.rating }}/5</span>
+        </div>
+        <span class="badge" [ngClass]="testimonial.is_featured ? 'bg-warning text-dark' : 'bg-success'">
+          <i class="bi" [ngClass]="testimonial.is_featured ? 'bi-star-fill' : 'bi-check-circle-fill'"></i>
+          {{ testimonial.is_featured ? 'Mis en vedette' : 'Approuvé' }}
+        </span>
+      </div>
+
+      <div class="testimonial-content">
+        <p class="testimonial-text">"{{ testimonial.comment }}"</p>
+        <div class="testimonial-footer">
+          <span class="author">— {{ testimonial.display_name }}</span>
+          <span class="date">{{ testimonial.created_at | date:'dd/MM/yyyy' }}</span>
+        </div>
+      </div>
+
+      <div class="info-box">
+        <i class="bi bi-info-circle"></i>
+        <p class="mb-0">
+          Merci pour votre témoignage ! Il est maintenant visible sur notre plateforme et aide d'autres utilisateurs à découvrir RestoTraiteur.
+          <span *ngIf="testimonial.is_featured" class="text-warning fw-bold">
+            Votre témoignage a été sélectionné pour être mis en vedette sur la page d'accueil !
+          </span>
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Éligible - Formulaire (Nouveau ou Modification) -->
+  <div *ngIf="!checkingEligibility && isEligible && canEdit()" class="testimonial-form">
+    
+    <!-- Statut actuel si existant -->
+    <div *ngIf="hasTestimonial" class="alert" 
+         [ngClass]="testimonial.status === 'pending' ? 'alert-info' : 'alert-warning'">
+      <i class="bi me-2" 
+         [ngClass]="testimonial.status === 'pending' ? 'bi-clock-fill' : 'bi-exclamation-triangle-fill'"></i>
+      <strong>
+        {{ testimonial.status === 'pending' ? 'Témoignage en attente de validation' : 'Témoignage rejeté' }}
+      </strong>
+      <p class="mb-0 mt-2" *ngIf="testimonial.status === 'rejected' && testimonial.rejection_reason">
+        <strong>Raison :</strong> {{ testimonial.rejection_reason }}
+      </p>
+      <p class="mb-0 mt-1">
+        {{ testimonial.status === 'pending' 
+           ? 'Notre équipe examine votre témoignage. Vous serez notifié une fois validé.' 
+           : 'Vous pouvez modifier et soumettre à nouveau votre témoignage.' }}
+      </p>
+    </div>
+
+    <!-- Guidelines -->
+    <div class="guidelines-card" *ngIf="!hasTestimonial">
+      <h5>
+        <i class="bi bi-lightbulb"></i>
+        Conseils pour un bon témoignage
+      </h5>
+      <ul>
+        <li>Soyez sincère et authentique</li>
+        <li>Décrivez votre expérience concrète avec RestoTraiteur</li>
+        <li>Mentionnez ce que vous appréciez le plus</li>
+        <li>Minimum 50 caractères, maximum 500</li>
+      </ul>
+    </div>
+
+    <!-- Formulaire -->
+    <form [formGroup]="testimonialForm" (ngSubmit)="submitTestimonial()">
+      
+      <!-- Rating Selector -->
+      <div class="form-group mb-4">
+        <label class="form-label">
+          <i class="bi bi-star-fill text-warning"></i>
+          Votre note *
+        </label>
+        <div class="rating-selector">
+          <button
+            *ngFor="let star of [1,2,3,4,5]"
+            type="button"
+            class="star-btn"
+            (click)="selectRating(star)"
+            (mouseenter)="hoverRating(star)"
+            (mouseleave)="resetHover()">
+            <i class="bi" [ngClass]="getStarClass(star)"></i>
+          </button>
+          <span class="rating-label" *ngIf="selectedRating > 0">
+            {{ selectedRating }}/5
+          </span>
+        </div>
+        <div class="invalid-feedback d-block" *ngIf="testimonialForm.get('rating')?.invalid && testimonialForm.get('rating')?.touched">
+          Veuillez sélectionner une note
+        </div>
+      </div>
+
+      <!-- Comment -->
+      <div class="form-group mb-4">
+        <label class="form-label" for="comment">
+          <i class="bi bi-chat-quote"></i>
+          Votre témoignage *
+        </label>
+        <textarea
+          id="comment"
+          class="form-control"
+          formControlName="comment"
+          rows="6"
+          placeholder="Partagez votre expérience avec RestoTraiteur... (minimum 50 caractères)"
+          [class.is-invalid]="comment?.invalid && comment?.touched"
+          [class.is-valid]="comment?.valid && comment?.touched">
+        </textarea>
+        
+        <!-- Character Counter -->
+        <div class="char-counter" [ngClass]="getCommentLengthClass()">
+          <i class="bi" 
+             [ngClass]="{
+               'bi-exclamation-circle': commentLength < 50,
+               'bi-check-circle': commentLength >= 50 && commentLength <= 500,
+               'bi-exclamation-triangle': commentLength > 450
+             }">
+          </i>
+          {{ commentLength }}/500 caractères
+          <span *ngIf="commentLength < 50">({{ 50 - commentLength }} caractères minimum)</span>
+        </div>
+
+        <div class="invalid-feedback" *ngIf="comment?.hasError('required')">
+          Le témoignage est requis
+        </div>
+        <div class="invalid-feedback" *ngIf="comment?.hasError('minlength')">
+          Minimum 50 caractères requis
+        </div>
+        <div class="invalid-feedback" *ngIf="comment?.hasError('maxlength')">
+          Maximum 500 caractères autorisés
+        </div>
+      </div>
+
+      <!-- Display Name -->
+      <div class="form-group mb-3">
+        <label class="form-label" for="displayName">
+          <i class="bi bi-person"></i>
+          Nom affiché (optionnel)
+        </label>
+        <input
+          type="text"
+          id="displayName"
+          class="form-control"
+          formControlName="displayName"
+          [placeholder]="currentUser?.first_name + ' ' + currentUser?.last_name?.charAt(0) + '.'">
+        <small class="text-muted">
+          Laissez vide pour utiliser "{{ currentUser?.first_name }} {{ currentUser?.last_name?.charAt(0) }}."
+        </small>
+      </div>
+
+      <!-- Photo Permission -->
+      <div class="form-group mb-4">
+        <div class="form-check">
+          <input
+            type="checkbox"
+            id="allowPhoto"
+            class="form-check-input"
+            formControlName="allowPhoto">
+          <label class="form-check-label" for="allowPhoto">
+            <i class="bi bi-image"></i>
+            J'autorise l'affichage de ma photo de profil avec mon témoignage
+          </label>
+        </div>
+      </div>
+
+      <!-- Submit Button -->
+      <div class="d-grid">
+        <button
+          type="submit"
+          class="btn btn-primary btn-lg"
+          [disabled]="loading || testimonialForm.invalid">
+          <span *ngIf="loading" class="spinner-border spinner-border-sm me-2"></span>
+          <i *ngIf="!loading" class="bi" 
+             [ngClass]="hasTestimonial ? 'bi-arrow-clockwise' : 'bi-send-fill'"></i>
+          {{ loading 
+             ? 'Envoi en cours...' 
+             : (hasTestimonial ? 'Mettre à jour mon témoignage' : 'Soumettre mon témoignage') }}
+        </button>
+      </div>
+    </form>
+  </div>
+
+</div>

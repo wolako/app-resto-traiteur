@@ -1,0 +1,415 @@
+<div class="plans-management-container">
+  <div class="page-header">
+    <div>
+      <h1>💳 Gestion des Plans d'Abonnement</h1>
+      <p>Créez et gérez les plans d'abonnement de la plateforme</p>
+    </div>
+    <button (click)="openCreateModal()" class="btn btn-primary">
+      <i class="bi bi-plus-circle"></i>
+      Nouveau Plan
+    </button>
+  </div>
+
+  <!-- Loading -->
+  <div *ngIf="loading && plans.length === 0" class="loading-container">
+    <div class="spinner"></div>
+    <p>Chargement des plans...</p>
+  </div>
+
+  <!-- Empty State -->
+  <div *ngIf="!loading && plans.length === 0" class="empty-state">
+    <div class="empty-icon">📋</div>
+    <h3>Aucun plan d'abonnement</h3>
+    <p>Commencez par créer votre premier plan</p>
+    <button (click)="openCreateModal()" class="btn btn-primary">
+      <i class="bi bi-plus-circle"></i>
+      Créer un plan
+    </button>
+  </div>
+
+  <!-- Plans Grid -->
+  <div *ngIf="!loading && plans.length > 0" class="plans-grid">
+    <div *ngFor="let plan of plans" class="plan-card" [class.inactive]="!plan.is_active">
+      <!-- Badge inactif -->
+      <div *ngIf="!plan.is_active" class="inactive-badge">
+        <i class="bi bi-pause-circle"></i>
+        Inactif
+      </div>
+
+      <div class="plan-header">
+        <div>
+          <h3>{{ plan.display_name }}</h3>
+          <span class="plan-name-badge">{{ plan.name }}</span>
+        </div>
+        <div class="plan-status">
+          <span class="status-badge" [class.active]="plan.is_active">
+            {{ plan.is_active ? '✓ Actif' : '⏸ Inactif' }}
+          </span>
+        </div>
+      </div>
+
+      <div class="plan-price">
+        <span class="price">{{ plan.price | number:'1.0-0' }} FCFA</span>
+        <span class="period">{{ getBillingPeriodLabel(plan.billing_period) }}</span>
+      </div>
+
+      <p class="plan-description">{{ plan.description || 'Aucune description' }}</p>
+
+      <div class="plan-details">
+        <div class="detail-row">
+          <span class="label">
+            <i class="bi bi-list-ul"></i>
+            Articles menu:
+          </span>
+          <span class="value">{{ plan.max_menu_items || '∞ Illimité' }}</span>
+        </div>
+        <div class="detail-row">
+          <span class="label">
+            <i class="bi bi-cart-check"></i>
+            Commandes/mois:
+          </span>
+          <span class="value">{{ plan.max_orders_per_month || '∞ Illimité' }}</span>
+        </div>
+        <div class="detail-row">
+          <span class="label">
+            <i class="bi bi-image"></i>
+            Photos:
+          </span>
+          <span class="value">{{ plan.max_photos }}</span>
+        </div>
+        <div class="detail-row commission">
+          <span class="label">
+            <i class="bi bi-percent"></i>
+            Commission:
+          </span>
+          <span class="value">{{ plan.commission_rate }}%</span>
+        </div>
+      </div>
+
+      <div class="plan-features">
+        <span *ngIf="plan.can_accept_online_orders" class="feature-badge">
+          <i class="bi bi-cart-check"></i> Commandes
+        </span>
+        <span *ngIf="plan.can_accept_reservations" class="feature-badge">
+          <i class="bi bi-calendar-check"></i> Réservations
+        </span>
+        <span *ngIf="plan.can_accept_special_orders" class="feature-badge">
+          <i class="bi bi-star"></i> Spécial
+        </span>
+        <span *ngIf="plan.priority_support" class="feature-badge">
+          <i class="bi bi-headset"></i> Support
+        </span>
+        <span *ngIf="plan.analytics_access" class="feature-badge">
+          <i class="bi bi-graph-up"></i> Analytics
+        </span>
+        <span *ngIf="plan.custom_branding" class="feature-badge">
+          <i class="bi bi-brush"></i> Branding
+        </span>
+        <span *ngIf="plan.api_access" class="feature-badge">
+          <i class="bi bi-code-slash"></i> API
+        </span>
+      </div>
+
+      <div class="plan-actions">
+        <button (click)="openEditModal(plan)" class="btn btn-secondary">
+          <i class="bi bi-pencil"></i>
+          Modifier
+        </button>
+        <button 
+          (click)="togglePlanStatus(plan)" 
+          class="btn"
+          [ngClass]="plan.is_active ? 'btn-warning' : 'btn-success'">
+          <i [class]="plan.is_active ? 'bi bi-pause-circle' : 'bi bi-play-circle'"></i>
+          {{ plan.is_active ? 'Désactiver' : 'Activer' }}
+        </button>
+        <button (click)="deletePlan(plan)" class="btn btn-danger">
+          <i class="bi bi-trash"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal -->
+  <div *ngIf="showModal" class="modal-overlay" (click)="closeModal()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>
+          <i [class]="isEditing ? 'bi bi-pencil-square' : 'bi bi-plus-circle'"></i>
+          {{ isEditing ? 'Modifier le Plan' : 'Nouveau Plan' }}
+        </h2>
+        <button (click)="closeModal()" class="close-btn">
+          <i class="bi bi-x-lg"></i>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <form #planForm="ngForm">
+          <!-- Basic Info -->
+          <div class="form-section">
+            <h3>
+              <i class="bi bi-info-circle"></i>
+              Informations de base
+            </h3>
+            
+            <div class="form-row">
+              <div class="form-group">
+                <label>
+                  Nom technique <span class="required">*</span>
+                </label>
+                <input 
+                  type="text" 
+                  [(ngModel)]="newPlan.name" 
+                  name="name"
+                  class="form-control"
+                  placeholder="ex: premium"
+                  required>
+                <small class="form-text">Identifiant unique du plan (pas d'espaces)</small>
+              </div>
+
+              <div class="form-group">
+                <label>
+                  Nom d'affichage <span class="required">*</span>
+                </label>
+                <input 
+                  type="text" 
+                  [(ngModel)]="newPlan.display_name" 
+                  name="display_name"
+                  class="form-control"
+                  placeholder="ex: Premium"
+                  required>
+                <small class="form-text">Nom visible par les utilisateurs</small>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label>Description</label>
+              <textarea 
+                [(ngModel)]="newPlan.description" 
+                name="description"
+                class="form-control"
+                rows="3"
+                placeholder="Décrivez les avantages de ce plan..."></textarea>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label>
+                  Prix (FCFA) <span class="required">*</span>
+                </label>
+                <input 
+                  type="number" 
+                  [(ngModel)]="newPlan.price" 
+                  name="price"
+                  class="form-control"
+                  min="0"
+                  placeholder="0"
+                  required>
+              </div>
+
+              <div class="form-group">
+                <label>
+                  Période de facturation <span class="required">*</span>
+                </label>
+                <select 
+                  [(ngModel)]="newPlan.billing_period" 
+                  name="billing_period" 
+                  class="form-control"
+                  required>
+                  <option value="monthly">Mensuel</option>
+                  <option value="yearly">Annuel</option>
+                  <option value="lifetime">À vie</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label>Ordre d'affichage</label>
+              <input 
+                type="number" 
+                [(ngModel)]="newPlan.sort_order" 
+                name="sort_order"
+                class="form-control"
+                min="0"
+                placeholder="0">
+              <small class="form-text">Ordre dans lequel le plan sera affiché (0 = premier)</small>
+            </div>
+          </div>
+
+          <!-- Limits -->
+          <div class="form-section">
+            <h3>
+              <i class="bi bi-speedometer"></i>
+              Limites
+            </h3>
+            
+            <div class="form-row">
+              <div class="form-group">
+                <label>Articles menu max</label>
+                <input 
+                  type="number" 
+                  [(ngModel)]="newPlan.max_menu_items" 
+                  name="max_menu_items"
+                  class="form-control"
+                  placeholder="Vide = illimité">
+                <small class="form-text">Laissez vide pour illimité</small>
+              </div>
+
+              <div class="form-group">
+                <label>Commandes/mois max</label>
+                <input 
+                  type="number" 
+                  [(ngModel)]="newPlan.max_orders_per_month" 
+                  name="max_orders_per_month"
+                  class="form-control"
+                  placeholder="Vide = illimité">
+                <small class="form-text">Laissez vide pour illimité</small>
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label>
+                  Photos max <span class="required">*</span>
+                </label>
+                <input 
+                  type="number" 
+                  [(ngModel)]="newPlan.max_photos" 
+                  name="max_photos"
+                  class="form-control"
+                  min="0"
+                  placeholder="5"
+                  required>
+              </div>
+
+              <div class="form-group">
+                <label>
+                  Taux de commission (%) <span class="required">*</span>
+                </label>
+                <input 
+                  type="number" 
+                  [(ngModel)]="newPlan.commission_rate" 
+                  name="commission_rate"
+                  class="form-control"
+                  min="0"
+                  max="100"
+                  step="0.1"
+                  placeholder="5.0"
+                  required>
+              </div>
+            </div>
+          </div>
+
+          <!-- Features -->
+          <div class="form-section">
+            <h3>
+              <i class="bi bi-stars"></i>
+              Fonctionnalités
+            </h3>
+            
+            <div class="checkbox-grid">
+              <label class="checkbox-label">
+                <input 
+                  type="checkbox" 
+                  [(ngModel)]="newPlan.can_accept_online_orders" 
+                  name="can_accept_online_orders">
+                <span>
+                  <i class="bi bi-cart-check"></i>
+                  Commandes en ligne
+                </span>
+              </label>
+
+              <label class="checkbox-label">
+                <input 
+                  type="checkbox" 
+                  [(ngModel)]="newPlan.can_accept_reservations" 
+                  name="can_accept_reservations">
+                <span>
+                  <i class="bi bi-calendar-check"></i>
+                  Réservations
+                </span>
+              </label>
+
+              <label class="checkbox-label">
+                <input 
+                  type="checkbox" 
+                  [(ngModel)]="newPlan.can_accept_special_orders" 
+                  name="can_accept_special_orders">
+                <span>
+                  <i class="bi bi-star"></i>
+                  Commandes spéciales
+                </span>
+              </label>
+
+              <label class="checkbox-label">
+                <input 
+                  type="checkbox" 
+                  [(ngModel)]="newPlan.priority_support" 
+                  name="priority_support">
+                <span>
+                  <i class="bi bi-headset"></i>
+                  Support prioritaire
+                </span>
+              </label>
+
+              <label class="checkbox-label">
+                <input 
+                  type="checkbox" 
+                  [(ngModel)]="newPlan.analytics_access" 
+                  name="analytics_access">
+                <span>
+                  <i class="bi bi-graph-up"></i>
+                  Accès analytics
+                </span>
+              </label>
+
+              <label class="checkbox-label">
+                <input 
+                  type="checkbox" 
+                  [(ngModel)]="newPlan.custom_branding" 
+                  name="custom_branding">
+                <span>
+                  <i class="bi bi-brush"></i>
+                  Branding personnalisé
+                </span>
+              </label>
+
+              <label class="checkbox-label">
+                <input 
+                  type="checkbox" 
+                  [(ngModel)]="newPlan.api_access" 
+                  name="api_access">
+                <span>
+                  <i class="bi bi-code-slash"></i>
+                  Accès API
+                </span>
+              </label>
+
+              <label class="checkbox-label">
+                <input 
+                  type="checkbox" 
+                  [(ngModel)]="newPlan.is_active" 
+                  name="is_active">
+                <span>
+                  <i class="bi bi-check-circle"></i>
+                  Plan actif
+                </span>
+              </label>
+            </div>
+          </div>
+        </form>
+      </div>
+
+      <div class="modal-footer">
+        <button (click)="closeModal()" class="btn btn-secondary" [disabled]="savingPlan">
+          <i class="bi bi-x-circle"></i>
+          Annuler
+        </button>
+        <button (click)="savePlan()" class="btn btn-primary" [disabled]="savingPlan">
+          <span *ngIf="savingPlan" class="spinner-border spinner-border-sm me-2"></span>
+          <i class="bi bi-check-circle" *ngIf="!savingPlan"></i>
+          {{ savingPlan ? 'Enregistrement...' : 'Enregistrer' }}
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

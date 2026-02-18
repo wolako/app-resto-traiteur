@@ -1,0 +1,142 @@
+<!-- src/app/shared/components/testimonials/testimonials.component.html -->
+
+<section class="testimonials-section" *ngIf="!isLoading && testimonials.length > 0">
+  <div class="container">
+    <div class="section-header">
+      <span class="section-badge">
+        <i class="bi bi-chat-quote"></i>
+        Témoignages
+      </span>
+      <h2 class="section-title">
+        Ce Que Nos Clients Disent
+      </h2>
+      <p class="section-subtitle">
+        Plus de 5000 clients satisfaits font confiance à RestoTraiteur
+      </p>
+    </div>
+
+    <div class="testimonials-carousel">
+      <!-- Navigation Gauche -->
+      <button 
+        class="carousel-nav carousel-prev" 
+        (click)="prevSlide()"
+        [disabled]="testimonials.length <= visibleCount"
+        *ngIf="testimonials.length > visibleCount">
+        <i class="bi bi-chevron-left"></i>
+      </button>
+
+      <!-- Testimonials Container -->
+      <div class="testimonials-container">
+        <div class="testimonials-track">
+          <div 
+            class="testimonial-card" 
+            *ngFor="let testimonial of visibleTestimonials"
+            [@slideIn]>
+            
+            <!-- Stars -->
+            <div class="testimonial-stars">
+              <i 
+                class="bi bi-star-fill" 
+                *ngFor="let star of getStars(testimonial.rating).filled">
+              </i>
+              <i 
+                class="bi bi-star" 
+                *ngFor="let star of getStars(testimonial.rating).empty">
+              </i>
+            </div>
+
+            <!-- Quote -->
+            <div class="testimonial-quote">
+              <i class="bi bi-quote quote-icon"></i>
+              <p>{{ testimonial.comment }}</p>
+            </div>
+
+            <!-- Author -->
+            <div class="testimonial-author">
+              <div class="author-avatar">
+                <img 
+                  [src]="getDisplayPhoto(testimonial)" 
+                  [alt]="getDisplayName(testimonial)"
+                  (error)="onImageError($event)">
+              </div>
+              <div class="author-info">
+                <h4 class="author-name">{{ getDisplayName(testimonial) }}</h4>
+                <p class="author-meta">
+                  <span class="verified-badge">
+                    <i class="bi bi-patch-check-fill"></i>
+                    Client Vérifié
+                  </span>
+                  <span class="separator">•</span>
+                  <span class="date">{{ getTimeSince(testimonial.created_at) }}</span>
+                </p>
+              </div>
+            </div>
+
+            <!-- Featured Badge -->
+            <div class="featured-corner" *ngIf="testimonial.is_featured">
+              <i class="bi bi-star-fill"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Navigation Droite -->
+      <button 
+        class="carousel-nav carousel-next" 
+        (click)="nextSlide()"
+        [disabled]="testimonials.length <= visibleCount"
+        *ngIf="testimonials.length > visibleCount">
+        <i class="bi bi-chevron-right"></i>
+      </button>
+    </div>
+
+    <!-- Dots Navigation -->
+    <div class="carousel-dots" *ngIf="testimonials.length > visibleCount">
+      <button 
+        class="dot" 
+        *ngFor="let testimonial of testimonials; let i = index"
+        [class.active]="i === currentIndex"
+        (click)="goToSlide(i)">
+      </button>
+    </div>
+
+    <!-- CTA Button -->
+    <div class="testimonials-cta">
+      <p class="cta-text">
+        Vous aussi, partagez votre expérience avec RestoTraiteur
+      </p>
+      <a routerLink="/profile" class="btn btn-primary btn-cta">
+        <i class="bi bi-chat-heart"></i>
+        Laisser un Témoignage
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- Loading State -->
+<section class="testimonials-section" *ngIf="isLoading">
+  <div class="container">
+    <div class="section-header">
+      <h2 class="section-title">Ce Que Nos Clients Disent</h2>
+    </div>
+    <div class="testimonials-loading">
+      <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">Chargement...</span>
+      </div>
+      <p>Chargement des témoignages...</p>
+    </div>
+  </div>
+</section>
+
+<!-- Error State -->
+<section class="testimonials-section" *ngIf="error && !isLoading">
+  <div class="container">
+    <div class="section-header">
+      <h2 class="section-title">Ce Que Nos Clients Disent</h2>
+    </div>
+    <div class="testimonials-error">
+      <i class="bi bi-exclamation-triangle"></i>
+      <p>Impossible de charger les témoignages</p>
+    </div>
+  </div>
+</section>

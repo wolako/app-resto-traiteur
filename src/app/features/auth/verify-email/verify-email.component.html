@@ -1,0 +1,67 @@
+<div class="verify-email-container">
+  <div class="container">
+    <div class="row justify-content-center">
+      <div class="col-md-6">
+        <div class="verify-card">
+          <!-- Loading State -->
+          <div *ngIf="loading" class="text-center">
+            <div class="spinner-border text-primary mb-3" role="status">
+              <span class="visually-hidden">Vérification en cours...</span>
+            </div>
+            <h3>Vérification de votre email...</h3>
+            <p class="text-muted">Veuillez patienter</p>
+          </div>
+
+          <!-- Success State -->
+          <div *ngIf="!loading && success" class="text-center">
+            <div class="success-icon mb-3">
+              <i class="bi bi-check-circle-fill text-success"></i>
+            </div>
+            <h2 class="mb-3">Email vérifié avec succès ! 🎉</h2>
+            <p class="text-muted mb-4">
+              Votre adresse email a été confirmée. Vous allez être redirigé vers la page de connexion.
+            </p>
+            <div class="d-grid gap-2">
+              <button 
+                class="btn btn-primary"
+                (click)="redirectToLogin()">
+                <i class="bi bi-arrow-right-circle"></i>
+                Se connecter maintenant
+              </button>
+              <p class="text-muted small">
+                Redirection automatique dans 3 secondes...
+              </p>
+            </div>
+          </div>
+
+          <!-- Error State -->
+          <div *ngIf="!loading && !success" class="text-center">
+            <div class="error-icon mb-3">
+              <i class="bi bi-x-circle-fill text-danger"></i>
+            </div>
+            <h2 class="mb-3">Erreur de vérification</h2>
+            <div class="alert alert-danger">
+              <i class="bi bi-exclamation-triangle"></i>
+              {{ errorMessage }}
+            </div>
+            <p class="text-muted mb-4">
+              Le lien de vérification est peut-être expiré ou invalide.
+            </p>
+            <div class="d-grid gap-2">
+              <button 
+                class="btn btn-primary"
+                (click)="resendVerification()">
+                <i class="bi bi-envelope"></i>
+                Renvoyer l'email de vérification
+              </button>
+              <a routerLink="/login" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left"></i>
+                Retour à la connexion
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

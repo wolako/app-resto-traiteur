@@ -1,0 +1,236 @@
+<div class="about-container">
+  <!-- Hero Section -->
+  <section class="hero-section">
+    <div class="container">
+      <div class="hero-content">
+        <h1 class="hero-title">
+          <i class="bi bi-shop"></i>
+          À Propos de RestoTraiteur
+        </h1>
+        <p class="hero-subtitle">
+          La plateforme qui connecte les amoureux de la bonne cuisine aux meilleurs restaurants et traiteurs du Togo
+        </p>
+        <div class="hero-buttons">
+          <button (click)="scrollToSection('mission')" class="btn btn-primary">
+            <i class="bi bi-info-circle"></i>
+            Notre Mission
+          </button>
+          <button (click)="scrollToSection('values')" class="btn btn-outline">
+            <i class="bi bi-heart"></i>
+            Nos Valeurs
+          </button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Stats Section -->
+  <section class="stats-section">
+    <div class="container">
+      <div class="stats-grid">
+        <div *ngFor="let stat of stats" class="stat-card">
+          <div class="stat-value">{{ stat.value }}</div>
+          <div class="stat-label">{{ stat.label }}</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Mission Section -->
+  <section id="mission" class="mission-section">
+    <div class="container">
+      <div class="section-header">
+        <h2>
+          <i class="bi bi-bullseye"></i>
+          Notre Mission
+        </h2>
+        <p class="section-subtitle">Ce qui nous anime au quotidien</p>
+      </div>
+
+      <div class="mission-content">
+        <div class="mission-text">
+          <h3>Révolutionner l'accès à la restauration au Togo</h3>
+          <p>
+            RestoTraiteur est née d'une vision simple : rendre la commande de repas aussi facile que de passer un coup de fil, 
+            tout en soutenant l'écosystème local de la restauration.
+          </p>
+          <p>
+            Nous croyons que chaque restaurant et traiteur mérite d'avoir accès aux outils digitaux modernes pour développer 
+            son activité, et que chaque client mérite une expérience de commande fluide et agréable.
+          </p>
+          <p>
+            Notre plateforme connecte les passionnés de cuisine aux talents culinaires locaux, créant ainsi une communauté 
+            vibrante autour de la gastronomie togolaise et internationale.
+          </p>
+        </div>
+        <div class="mission-image">
+          <img src="https://images.unsplash.com/photo-1556910103-1c02745aae4d?w=600&q=80" alt="Notre équipe">
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- How It Works -->
+  <section class="how-it-works-section">
+    <div class="container">
+      <div class="section-header">
+        <h2>
+          <i class="bi bi-gear"></i>
+          Comment Ça Marche
+        </h2>
+        <p class="section-subtitle">Simple, rapide et efficace</p>
+      </div>
+
+      <div class="steps-grid">
+        <div class="step-card">
+          <div class="step-number">1</div>
+          <div class="step-icon">
+            <i class="bi bi-search"></i>
+          </div>
+          <h3>Découvrez</h3>
+          <p>Parcourez notre sélection de restaurants et traiteurs à Lomé</p>
+        </div>
+
+        <div class="step-card">
+          <div class="step-number">2</div>
+          <div class="step-icon">
+            <i class="bi bi-cart"></i>
+          </div>
+          <h3>Commandez</h3>
+          <p>Choisissez vos plats préférés et ajoutez-les à votre panier</p>
+        </div>
+
+        <div class="step-card">
+          <div class="step-number">3</div>
+          <div class="step-icon">
+            <i class="bi bi-credit-card"></i>
+          </div>
+          <h3>Payez</h3>
+          <p>Réglez en toute sécurité avec T-Money ou Flooz</p>
+        </div>
+
+        <div class="step-card">
+          <div class="step-number">4</div>
+          <div class="step-icon">
+            <i class="bi bi-emoji-smile"></i>
+          </div>
+          <h3>Dégustez</h3>
+          <p>Recevez votre commande et savourez votre repas</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Features Section -->
+  <section class="features-section">
+    <div class="container">
+      <div class="section-header">
+        <h2>
+          <i class="bi bi-star"></i>
+          Pourquoi Nous Choisir
+        </h2>
+        <p class="section-subtitle">Les avantages de notre plateforme</p>
+      </div>
+
+      <div class="features-grid">
+        <div *ngFor="let feature of features" class="feature-card">
+          <div class="feature-icon">
+            <i [class]="feature.icon"></i>
+          </div>
+          <h3>{{ feature.title }}</h3>
+          <p>{{ feature.description }}</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Values Section -->
+  <section id="values" class="values-section">
+    <div class="container">
+      <div class="section-header">
+        <h2>
+          <i class="bi bi-heart-fill"></i>
+          Nos Valeurs
+        </h2>
+        <p class="section-subtitle">Ce en quoi nous croyons</p>
+      </div>
+
+      <div class="values-grid">
+        <div *ngFor="let value of values" class="value-card">
+          <div class="value-icon">
+            <i [class]="value.icon"></i>
+          </div>
+          <h3>{{ value.title }}</h3>
+          <p>{{ value.description }}</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- For Business Section -->
+  <section class="business-section">
+    <div class="container">
+      <div class="business-content">
+        <div class="business-text">
+          <h2>
+            <i class="bi bi-building"></i>
+            Vous êtes Restaurateur ou Traiteur ?
+          </h2>
+          <p>
+            Rejoignez RestoTraiteur et développez votre activité grâce à notre plateforme. 
+            Bénéficiez d'outils professionnels pour gérer vos commandes, vos menus et votre visibilité en ligne.
+          </p>
+          <ul class="business-benefits">
+            <li>
+              <i class="bi bi-check-circle-fill"></i>
+              Inscription gratuite
+            </li>
+            <li>
+              <i class="bi bi-check-circle-fill"></i>
+              Interface de gestion intuitive
+            </li>
+            <li>
+              <i class="bi bi-check-circle-fill"></i>
+              Paiements sécurisés automatiques
+            </li>
+            <li>
+              <i class="bi bi-check-circle-fill"></i>
+              Support technique dédié
+            </li>
+            <li>
+              <i class="bi bi-check-circle-fill"></i>
+              Statistiques et analyses
+            </li>
+          </ul>
+          <a routerLink="/register" class="btn btn-success">
+            <i class="bi bi-person-plus-fill"></i>
+            Rejoindre la Plateforme
+          </a>
+        </div>
+        <div class="business-image">
+          <img src="https://images.unsplash.com/photo-1556910103-1c02745aae4d?w=600&q=80" alt="Restaurant">
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CTA Section -->
+  <section class="cta-section">
+    <div class="container">
+      <div class="cta-content">
+        <h2>Prêt à Commander ?</h2>
+        <p>Découvrez les meilleurs restaurants et traiteurs près de chez vous</p>
+        <div class="cta-buttons">
+          <a routerLink="/" class="btn btn-primary">
+            <i class="bi bi-shop"></i>
+            Découvrir les Établissements
+          </a>
+          <a routerLink="/contact" class="btn btn-outline">
+            <i class="bi bi-envelope"></i>
+            Nous Contacter
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>

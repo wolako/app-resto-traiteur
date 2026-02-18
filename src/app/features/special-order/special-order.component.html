@@ -1,0 +1,256 @@
+<!-- special-order.component.html -->
+<div class="special-order-container">
+  <div class="container">
+    <div class="row justify-content-center">
+      <div class="col-lg-8">
+        <!-- Header -->
+        <div class="order-header">
+          <button class="btn btn-outline-secondary mb-3" (click)="navigateBack()">
+            <i class="bi bi-arrow-left"></i>
+            Retour
+          </button>
+          <h2>
+            <i class="bi bi-cake2"></i>
+            Commande Spéciale pour Événement
+          </h2>
+          <p class="text-muted" *ngIf="traiteur">Chez {{ traiteur.name }}</p>
+        </div>
+
+        <!-- Success Message -->
+        <div #successSection *ngIf="success" class="success-message">
+          <div class="success-icon">
+            <i class="bi bi-check-circle"></i>
+          </div>
+          <h3>Demande envoyée avec succès !</h3>
+          <p>Votre demande de commande spéciale a été envoyée avec succès ! Le traiteur vous contactera dans les plus brefs délais pour discuter des détails de votre événement.</p>
+          <button class="btn btn-primary" (click)="navigateBack()">
+            <i class="bi bi-house"></i>
+            Retour à l'accueil
+          </button>
+          <button class="btn btn-outline-primary me-2" (click)="makeNewOrder()">
+            <i class="bi bi-plus-circle"></i>
+            Nouvelle commande
+          </button>
+        </div>
+
+        <!-- Form (caché en cas de succès) -->
+        <div class="order-card" *ngIf="!success">
+          <!-- ... le reste de votre formulaire actuel ... -->
+          <form [formGroup]="orderForm" (ngSubmit)="onSubmit()">
+            
+            <!-- Section 1: Informations Client -->
+            <div class="form-section">
+              <h4>
+                <i class="bi bi-person"></i>
+                Vos informations
+              </h4>
+              
+              <div class="row">
+                <div class="col-md-12 mb-3">
+                  <label class="form-label">Nom complet *</label>
+                  <input 
+                    type="text" 
+                    class="form-control" 
+                    formControlName="client_name"
+                    placeholder="Jean Dupont"
+                    [class.is-invalid]="isFieldInvalid('client_name')">
+                  <div class="invalid-feedback">{{ getFieldError('client_name') }}</div>
+                </div>
+
+                <div class="col-md-6 mb-3">
+                  <label class="form-label">Email *</label>
+                  <input 
+                    type="email" 
+                    class="form-control" 
+                    formControlName="client_email"
+                    placeholder="jean@example.com"
+                    [class.is-invalid]="isFieldInvalid('client_email')">
+                  <div class="invalid-feedback">{{ getFieldError('client_email') }}</div>
+                </div>
+
+                <div class="col-md-6 mb-3">
+                  <label class="form-label">Téléphone *</label>
+                  <input 
+                    type="tel" 
+                    class="form-control" 
+                    formControlName="client_phone"
+                    placeholder="90123456"
+                    [class.is-invalid]="isFieldInvalid('client_phone')">
+                  <div class="invalid-feedback">{{ getFieldError('client_phone') }}</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Section 2: Détails de l'événement -->
+            <div class="form-section">
+              <h4>
+                <i class="bi bi-calendar-event"></i>
+                Détails de l'événement
+              </h4>
+              
+              <div class="row">
+                <div class="col-md-6 mb-3">
+                  <label class="form-label">Type d'événement *</label>
+                  <select 
+                    class="form-select" 
+                    formControlName="event_type"
+                    [class.is-invalid]="isFieldInvalid('event_type')">
+                    <option value="">Sélectionner un type</option>
+                    <option *ngFor="let type of eventTypes" [value]="type.value">
+                      {{ type.label }}
+                    </option>
+                  </select>
+                  <div class="invalid-feedback">{{ getFieldError('event_type') }}</div>
+                </div>
+
+                <div class="col-md-6 mb-3">
+                  <label class="form-label">Nombre d'invités *</label>
+                  <input 
+                    type="number" 
+                    class="form-control" 
+                    formControlName="number_of_guests"
+                    placeholder="50"
+                    min="1"
+                    [class.is-invalid]="isFieldInvalid('number_of_guests')">
+                  <div class="invalid-feedback">{{ getFieldError('number_of_guests') }}</div>
+                </div>
+
+                <div class="col-md-6 mb-3">
+                  <label class="form-label">Date de l'événement *</label>
+                  <input 
+                    type="date" 
+                    class="form-control" 
+                    formControlName="event_date"
+                    [min]="minDate"
+                    [class.is-invalid]="isFieldInvalid('event_date')">
+                  <div class="invalid-feedback">{{ getFieldError('event_date') }}</div>
+                </div>
+
+                <div class="col-md-6 mb-3">
+                  <label class="form-label">Heure de l'événement *</label>
+                  <input 
+                    type="time" 
+                    class="form-control" 
+                    formControlName="event_time"
+                    [class.is-invalid]="isFieldInvalid('event_time')">
+                  <div class="invalid-feedback">{{ getFieldError('event_time') }}</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Section 3: Adresse de livraison -->
+            <div class="form-section">
+              <h4>
+                <i class="bi bi-geo-alt"></i>
+                Lieu de livraison
+              </h4>
+              
+              <div class="row">
+                <div class="col-md-8 mb-3">
+                  <label class="form-label">Adresse complète *</label>
+                  <input 
+                    type="text" 
+                    class="form-control" 
+                    formControlName="delivery_address"
+                    placeholder="123 Rue de la République"
+                    [class.is-invalid]="isFieldInvalid('delivery_address')">
+                  <div class="invalid-feedback">{{ getFieldError('delivery_address') }}</div>
+                </div>
+
+                <div class="col-md-4 mb-3">
+                  <label class="form-label">Ville *</label>
+                  <input 
+                    type="text" 
+                    class="form-control" 
+                    formControlName="city"
+                    placeholder="Lomé"
+                    [class.is-invalid]="isFieldInvalid('city')">
+                  <div class="invalid-feedback">{{ getFieldError('city') }}</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Section 4: Préférences du menu -->
+            <div class="form-section">
+              <h4>
+                <i class="bi bi-card-checklist"></i>
+                Préférences du menu
+              </h4>
+              
+              <div class="mb-3">
+                <label class="form-label">Décrivez le menu souhaité *</label>
+                <textarea 
+                  class="form-control" 
+                  formControlName="menu_preferences"
+                  rows="4"
+                  placeholder="Ex: Menu buffet avec entrée, plat principal (poulet et poisson), accompagnements variés, desserts..."
+                  [class.is-invalid]="isFieldInvalid('menu_preferences')"></textarea>
+                <div class="invalid-feedback">{{ getFieldError('menu_preferences') }}</div>
+                <small class="form-text text-muted">
+                  Soyez aussi détaillé que possible pour que le traiteur puisse vous faire la meilleure proposition
+                </small>
+              </div>
+
+              <div class="mb-3">
+                <label class="form-label">Restrictions alimentaires ou allergies</label>
+                <textarea 
+                  class="form-control" 
+                  formControlName="dietary_restrictions"
+                  rows="2"
+                  placeholder="Ex: Végétarien, sans gluten, allergie aux fruits de mer..."></textarea>
+              </div>
+
+              <div class="mb-3">
+                <label class="form-label">Demandes spéciales</label>
+                <textarea 
+                  class="form-control" 
+                  formControlName="special_requests"
+                  rows="3"
+                  placeholder="Ex: Décoration de table, service à l'assiette, emballages biodégradables..."></textarea>
+              </div>
+
+              <div class="mb-3">
+                <label class="form-label">Budget estimé (FCFA)</label>
+                <input 
+                  type="number" 
+                  class="form-control" 
+                  formControlName="estimated_budget"
+                  placeholder="500000"
+                  min="0">
+                <small class="form-text text-muted">
+                  Optionnel - Cela aidera le traiteur à adapter sa proposition
+                </small>
+              </div>
+            </div>
+
+            <!-- Info Box -->
+            <div class="info-box">
+              <i class="bi bi-info-circle"></i>
+              <div>
+                <strong>Comment ça marche ?</strong>
+                <p>
+                  1. Remplissez ce formulaire avec tous les détails de votre événement<br>
+                  2. Le traiteur recevra votre demande et vous contactera dans les 24-48h<br>
+                  3. Vous discuterez ensemble des détails et recevrez un devis personnalisé<br>
+                  4. Une fois d'accord, confirmez la commande et effectuez le paiement
+                </p>
+              </div>
+            </div>
+
+            <!-- Submit Button -->
+            <div class="form-actions">
+              <button 
+                type="submit" 
+                class="btn btn-primary btn-lg"
+                [disabled]="orderForm.invalid || loading">
+                <span *ngIf="loading" class="spinner-border spinner-border-sm me-2"></span>
+                <i class="bi bi-send" *ngIf="!loading"></i>
+                {{ loading ? 'Envoi en cours...' : 'Envoyer la demande' }}
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,233 @@
+<div class="checkout-container">
+  <div class="container">
+    <div class="row">
+
+      <!-- ── Formulaire ──────────────────────────────────────── -->
+      <div class="col-lg-8 mb-4">
+        <div class="checkout-card">
+
+          <div class="card-header-checkout">
+            <i class="bi bi-credit-card"></i>
+            <h3>Finaliser la commande</h3>
+          </div>
+
+          <div class="card-body-checkout">
+
+            <!-- Badge Sandbox -->
+            <div class="alert alert-warning d-flex align-items-center gap-2 mb-4" *ngIf="isSandbox">
+              <i class="bi bi-shield-fill-check fs-5"></i>
+              <div>
+                <strong>Mode Sandbox actif</strong>
+                — Le paiement sera accepté immédiatement, aucune somme ne sera débitée.
+              </div>
+            </div>
+
+            <form [formGroup]="checkoutForm" (ngSubmit)="onSubmit()">
+
+              <!-- ── Informations client ─────────────────────── -->
+              <div class="form-section">
+                <h5 class="section-title">
+                  <i class="bi bi-person"></i>
+                  Informations client
+                </h5>
+
+                <div class="row">
+                  <div class="col-md-6 mb-3">
+                    <label for="client_name" class="form-label">Nom complet *</label>
+                    <input
+                      type="text"
+                      class="form-control"
+                      id="client_name"
+                      formControlName="client_name"
+                      placeholder="Votre nom complet"
+                      [class.is-invalid]="checkoutForm.get('client_name')?.invalid && checkoutForm.get('client_name')?.touched">
+                    <div class="invalid-feedback">Nom requis</div>
+                  </div>
+
+                  <div class="col-md-6 mb-3">
+                    <label for="client_phone" class="form-label">Téléphone *</label>
+                    <input
+                      type="tel"
+                      class="form-control"
+                      id="client_phone"
+                      formControlName="client_phone"
+                      placeholder="+228 90 12 34 56"
+                      [class.is-invalid]="checkoutForm.get('client_phone')?.invalid && checkoutForm.get('client_phone')?.touched">
+                    <div class="invalid-feedback">Téléphone requis</div>
+                  </div>
+
+                  <div class="col-12 mb-3">
+                    <label for="client_email" class="form-label">Email (optionnel)</label>
+                    <input
+                      type="email"
+                      class="form-control"
+                      id="client_email"
+                      formControlName="client_email"
+                      placeholder="votre@email.com">
+                  </div>
+
+                  <div class="col-12 mb-3">
+                    <label for="notes" class="form-label">Notes spéciales (optionnel)</label>
+                    <textarea
+                      class="form-control"
+                      id="notes"
+                      rows="3"
+                      formControlName="notes"
+                      placeholder="Instructions particulières pour votre commande..."></textarea>
+                  </div>
+                </div>
+              </div>
+
+              <!-- ── Méthode de paiement ────────────────────── -->
+              <div class="form-section">
+                <h5 class="section-title">
+                  <i class="bi bi-wallet2"></i>
+                  Méthode de paiement
+                </h5>
+
+                <!-- ✅ Cards cliquables — valeurs exactes attendues par le backend -->
+                <div class="payment-methods">
+
+                  <!-- Mixx By Yas -->
+                  <div class="payment-option"
+                       [class.selected]="isPaymentSelected('Mixx By Yas')"
+                       (click)="selectPaymentMethod('Mixx By Yas')">
+                    <div class="payment-icon">
+                      <span style="font-size: 1.4rem;">📱</span>
+                    </div>
+                    <div class="payment-info">
+                      <strong>Mixx By Yas</strong>
+                      <small>T-Money / Flooz via Mixx By Yas</small>
+                    </div>
+                    <i class="bi bi-check-circle-fill text-success ms-auto"
+                       *ngIf="isPaymentSelected('Mixx By Yas')"></i>
+                  </div>
+
+                  <!-- Flooz -->
+                  <div class="payment-option"
+                       [class.selected]="isPaymentSelected('flooz')"
+                       (click)="selectPaymentMethod('flooz')">
+                    <div class="payment-icon">
+                      <span style="font-size: 1.4rem;">💚</span>
+                    </div>
+                    <div class="payment-info">
+                      <strong>Flooz</strong>
+                      <small>Paiement mobile Flooz</small>
+                    </div>
+                    <i class="bi bi-check-circle-fill text-success ms-auto"
+                       *ngIf="isPaymentSelected('flooz')"></i>
+                  </div>
+
+                  <!-- Carte bancaire -->
+                  <div class="payment-option"
+                       [class.selected]="isPaymentSelected('card')"
+                       (click)="selectPaymentMethod('card')">
+                    <div class="payment-icon">
+                      <span style="font-size: 1.4rem;">💳</span>
+                    </div>
+                    <div class="payment-info">
+                      <strong>Carte bancaire</strong>
+                      <small>Visa / Mastercard via CinetPay</small>
+                    </div>
+                    <i class="bi bi-check-circle-fill text-success ms-auto"
+                       *ngIf="isPaymentSelected('card')"></i>
+                  </div>
+
+                </div>
+
+                <!-- Message d'erreur si aucune méthode sélectionnée -->
+                <div class="text-danger small mt-2"
+                     *ngIf="checkoutForm.get('payment_method')?.invalid && checkoutForm.get('payment_method')?.touched">
+                  Veuillez sélectionner une méthode de paiement
+                </div>
+
+              </div><!-- /form-section paiement -->
+
+              <!-- ── Bouton submit ───────────────────────────── -->
+              <button
+                type="submit"
+                class="btn btn-success btn-lg w-100 btn-checkout"
+                [disabled]="checkoutForm.invalid || loading">
+                <ng-container *ngIf="loading">
+                  <span class="spinner-border spinner-border-sm me-2"></span>
+                  Traitement en cours...
+                </ng-container>
+                <ng-container *ngIf="!loading">
+                  <i class="bi bi-credit-card me-2"></i>
+                  {{ isSandbox ? '✅ Valider (Sandbox)' : 'Payer' }}
+                  {{ totalAmount | number:'1.0-0' }} FCFA
+                </ng-container>
+              </button>
+
+            </form>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Récapitulatif commande ──────────────────────────── -->
+      <div class="col-lg-4">
+        <div class="summary-card">
+
+          <div class="summary-header">
+            <i class="bi bi-receipt"></i>
+            <h5>Récapitulatif</h5>
+          </div>
+
+          <div class="summary-body">
+
+            <!-- Info établissement -->
+            <div class="business-info">
+              <h6>{{ business?.name }}</h6>
+              <span class="business-type">
+                <i [class]="business?.type === 'restaurant' ? 'bi bi-building' : 'bi bi-cake2'"></i>
+                {{ business?.type === 'restaurant' ? 'Restaurant' : 'Traiteur' }}
+              </span>
+            </div>
+
+            <!-- Articles -->
+            <div class="order-items">
+              <div class="order-item-checkout" *ngFor="let item of cart">
+                <div class="item-image-checkout">
+                  <img
+                    *ngIf="item.menu_item.image_url"
+                    [src]="item.menu_item.image_url"
+                    [alt]="item.menu_item.name"
+                    (error)="onImageError($event)">
+                  <div *ngIf="!item.menu_item.image_url" class="item-placeholder-checkout">
+                    <i class="bi bi-image"></i>
+                  </div>
+                </div>
+                <div class="item-info-checkout">
+                  <div class="item-name-checkout">{{ item.menu_item.name }}</div>
+                  <div class="item-quantity-checkout">
+                    {{ item.quantity }} × {{ item.unit_price | number:'1.0-0' }} FCFA
+                  </div>
+                </div>
+                <div class="item-price-checkout">
+                  {{ item.subtotal | number:'1.0-0' }} FCFA
+                </div>
+              </div>
+            </div>
+
+            <!-- Total -->
+            <div class="summary-total">
+              <span>Total</span>
+              <strong>{{ totalAmount | number:'1.0-0' }} FCFA</strong>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- Sécurité -->
+        <div class="security-info">
+          <i class="bi bi-shield-check"></i>
+          <p *ngIf="!isSandbox">Paiement sécurisé par CinetPay</p>
+          <p *ngIf="isSandbox" class="text-warning">
+            <strong>Mode test</strong> — aucun débit réel
+          </p>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>

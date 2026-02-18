@@ -1,0 +1,55 @@
+<svg width="200" height="200" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+  <!-- Définition des gradients -->
+  <defs>
+    <linearGradient id="primaryGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#667eea;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#764ba2;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="accentGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#f093fb;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#f5576c;stop-opacity:1" />
+    </linearGradient>
+    <filter id="shadow">
+      <feDropShadow dx="0" dy="4" stdDeviation="8" flood-opacity="0.3"/>
+    </filter>
+  </defs>
+  
+  <!-- Cercle de fond avec gradient -->
+  <circle cx="100" cy="100" r="95" fill="url(#primaryGradient)" filter="url(#shadow)"/>
+  
+  <!-- Assiette principale -->
+  <circle cx="100" cy="100" r="70" fill="white" opacity="0.95"/>
+  <circle cx="100" cy="100" r="70" fill="none" stroke="url(#accentGradient)" stroke-width="3"/>
+  
+  <!-- Fourchette stylisée (gauche) -->
+  <g transform="translate(55, 70)">
+    <rect x="0" y="0" width="4" height="50" rx="2" fill="url(#primaryGradient)"/>
+    <rect x="-6" y="0" width="3" height="20" rx="1.5" fill="url(#primaryGradient)"/>
+    <rect x="7" y="0" width="3" height="20" rx="1.5" fill="url(#primaryGradient)"/>
+  </g>
+  
+  <!-- Couteau stylisé (droite) -->
+  <g transform="translate(135, 70)">
+    <rect x="0" y="0" width="4" height="50" rx="2" fill="url(#accentGradient)"/>
+    <path d="M -2 0 L -2 15 L 6 15 L 6 0 Z" fill="url(#accentGradient)" opacity="0.8"/>
+  </g>
+  
+  <!-- Chef hat (chapeau de chef au centre) -->
+  <g transform="translate(100, 85)">
+    <!-- Base du chapeau -->
+    <ellipse cx="0" cy="15" rx="25" ry="8" fill="white" stroke="url(#primaryGradient)" stroke-width="2"/>
+    <!-- Haut du chapeau -->
+    <path d="M -20 15 Q -20 -10, 0 -15 Q 20 -10, 20 15 Z" fill="white" stroke="url(#primaryGradient)" stroke-width="2"/>
+    <!-- Détails du chapeau -->
+    <circle cx="-10" cy="0" r="4" fill="url(#accentGradient)" opacity="0.6"/>
+    <circle cx="10" cy="0" r="4" fill="url(#accentGradient)" opacity="0.6"/>
+    <circle cx="0" cy="-5" r="5" fill="url(#accentGradient)" opacity="0.6"/>
+  </g>
+  
+  <!-- Étoiles décoratives -->
+  <g opacity="0.7">
+    <path d="M 30 40 L 32 46 L 38 46 L 33 50 L 35 56 L 30 52 L 25 56 L 27 50 L 22 46 L 28 46 Z" fill="url(#accentGradient)"/>
+    <path d="M 170 40 L 172 46 L 178 46 L 173 50 L 175 56 L 170 52 L 165 56 L 167 50 L 162 46 L 168 46 Z" fill="url(#accentGradient)"/>
+    <path d="M 100 160 L 102 166 L 108 166 L 103 170 L 105 176 L 100 172 L 95 176 L 97 170 L 92 166 L 98 166 Z" fill="url(#accentGradient)"/>
+  </g>
+</svg>

@@ -1,0 +1,426 @@
+<!-- subscription-management.component.html - AVEC AFFICHAGE DE TOUTES LES LIMITES -->
+
+<div class="subscription-container">
+  <!-- Current Subscription Info -->
+  <div *ngIf="currentSubscription" class="current-subscription-card">
+    <h3>🎯 Votre Abonnement Actuel</h3>
+    <div class="subscription-details">
+      <div class="detail-item">
+        <span class="label">Plan:</span>
+        <span class="value">{{ currentSubscription.display_name }}</span>
+      </div>
+      <div class="detail-item">
+        <span class="label">Période:</span>
+        <span class="value">{{ getBillingPeriodLabel(currentSubscription.billing_period) }}</span>
+      </div>
+      <div class="detail-item">
+        <span class="label">Statut:</span>
+        <span class="badge" [ngClass]="currentSubscription.status === 'active' ? 'bg-success' : 'bg-warning'">
+          {{ currentSubscription.status === 'active' ? 'Actif' : currentSubscription.status }}
+        </span>
+      </div>
+      <div class="detail-item" *ngIf="currentSubscription.end_date">
+        <span class="label">Expire le:</span>
+        <span class="value">{{ currentSubscription.end_date | date:'dd/MM/yyyy' }}</span>
+      </div>
+      <div class="detail-item">
+        <span class="label">Taux de commission:</span>
+        <span class="value commission-rate">{{ currentSubscription.commission_rate | commissionRate }}</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Usage Statistics -->
+  <div *ngIf="usageStats" class="usage-stats-card">
+    <h3>📊 Votre Utilisation</h3>
+    <div class="usage-items">
+      <div class="usage-item">
+        <div class="usage-header">
+          <span class="usage-label">Articles du menu</span>
+          <span class="usage-value">
+            {{ usageStats.usage.menu_items }} / 
+            {{ usageStats.limits.menu_items || '∞' }}
+          </span>
+        </div>
+        <div class="progress-bar">
+          <div 
+            class="progress-fill" 
+            [ngClass]="getUsageClass(getUsagePercentage(usageStats.usage.menu_items, usageStats.limits.menu_items))"
+            [style.width.%]="getUsagePercentage(usageStats.usage.menu_items, usageStats.limits.menu_items)">
+          </div>
+        </div>
+      </div>
+
+      <div class="usage-item">
+        <div class="usage-header">
+          <span class="usage-label">Commandes ce mois</span>
+          <span class="usage-value">
+            {{ usageStats.usage.orders_this_month }} / 
+            {{ usageStats.limits.orders_per_month || '∞' }}
+          </span>
+        </div>
+        <div class="progress-bar">
+          <div 
+            class="progress-fill" 
+            [ngClass]="getUsageClass(getUsagePercentage(usageStats.usage.orders_this_month, usageStats.limits.orders_per_month))"
+            [style.width.%]="getUsagePercentage(usageStats.usage.orders_this_month, usageStats.limits.orders_per_month)">
+          </div>
+        </div>
+      </div>
+
+      <!-- ✅ NOUVEAU : Réservations (restaurants uniquement) -->
+      <div class="usage-item" *ngIf="shouldShowReservations() && usageStats.limits.reservations_per_month !== undefined">
+        <div class="usage-header">
+          <span class="usage-label">Réservations ce mois</span>
+          <span class="usage-value">
+            {{ usageStats.usage.reservations_this_month }} / 
+            {{ usageStats.limits.reservations_per_month || '∞' }}
+          </span>
+        </div>
+        <div class="progress-bar">
+          <div 
+            class="progress-fill" 
+            [ngClass]="getUsageClass(getUsagePercentage(usageStats.usage.reservations_this_month, usageStats.limits.reservations_per_month))"
+            [style.width.%]="getUsagePercentage(usageStats.usage.reservations_this_month, usageStats.limits.reservations_per_month)">
+          </div>
+        </div>
+      </div>
+
+      <!-- ✅ NOUVEAU : Commandes spéciales (traiteurs uniquement) -->
+      <div class="usage-item" *ngIf="shouldShowSpecialOrders() && usageStats.limits.special_orders_per_month !== undefined">
+        <div class="usage-header">
+          <span class="usage-label">Commandes spéciales ce mois</span>
+          <span class="usage-value">
+            {{ usageStats.usage.special_orders_this_month }} / 
+            {{ usageStats.limits.special_orders_per_month || '∞' }}
+          </span>
+        </div>
+        <div class="progress-bar">
+          <div 
+            class="progress-fill" 
+            [ngClass]="getUsageClass(getUsagePercentage(usageStats.usage.special_orders_this_month, usageStats.limits.special_orders_per_month))"
+            [style.width.%]="getUsagePercentage(usageStats.usage.special_orders_this_month, usageStats.limits.special_orders_per_month)">
+          </div>
+        </div>
+      </div>
+
+      <div class="usage-item">
+        <div class="usage-header">
+          <span class="usage-label">Photos</span>
+          <span class="usage-value">
+            {{ usageStats.usage.photos }} / 
+            {{ usageStats.limits.photos }}
+          </span>
+        </div>
+        <div class="progress-bar">
+          <div 
+            class="progress-fill" 
+            [ngClass]="getUsageClass(getUsagePercentage(usageStats.usage.photos, usageStats.limits.photos))"
+            [style.width.%]="getUsagePercentage(usageStats.usage.photos, usageStats.limits.photos)">
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Billing Period Toggle -->
+  <div class="billing-toggle-section">
+    <h3>💎 Choisissez votre plan</h3>
+    <div class="billing-toggle">
+      <button 
+        class="toggle-btn"
+        [class.active]="selectedBillingPeriod === 'monthly'"
+        (click)="toggleBillingPeriod('monthly')">
+        <i class="bi bi-calendar-month"></i>
+        Mensuel
+      </button>
+      <div class="toggle-btn-wrapper">
+        <span class="save-badge">Économisez jusqu'à 20%</span>
+        <button 
+          class="toggle-btn"
+          [class.active]="selectedBillingPeriod === 'yearly'"
+          (click)="toggleBillingPeriod('yearly')">
+          <i class="bi bi-calendar-range"></i>
+          Annuel
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Available Plans -->
+  <div class="plans-section">
+    <div class="plans-grid">
+      <div 
+        *ngFor="let plan of getDisplayedPlans()" 
+        class="plan-card"
+        [class.current-plan]="isCurrentPlan(plan.id)"
+        [class.recommended]="plan.name === 'standard' || plan.name === 'standard_yearly'">
+        
+        <div class="plan-badge" *ngIf="plan.name === 'standard' || plan.name === 'standard_yearly'">
+          ⭐ Recommandé
+        </div>
+
+        <div class="savings-badge" *ngIf="selectedBillingPeriod === 'yearly' && getYearlySavings(plan) > 0">
+          <i class="bi bi-piggy-bank"></i>
+          Économisez {{ getYearlySavings(plan) | number:'1.0-0' }} FCFA
+          <span class="savings-percent">({{ getSavingsPercentage(plan) }}%)</span>
+        </div>
+
+        <div class="plan-header">
+          <h4>{{ plan.display_name }}</h4>
+          <div class="plan-price">
+            <span class="price-amount">{{ plan.price | number:'1.0-0' }}</span>
+            <span class="price-currency">FCFA</span>
+            <span class="price-period" *ngIf="plan.billing_period !== 'lifetime'">
+              / {{ getBillingPeriodLabel(plan.billing_period) }}
+            </span>
+            <span class="price-period" *ngIf="plan.billing_period === 'lifetime'">
+              {{ getBillingPeriodLabel(plan.billing_period) }}
+            </span>
+          </div>
+          
+          <div class="monthly-equivalent" *ngIf="plan.billing_period === 'yearly'">
+            <small class="text-muted">
+              Soit {{ (plan.price / 12) | number:'1.0-0' }} FCFA/mois
+            </small>
+          </div>
+          
+          <p class="plan-description">{{ plan.description }}</p>
+        </div>
+
+        <div class="plan-features">
+          <!-- ✅ Articles de menu -->
+          <div class="feature-item">
+            <i class="bi bi-check-circle text-success"></i>
+            <span>
+              {{ plan.max_menu_items ? plan.max_menu_items + ' articles menu' : 'Articles illimités' }}
+            </span>
+          </div>
+
+          <!-- ✅ Commandes en ligne par mois -->
+          <div class="feature-item">
+            <i class="bi bi-check-circle text-success"></i>
+            <span>
+              {{ plan.max_orders_per_month ? plan.max_orders_per_month + ' commandes/mois' : 'Commandes illimitées' }}
+            </span>
+          </div>
+
+          <!-- ✅ NOUVEAU : Réservations par mois (restaurants uniquement) -->
+          <div class="feature-item" *ngIf="shouldShowReservations() && plan.max_reservations_per_month !== undefined && plan.max_reservations_per_month !== null">
+            <i class="bi bi-check-circle text-success"></i>
+            <span>{{ plan.max_reservations_per_month }} réservations/mois</span>
+          </div>
+
+          <div class="feature-item" *ngIf="shouldShowReservations() && plan.max_reservations_per_month === null">
+            <i class="bi bi-check-circle text-success"></i>
+            <span>Réservations illimitées</span>
+          </div>
+
+          <!-- ✅ NOUVEAU : Commandes spéciales par mois (traiteurs uniquement) -->
+          <div class="feature-item" *ngIf="shouldShowSpecialOrders() && plan.max_special_orders_per_month !== undefined && plan.max_special_orders_per_month !== null">
+            <i class="bi bi-check-circle text-success"></i>
+            <span>{{ plan.max_special_orders_per_month }} commandes spéciales/mois</span>
+          </div>
+
+          <div class="feature-item" *ngIf="shouldShowSpecialOrders() && plan.max_special_orders_per_month === null">
+            <i class="bi bi-check-circle text-success"></i>
+            <span>Commandes spéciales illimitées</span>
+          </div>
+
+          <!-- ✅ Photos -->
+          <div class="feature-item">
+            <i class="bi bi-check-circle text-success"></i>
+            <span>{{ plan.max_photos }} photos</span>
+          </div>
+
+          <!-- Fonctionnalités (ces lignes peuvent être supprimées car redondantes avec les limites ci-dessus) -->
+          <!--
+          <div class="feature-item" *ngIf="plan.can_accept_online_orders">
+            <i class="bi bi-check-circle text-success"></i>
+            <span>Commandes en ligne</span>
+          </div>
+          <div class="feature-item" *ngIf="plan.can_accept_reservations">
+            <i class="bi bi-check-circle text-success"></i>
+            <span>Réservations</span>
+          </div>
+          <div class="feature-item" *ngIf="plan.can_accept_special_orders">
+            <i class="bi bi-check-circle text-success"></i>
+            <span>Commandes spéciales</span>
+          </div>
+          -->
+
+          <div class="feature-item" *ngIf="plan.priority_support">
+            <i class="bi bi-check-circle text-success"></i>
+            <span>Support prioritaire</span>
+          </div>
+          <div class="feature-item" *ngIf="plan.analytics_access">
+            <i class="bi bi-check-circle text-success"></i>
+            <span>Statistiques avancées</span>
+          </div>
+          <div class="feature-item" *ngIf="plan.custom_branding">
+            <i class="bi bi-check-circle text-success"></i>
+            <span>Branding personnalisé</span>
+          </div>
+
+          <!-- ✅ Commission -->
+          <div class="feature-item commission-info">
+            <i class="bi bi-percent"></i>
+            <span>{{ plan.commission_rate | number:'1.0-0' }}% de commission</span>
+          </div>
+        </div>
+
+        <div class="plan-action">
+          <button 
+            *ngIf="isCurrentPlan(plan.id)"
+            class="btn btn-current"
+            disabled>
+            <i class="bi bi-check-circle"></i> Plan Actuel
+          </button>
+
+          <button 
+            *ngIf="!isCurrentPlan(plan.id) && canUpgrade(plan)"
+            class="btn btn-primary"
+            (click)="subscribe(plan.id)"
+            [disabled]="loading">
+            <span *ngIf="loading" class="spinner-border spinner-border-sm me-2"></span>
+            <i class="bi bi-arrow-up-circle" *ngIf="!loading"></i>
+            {{ currentSubscription ? 'Changer de plan' : 'Souscrire' }}
+          </button>
+
+          <button 
+            *ngIf="!isCurrentPlan(plan.id) && !canUpgrade(plan)"
+            class="btn btn-secondary"
+            disabled>
+            <i class="bi bi-arrow-down-circle"></i>
+            Non disponible
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Cancel Subscription -->
+  <div *ngIf="currentSubscription && currentSubscription.plan_name !== 'free'" class="cancel-section">
+    <button 
+      class="btn btn-danger"
+      (click)="cancelSubscription()"
+      [disabled]="loading">
+      <span *ngIf="loading" class="spinner-border spinner-border-sm me-2"></span>
+      <i class="bi bi-x-circle" *ngIf="!loading"></i>
+      Annuler mon abonnement
+    </button>
+    <p class="cancel-note">
+      <i class="bi bi-info-circle"></i>
+      En annulant, vous serez rétrogradé au plan gratuit à la fin de votre période de facturation.
+    </p>
+  </div>
+</div>
+
+<!-- Modal de proposition annuelle (inchangé) -->
+<div class="modal yearly-offer-modal" 
+     [class.show]="showYearlyOfferModal" 
+     [style.display]="showYearlyOfferModal ? 'block' : 'none'"
+     *ngIf="proposedMonthlyPlan && proposedYearlyPlan">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">
+          <i class="bi bi-piggy-bank-fill me-2"></i>
+          🎉 Offre Spéciale : Économisez avec l'abonnement annuel !
+        </h5>
+        <button type="button" class="btn-close" (click)="closeYearlyOfferModal()"></button>
+      </div>
+      
+      <div class="modal-body">
+        <div class="offer-comparison">
+          <!-- Plan Mensuel -->
+          <div class="comparison-plan monthly-plan">
+            <div class="plan-label">Plan Mensuel</div>
+            <h4>{{ proposedMonthlyPlan.display_name }}</h4>
+            <div class="plan-price">
+              <span class="price-amount">{{ proposedMonthlyPlan.price | number:'1.0-0' }}</span>
+              <span class="price-currency">FCFA</span>
+              <span class="price-period">/mois</span>
+            </div>
+            <div class="yearly-cost">
+              <small class="text-muted">
+                Coût sur 12 mois : <strong>{{ (proposedMonthlyPlan.price * 12) | number:'1.0-0' }} FCFA</strong>
+              </small>
+            </div>
+          </div>
+
+          <!-- Séparateur VS -->
+          <div class="vs-separator">
+            <span class="vs-text">VS</span>
+          </div>
+
+          <!-- Plan Annuel -->
+          <div class="comparison-plan yearly-plan recommended">
+            <div class="plan-label">Plan Annuel ⭐</div>
+            <div class="savings-highlight">
+              <i class="bi bi-piggy-bank"></i>
+              Économisez {{ calculateSavingsPercentage(proposedMonthlyPlan, proposedYearlyPlan) }}%
+            </div>
+            <h4>{{ proposedYearlyPlan.display_name }}</h4>
+            <div class="plan-price">
+              <span class="price-amount">{{ proposedYearlyPlan.price | number:'1.0-0' }}</span>
+              <span class="price-currency">FCFA</span>
+              <span class="price-period">/an</span>
+            </div>
+            <div class="yearly-cost">
+              <small class="text-muted">
+                Soit <strong>{{ (proposedYearlyPlan.price / 12) | number:'1.0-0' }} FCFA/mois</strong>
+              </small>
+            </div>
+            <div class="savings-amount">
+              <i class="bi bi-check-circle-fill text-success"></i>
+              Vous économisez <strong class="text-success">{{ calculateYearlySavings(proposedMonthlyPlan, proposedYearlyPlan) | number:'1.0-0' }} FCFA</strong>
+            </div>
+          </div>
+        </div>
+
+        <!-- Avantages -->
+        <div class="offer-benefits mt-4">
+          <h6><i class="bi bi-star-fill text-warning me-2"></i>Pourquoi choisir l'annuel ?</h6>
+          <ul class="benefits-list">
+            <li>
+              <i class="bi bi-check-circle-fill text-success"></i>
+              <strong>{{ calculateSavingsPercentage(proposedMonthlyPlan, proposedYearlyPlan) }}% d'économie</strong> soit {{ calculateYearlySavings(proposedMonthlyPlan, proposedYearlyPlan) | number:'1.0-0' }} FCFA de moins
+            </li>
+            <li>
+              <i class="bi bi-check-circle-fill text-success"></i>
+              Un seul paiement pour toute l'année
+            </li>
+            <li>
+              <i class="bi bi-check-circle-fill text-success"></i>
+              Pas de souci de renouvellement mensuel
+            </li>
+            <li>
+              <i class="bi bi-check-circle-fill text-success"></i>
+              Même fonctionnalités que le plan mensuel
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <div class="footer-actions">
+          <button 
+            class="btn btn-primary btn-lg flex-grow-1"
+            (click)="acceptYearlyOffer()"
+            [disabled]="loading">
+            <i class="bi bi-check-circle me-2"></i>
+            Oui, je veux économiser {{ calculateSavingsPercentage(proposedMonthlyPlan, proposedYearlyPlan) }}% !
+          </button>
+          <button 
+            class="btn btn-outline-secondary"
+            (click)="declineYearlyOffer()"
+            [disabled]="loading">
+            Non, je préfère le mensuel
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="modal-backdrop fade" [class.show]="showYearlyOfferModal" *ngIf="showYearlyOfferModal"></div>

@@ -1,0 +1,30 @@
+<div class="reservation-list">
+      <div class="table-responsive">
+        <table class="table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Client</th>
+              <th>Date</th>
+              <th>Heure</th>
+              <th>Personnes</th>
+              <th>Statut</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let reservation of reservations">
+              <td>{{ reservation.id }}</td>
+              <td>{{ reservation.client_name }}</td>
+              <td>{{ reservation.reservation_date | date:'shortDate' }}</td>
+              <td>{{ reservation.time_slot }}</td>
+              <td>{{ reservation.number_of_people }}</td>
+              <td>
+                <span class="badge bg-{{ getStatusColor(reservation.status) }}">
+                  {{ reservation.status }}
+                </span>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>

@@ -1,0 +1,220 @@
+<div class="legal-container">
+  <section class="hero-section">
+    <div class="container">
+      <h1><i class="bi bi-cart-check"></i> Conditions Générales de Vente</h1>
+      <p>Dernière mise à jour : {{ lastUpdated }}</p>
+    </div>
+  </section>
+
+  <section class="content-section">
+    <div class="container">
+      <div class="legal-content">
+
+        <article class="legal-article">
+          <h2>1. Objet</h2>
+          <p>
+            Les présentes Conditions Générales de Vente (CGV) régissent les transactions effectuées 
+            sur la plateforme {{ company.name }} entre clients et établissements partenaires.
+          </p>
+        </article>
+
+        <article class="legal-article">
+          <h2>2. Prix</h2>
+          <h3>2.1 Affichage des Prix</h3>
+          <p>
+            Tous les prix sont affichés en Francs CFA (FCFA), Toutes Taxes Comprises (TTC).
+          </p>
+          
+          <h3>2.2 Frais de Livraison</h3>
+          <p>
+            Les frais de livraison sont indiqués avant validation de la commande et varient selon 
+            la distance et l'établissement.
+          </p>
+          
+          <h3>2.3 Modifications de Prix</h3>
+          <p>
+            Les prix peuvent être modifiés à tout moment. Le prix applicable est celui affiché au 
+            moment de la validation de la commande.
+          </p>
+        </article>
+
+        <article class="legal-article">
+          <h2>3. Commandes</h2>
+          <h3>3.1 Processus de Commande</h3>
+          <p>Pour passer commande :</p>
+          <ol>
+            <li>Sélectionnez les produits de votre choix</li>
+            <li>Vérifiez votre panier</li>
+            <li>Indiquez votre adresse de livraison</li>
+            <li>Choisissez votre mode de paiement</li>
+            <li>Validez votre commande</li>
+          </ol>
+          
+          <h3>3.2 Confirmation</h3>
+          <p>
+            Après validation, vous recevez une confirmation par email avec le récapitulatif de votre commande.
+          </p>
+          
+          <h3>3.3 Preuve de Transaction</h3>
+          <p>
+            La confirmation email et l'historique de commandes dans votre compte constituent la preuve 
+            de la transaction.
+          </p>
+        </article>
+
+        <article class="legal-article">
+          <h2>4. Paiement</h2>
+          <h3>4.1 Moyens de Paiement Acceptés</h3>
+          <p>Nous acceptons les paiements via :</p>
+          <ul>
+            <li *ngFor="let method of paymentMethods"><strong>{{ method }}</strong></li>
+          </ul>
+          
+          <h3>4.2 Sécurisation</h3>
+          <p>
+            Tous les paiements sont sécurisés par cryptage SSL/TLS. Vos données bancaires ne transitent 
+            jamais par nos serveurs.
+          </p>
+          
+          <h3>4.3 Paiement Immédiat</h3>
+          <p>
+            Le paiement est exigible immédiatement à la validation de la commande. En cas de paiement 
+            refusé, la commande est automatiquement annulée.
+          </p>
+        </article>
+
+        <article class="legal-article">
+          <h2>5. Livraison</h2>
+          <h3>5.1 Délais</h3>
+          <p>
+            Les délais de livraison varient selon le restaurant et votre localisation (généralement 30-60 minutes). 
+            Le délai estimé est indiqué avant validation.
+          </p>
+          
+          <h3>5.2 Zone de Livraison</h3>
+          <p>
+            Nous livrons actuellement à Lomé et ses environs. Les zones de livraison sont indiquées 
+            pour chaque établissement.
+          </p>
+          
+          <h3>5.3 Suivi</h3>
+          <p>
+            Vous pouvez suivre votre commande en temps réel depuis votre compte.
+          </p>
+          
+          <h3>5.4 Réception</h3>
+          <p>
+            Il est recommandé de vérifier votre commande à la réception. Tout problème doit être 
+            signalé immédiatement.
+          </p>
+        </article>
+
+        <article class="legal-article">
+          <h2>6. Produits Non Conformes</h2>
+          <p>
+            En cas de produit non conforme (erreur, manque, produit endommagé) :
+          </p>
+          <ul>
+            <li>Signalez-le immédiatement via le chat ou par email</li>
+            <li>Fournissez une photo si possible</li>
+            <li>Un remplacement ou remboursement vous sera proposé</li>
+          </ul>
+          <p>
+            <strong>Délai :</strong> Les réclamations doivent être faites dans les 24 heures suivant la livraison.
+          </p>
+        </article>
+
+        <article class="legal-article">
+          <h2>7. Droit de Rétractation</h2>
+          <div class="info-box warning">
+            <p>
+              Conformément à la législation sur la vente à distance, le droit de rétractation ne s'applique 
+              pas aux denrées périssables (produits alimentaires).
+            </p>
+          </div>
+          <p>
+            Toutefois, en cas de motif légitime (produit non conforme, retard excessif), une solution 
+            sera étudiée au cas par cas.
+          </p>
+        </article>
+
+        <article class="legal-article">
+          <h2>8. Annulation et Remboursement</h2>
+          <h3>8.1 Annulation par le Client</h3>
+          <p>
+            Vous pouvez annuler votre commande dans les 30 minutes suivant la validation, à condition 
+            qu'elle n'ait pas encore été préparée.
+          </p>
+          
+          <h3>8.2 Annulation par le Restaurant</h3>
+          <p>
+            L'établissement peut annuler une commande pour motif valable (rupture de stock, fermeture imprévue).
+          </p>
+          
+          <h3>8.3 Remboursement</h3>
+          <p>
+            En cas d'annulation ou de problème, le remboursement est effectué sous 5 à 10 jours ouvrés 
+            sur le moyen de paiement initial.
+          </p>
+        </article>
+
+        <article class="legal-article">
+          <h2>9. Garanties</h2>
+          <h3>9.1 Conformité des Produits</h3>
+          <p>
+            Les établissements s'engagent à fournir des produits conformes à la description et aux 
+            normes d'hygiène en vigueur.
+          </p>
+          
+          <h3>9.2 Sécurité Alimentaire</h3>
+          <p>
+            Tous nos partenaires sont certifiés et respectent les normes d'hygiène et de sécurité alimentaire.
+          </p>
+        </article>
+
+        <article class="legal-article">
+          <h2>10. Réclamations</h2>
+          <h3>10.1 Service Client</h3>
+          <p>
+            Pour toute réclamation, contactez notre service client : 
+            <a [href]="'mailto:' + company.email">{{ company.email }}</a>
+          </p>
+          
+          <h3>10.2 Délai de Réponse</h3>
+          <p>
+            Nous nous engageons à répondre à toute réclamation dans un délai de 48 heures ouvrées.
+          </p>
+          
+          <h3>10.3 Médiation</h3>
+          <p>
+            En cas de litige non résolu, vous pouvez recourir à un médiateur de la consommation.
+          </p>
+        </article>
+
+        <article class="legal-article">
+          <h2>11. Force Majeure</h2>
+          <p>
+            {{ company.name }} ne saurait être tenue responsable en cas d'événements de force majeure 
+            (catastrophe naturelle, pandémie, émeutes, etc.) empêchant l'exécution normale des commandes.
+          </p>
+        </article>
+
+        <article class="legal-article">
+          <h2>12. Droit Applicable</h2>
+          <p>
+            Les présentes CGV sont régies par le droit togolais et le Code de la consommation. 
+            En cas de litige, les tribunaux de Lomé seront seuls compétents.
+          </p>
+        </article>
+
+        <article class="legal-article">
+          <h2>13. Contact</h2>
+          <p>
+            Service client : <a [href]="'mailto:' + company.email">{{ company.email }}</a>
+          </p>
+        </article>
+
+      </div>
+    </div>
+  </section>
+</div>

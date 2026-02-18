@@ -1,0 +1,17 @@
+<div class="toast-modal" [class.show]="toast.show" [class]="'toast-' + toast.type">
+      <div class="toast-content">
+        <div class="toast-header">
+          <div class="toast-icon">
+            <i [class]="getIcon()"></i>
+          </div>
+          <h5 class="toast-title">{{ toast.title }}</h5>
+          <button type="button" class="btn-close-toast" (click)="close()">
+            <i class="bi bi-x-lg"></i>
+          </button>
+        </div>
+        <div class="toast-body">
+          <p>{{ toast.message }}</p>
+        </div>
+    </div>
+</div>
+<div class="toast-backdrop" [class.show]="toast.show" (click)="close()"></div>

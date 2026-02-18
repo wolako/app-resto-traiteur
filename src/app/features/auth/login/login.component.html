@@ -1,0 +1,78 @@
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6 col-lg-4">
+          <div class="card">
+            <div class="card-body">
+              <h2 class="card-title text-center mb-4">
+                <i class="bi bi-box-arrow-in-right"></i>
+                Connexion
+              </h2>
+              
+              <div *ngIf="error" class="error-message">
+                <i class="fas fa-exclamation-circle"></i>
+                <span>{{ error }}</span>
+              </div>
+              
+              <form [formGroup]="loginForm" (ngSubmit)="onSubmit()">
+                <div class="mb-3">
+                  <label for="email" class="form-label">Email</label>
+                  <input 
+                    type="email" 
+                    class="form-control" 
+                    id="email" 
+                    formControlName="email"
+                    [class.is-invalid]="loginForm.get('email')?.invalid && loginForm.get('email')?.touched">
+                  <div class="invalid-feedback" *ngIf="loginForm.get('email')?.invalid && loginForm.get('email')?.touched">
+                    Email requis et valide
+                  </div>
+                </div>
+                
+                <div class="mb-3">
+                  <div class="d-flex justify-content-between align-items-center mb-2">
+                    <label for="password" class="form-label mb-0">Mot de passe</label>
+                    <a routerLink="/forgot-password" class="text-primary small text-decoration-none">
+                      Mot de passe oublié ?
+                    </a>
+                  </div>
+                  <div class="input-wrapper">
+                    <i class="bi bi-lock"></i>
+                    <input 
+                      [type]="showPassword ? 'text' : 'password'"
+                      class="form-control" 
+                      id="password" 
+                      formControlName="password"
+                      [class.is-invalid]="loginForm.get('password')?.invalid && loginForm.get('password')?.touched"
+                      placeholder="Saisissez votre mot de passe">
+                    <button 
+                      type="button"
+                      class="toggle-password"
+                      (click)="togglePasswordVisibility()"
+                      tabindex="-1">
+                      <i class="bi" [class.bi-eye]="!showPassword" [class.bi-eye-slash]="showPassword"></i>
+                    </button>
+                  </div>
+                  <div class="invalid-feedback" *ngIf="loginForm.get('password')?.invalid && loginForm.get('password')?.touched">
+                    Mot de passe requis
+                  </div>
+                </div>
+                
+                <button 
+                  type="submit" 
+                  class="btn btn-primary w-100" 
+                  [disabled]="loginForm.invalid || loading">
+                  <span *ngIf="loading" class="spinner-border spinner-border-sm me-2"></span>
+                  Se connecter
+                </button>
+              </form>
+              
+              <div class="text-center mt-3">
+                <p>Pas encore de compte ?</p>
+                <a routerLink="/register" class="btn btn-outline-secondary">
+                  S'inscrire
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+    </div>
+</div>

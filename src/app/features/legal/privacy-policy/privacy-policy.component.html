@@ -1,0 +1,169 @@
+<div class="legal-container">
+  <section class="hero-section">
+    <div class="container">
+      <h1><i class="bi bi-shield-check"></i> Politique de Confidentialité</h1>
+      <p>Dernière mise à jour : {{ lastUpdated }}</p>
+    </div>
+  </section>
+
+  <section class="content-section">
+    <div class="container">
+      <div class="legal-content">
+
+        <article class="legal-article">
+          <h2>1. Introduction</h2>
+          <p>
+            {{ company.name }} s'engage à protéger la vie privée et les données personnelles de ses utilisateurs 
+            conformément au Règlement Général sur la Protection des Données (RGPD) et aux lois togolaises en vigueur.
+          </p>
+          <p>
+            Cette politique explique comment nous collectons, utilisons, stockons et protégeons vos données personnelles.
+          </p>
+        </article>
+
+        <article class="legal-article">
+          <h2>2. Données Collectées</h2>
+          <p>Nous collectons différents types de données selon votre utilisation de nos services :</p>
+          
+          <div *ngFor="let type of dataTypes" style="margin: 25px 0;">
+            <h3>{{ type.category }}</h3>
+            <ul>
+              <li *ngFor="let item of type.items">{{ item }}</li>
+            </ul>
+          </div>
+        </article>
+
+        <article class="legal-article">
+          <h2>3. Finalités du Traitement</h2>
+          <p>Vos données personnelles sont traitées pour les finalités suivantes :</p>
+          <ul>
+            <li><strong>Exécution du contrat :</strong> Traitement et livraison de vos commandes</li>
+            <li><strong>Gestion du compte :</strong> Création et maintenance de votre compte utilisateur</li>
+            <li><strong>Service client :</strong> Réponse à vos questions et réclamations</li>
+            <li><strong>Amélioration du service :</strong> Analyse de l'utilisation pour optimiser l'expérience</li>
+            <li><strong>Communications :</strong> Envoi d'informations sur vos commandes et offres (avec votre consentement)</li>
+            <li><strong>Sécurité :</strong> Prévention de la fraude et protection de la plateforme</li>
+            <li><strong>Obligations légales :</strong> Respect des obligations fiscales et comptables</li>
+          </ul>
+        </article>
+
+        <article class="legal-article">
+          <h2>4. Base Légale du Traitement</h2>
+          <ul>
+            <li><strong>Exécution du contrat :</strong> Nécessaire pour fournir nos services</li>
+            <li><strong>Consentement :</strong> Pour les communications marketing et cookies non essentiels</li>
+            <li><strong>Intérêt légitime :</strong> Amélioration de nos services et prévention de la fraude</li>
+            <li><strong>Obligation légale :</strong> Conservation des données de facturation</li>
+          </ul>
+        </article>
+
+        <article class="legal-article">
+          <h2>5. Partage des Données</h2>
+          <p>Vos données peuvent être partagées avec :</p>
+          <ul>
+            <li><strong>Restaurants et Traiteurs partenaires :</strong> Uniquement les informations nécessaires à la préparation et livraison</li>
+            <li><strong>Partenaires de paiement :</strong> T-Money et Flooz pour le traitement des paiements</li>
+            <li><strong>Prestataires techniques :</strong> Hébergement, maintenance, support client</li>
+            <li><strong>Autorités légales :</strong> Si requis par la loi ou pour protéger nos droits</li>
+          </ul>
+          <p>Nous ne vendons jamais vos données personnelles à des tiers.</p>
+        </article>
+
+        <article class="legal-article">
+          <h2>6. Vos Droits (RGPD)</h2>
+          <p>Conformément au RGPD, vous disposez des droits suivants :</p>
+          
+          <div *ngFor="let right of userRights" class="highlight" style="margin: 15px 0;">
+            <p><strong>{{ right.right }} :</strong> {{ right.description }}</p>
+          </div>
+
+          <p>
+            Pour exercer vos droits, contactez notre Délégué à la Protection des Données (DPO) à 
+            <a [href]="'mailto:' + company.email">{{ company.email }}</a>
+          </p>
+        </article>
+
+        <article class="legal-article">
+          <h2>7. Sécurité des Données</h2>
+          <p>Nous mettons en œuvre des mesures de sécurité techniques et organisationnelles pour protéger vos données :</p>
+          <ul>
+            <li><strong>Cryptage SSL/TLS :</strong> Toutes les communications sont cryptées</li>
+            <li><strong>Serveurs sécurisés :</strong> Hébergement dans des datacenters certifiés</li>
+            <li><strong>Accès restreints :</strong> Seul le personnel autorisé peut accéder aux données</li>
+            <li><strong>Mots de passe cryptés :</strong> Utilisation d'algorithmes de hachage sécurisés</li>
+            <li><strong>Sauvegardes régulières :</strong> Protection contre la perte de données</li>
+            <li><strong>Monitoring 24/7 :</strong> Surveillance continue des systèmes</li>
+          </ul>
+        </article>
+
+        <article class="legal-article">
+          <h2>8. Cookies et Technologies Similaires</h2>
+          <h3>Types de Cookies Utilisés</h3>
+          <ul>
+            <li><strong>Cookies essentiels :</strong> Nécessaires au fonctionnement du site (session, panier)</li>
+            <li><strong>Cookies analytiques :</strong> Statistiques d'utilisation (avec votre consentement)</li>
+            <li><strong>Cookies de performance :</strong> Optimisation de l'expérience utilisateur</li>
+          </ul>
+          
+          <h3>Gestion des Cookies</h3>
+          <p>
+            Vous pouvez gérer vos préférences de cookies via les paramètres de votre navigateur. 
+            Notez que le refus de certains cookies peut affecter le fonctionnement du site.
+          </p>
+        </article>
+
+        <article class="legal-article">
+          <h2>9. Conservation des Données</h2>
+          <ul>
+            <li><strong>Données de compte :</strong> Durée de votre compte + 1 an après fermeture</li>
+            <li><strong>Données de commande :</strong> 3 ans (obligations légales fiscales)</li>
+            <li><strong>Données de facturation :</strong> 10 ans (obligations comptables)</li>
+            <li><strong>Données marketing :</strong> Jusqu'à opposition de votre part</li>
+            <li><strong>Logs de connexion :</strong> 12 mois maximum</li>
+          </ul>
+        </article>
+
+        <article class="legal-article">
+          <h2>10. Transferts Internationaux</h2>
+          <p>
+            Vos données sont principalement stockées et traitées au Togo. En cas de transfert vers 
+            d'autres pays, nous nous assurons que des garanties appropriées sont en place conformément 
+            au RGPD.
+          </p>
+        </article>
+
+        <article class="legal-article">
+          <h2>11. Mineurs</h2>
+          <p>
+            Nos services ne sont pas destinés aux personnes de moins de 18 ans. Nous ne collectons pas 
+            sciemment de données personnelles de mineurs. Si vous pensez qu'un mineur a fourni des 
+            données, contactez-nous immédiatement.
+          </p>
+        </article>
+
+        <article class="legal-article">
+          <h2>12. Modifications de la Politique</h2>
+          <p>
+            Nous pouvons modifier cette politique de confidentialité. Les changements importants vous 
+            seront notifiés par email ou via un avis sur le site. La date de dernière mise à jour est 
+            indiquée en haut de ce document.
+          </p>
+        </article>
+
+        <article class="legal-article">
+          <h2>13. Contact</h2>
+          <p>Pour toute question concernant cette politique ou vos données personnelles :</p>
+          <ul>
+            <li><strong>Délégué à la Protection des Données (DPO) :</strong> <a [href]="'mailto:' + company.email">{{ company.email }}</a></li>
+            <li><strong>Adresse :</strong> {{ company.address }}</li>
+          </ul>
+          <p>
+            Vous avez également le droit d'introduire une réclamation auprès de l'autorité de contrôle 
+            compétente en matière de protection des données.
+          </p>
+        </article>
+
+      </div>
+    </div>
+  </section>
+</div>

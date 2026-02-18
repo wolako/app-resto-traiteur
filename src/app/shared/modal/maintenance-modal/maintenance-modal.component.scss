@@ -1,0 +1,188 @@
+.maintenance-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  overflow-y: auto;
+
+  // Animation d'apparition
+  animation: fadeIn 0.5s ease-in-out;
+}
+
+.maintenance-modal {
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  max-width: 480px;
+  width: 100%;
+  padding: 1.5rem;
+  position: relative;
+  
+  // Animation de slide up
+  animation: slideUp 0.6s ease-out;
+
+  @media (max-width: 768px) {
+    padding: 1.25rem;
+    margin: 1rem;
+    max-width: 90%;
+  }
+}
+
+.maintenance-icon {
+  text-align: center;
+  margin-bottom: 1rem;
+
+  svg {
+    width: 50px;
+    height: 50px;
+    animation: pulse 2s ease-in-out infinite;
+  }
+}
+
+.maintenance-content {
+  text-align: center;
+
+  .maintenance-title {
+    font-size: 1.375rem;
+    font-weight: 700;
+    color: #333;
+    margin-bottom: 0.75rem;
+
+    @media (max-width: 768px) {
+      font-size: 1.125rem;
+    }
+  }
+
+  .maintenance-message {
+    font-size: 0.9375rem;
+    color: #666;
+    line-height: 1.5;
+    margin-bottom: 1.25rem;
+
+    @media (max-width: 768px) {
+      font-size: 0.875rem;
+    }
+  }
+
+  .maintenance-time {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.625rem;
+    background: #fff3e0;
+    border-radius: 8px;
+    padding: 0.625rem 1rem;
+    margin-bottom: 1.25rem;
+
+    .time-icon {
+      font-size: 1.25rem;
+    }
+
+    .time-text {
+      text-align: left;
+
+      .time-label {
+        display: block;
+        font-size: 0.75rem;
+        color: #666;
+        margin-bottom: 0.125rem;
+      }
+
+      .time-value {
+        display: block;
+        font-size: 1rem;
+        font-weight: 700;
+        color: #f57c00;
+      }
+    }
+  }
+
+  .refresh-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.625rem 1.25rem;
+    background: #ff6b35;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    margin: 0.75rem 0 0.5rem 0;
+
+    svg {
+      width: 16px;
+      height: 16px;
+      transition: transform 0.3s ease;
+    }
+
+    &:hover {
+      background: #ff5722;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(255, 107, 53, 0.4);
+
+      svg {
+        transform: rotate(180deg);
+      }
+    }
+
+    &:active {
+      transform: translateY(0);
+    }
+  }
+
+  .maintenance-footer {
+    font-size: 0.75rem;
+    color: #999;
+    margin-top: 0.75rem;
+  }
+}
+
+// Animations
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes pulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.1);
+  }
+}
+
+// Animation de rotation pour le refresh
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}

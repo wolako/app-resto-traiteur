@@ -1,0 +1,169 @@
+.verification-container {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      padding: 40px 20px;
+    }
+
+    .verification-card {
+      background: white;
+      border-radius: 20px;
+      padding: 50px 40px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      text-align: center;
+    }
+
+    .success-icon {
+      font-size: 80px;
+      color: #28a745;
+      margin-bottom: 20px;
+      animation: scaleIn 0.5s ease-out;
+    }
+
+    @keyframes scaleIn {
+      from {
+        transform: scale(0);
+        opacity: 0;
+      }
+      to {
+        transform: scale(1);
+        opacity: 1;
+      }
+    }
+
+    h2 {
+      color: #333;
+      font-weight: 700;
+      font-size: 32px;
+    }
+
+    .alert-info {
+      background-color: #e3f2fd;
+      border: none;
+      border-left: 4px solid #2196F3;
+      text-align: left;
+      display: flex;
+      align-items: start;
+      gap: 15px;
+    }
+
+    .alert-info i {
+      font-size: 24px;
+      color: #2196F3;
+      flex-shrink: 0;
+      margin-top: 3px;
+    }
+
+    .instructions {
+      background-color: #f8f9fa;
+      border-radius: 10px;
+      padding: 25px;
+      margin: 30px 0;
+      text-align: left;
+    }
+
+    .instructions h5 {
+      color: #495057;
+      font-weight: 600;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .instructions ol {
+      margin: 0;
+      padding-left: 0;
+      list-style: none;
+      counter-reset: step-counter;
+    }
+
+    .instructions li {
+      counter-increment: step-counter;
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      padding: 12px 0;
+      position: relative;
+    }
+
+    .instructions li::before {
+      content: counter(step-counter);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 30px;
+      height: 30px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border-radius: 50%;
+      font-weight: bold;
+      font-size: 14px;
+      flex-shrink: 0;
+    }
+
+    .instructions li i {
+      color: #667eea;
+      font-size: 18px;
+    }
+
+    .notice-box {
+      background-color: #fff3cd;
+      border-left: 4px solid #ffc107;
+      border-radius: 5px;
+      padding: 20px;
+      text-align: left;
+      display: flex;
+      align-items: start;
+      gap: 15px;
+      margin: 20px 0;
+    }
+
+    .notice-box i {
+      font-size: 24px;
+      color: #856404;
+      flex-shrink: 0;
+      margin-top: 3px;
+    }
+
+    .notice-box ul {
+      margin: 10px 0 0 0;
+      padding-left: 20px;
+    }
+
+    .notice-box li {
+      margin: 8px 0;
+    }
+
+    .resend-section {
+      margin: 30px 0;
+    }
+
+    .alert-success {
+      background-color: #d4edda;
+      border: none;
+      border-left: 4px solid #28a745;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .actions {
+      border-top: 1px solid #dee2e6;
+      padding-top: 30px;
+    }
+
+    @media (max-width: 576px) {
+      .verification-card {
+        padding: 30px 20px;
+      }
+
+      h2 {
+        font-size: 24px;
+      }
+
+      .success-icon {
+        font-size: 60px;
+      }
+    }

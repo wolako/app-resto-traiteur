@@ -1,0 +1,178 @@
+<div class="faq-container">
+  <!-- Hero Section -->
+  <section class="hero-section">
+    <div class="container">
+      <div class="hero-content">
+        <h1 class="hero-title">
+          <i class="bi bi-question-circle"></i>
+          Questions Fréquentes (FAQ)
+        </h1>
+        <p class="hero-subtitle">
+          Trouvez rapidement des réponses à vos questions
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Search and Filters -->
+  <section class="search-section">
+    <div class="container">
+      <div class="search-bar">
+        <div class="search-input-wrapper">
+          <i class="bi bi-search"></i>
+          <input 
+            type="text" 
+            class="search-input" 
+            [(ngModel)]="searchTerm"
+            placeholder="Rechercher une question..."
+          >
+          <button 
+            *ngIf="searchTerm" 
+            class="clear-button" 
+            (click)="clearSearch()">
+            <i class="bi bi-x-circle-fill"></i>
+          </button>
+        </div>
+      </div>
+
+      <div class="category-filters">
+        <button 
+          *ngFor="let category of categories"
+          [class.active]="selectedCategory === category.id"
+          (click)="selectCategory(category.id)"
+          class="category-btn">
+          <i [class]="category.icon"></i>
+          <span>{{ category.label }}</span>
+        </button>
+      </div>
+
+      <div class="results-count" *ngIf="searchTerm || selectedCategory !== 'all'">
+        <i class="bi bi-info-circle"></i>
+        {{ filteredFaqs.length }} résultat{{ filteredFaqs.length > 1 ? 's' : '' }} trouvé{{ filteredFaqs.length > 1 ? 's' : '' }}
+      </div>
+    </div>
+  </section>
+
+  <!-- FAQ List -->
+  <section class="faq-section">
+    <div class="container">
+      <div class="faq-list" *ngIf="filteredFaqs.length > 0; else noResults">
+        <div 
+          *ngFor="let faq of filteredFaqs; let i = index" 
+          class="faq-item"
+          [class.open]="faq.isOpen">
+          
+          <div class="faq-question" (click)="toggleFaq(faq)">
+            <div class="question-content">
+              <span class="question-icon">
+                <i class="bi bi-patch-question"></i>
+              </span>
+              <h3>{{ faq.question }}</h3>
+            </div>
+            <span class="toggle-icon">
+              <i [class]="faq.isOpen ? 'bi bi-chevron-up' : 'bi bi-chevron-down'"></i>
+            </span>
+          </div>
+
+          <div class="faq-answer" *ngIf="faq.isOpen">
+            <div class="answer-content">
+              <span class="answer-icon">
+                <i class="bi bi-check-circle-fill"></i>
+              </span>
+              <p>{{ faq.answer }}</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- No Results -->
+      <ng-template #noResults>
+        <div class="no-results">
+          <div class="no-results-icon">
+            <i class="bi bi-search"></i>
+          </div>
+          <h3>Aucun résultat trouvé</h3>
+          <p>Essayez de modifier votre recherche ou de changer de catégorie</p>
+          <button class="btn btn-primary" (click)="clearSearch(); selectCategory('all')">
+            <i class="bi bi-arrow-clockwise"></i>
+            Réinitialiser les filtres
+          </button>
+        </div>
+      </ng-template>
+    </div>
+  </section>
+
+  <!-- Contact Section -->
+  <section class="contact-cta-section">
+    <div class="container">
+      <div class="contact-cta">
+        <div class="cta-icon">
+          <i class="bi bi-headset"></i>
+        </div>
+        <div class="cta-content">
+          <h2>Vous ne trouvez pas votre réponse ?</h2>
+          <p>Notre équipe de support est là pour vous aider</p>
+        </div>
+        <a routerLink="/contact" class="btn btn-primary">
+          <i class="bi bi-envelope"></i>
+          Nous Contacter
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Quick Links -->
+  <section class="quick-links-section">
+    <div class="container">
+      <h2 class="section-title">
+        <i class="bi bi-link-45deg"></i>
+        Liens Utiles
+      </h2>
+      <div class="quick-links-grid">
+        <a routerLink="/about" class="quick-link-card">
+          <div class="link-icon">
+            <i class="bi bi-info-circle"></i>
+          </div>
+          <h3>À Propos</h3>
+          <p>Découvrez notre histoire et notre mission</p>
+          <span class="link-arrow">
+            <i class="bi bi-arrow-right"></i>
+          </span>
+        </a>
+
+        <a routerLink="/contact" class="quick-link-card">
+          <div class="link-icon">
+            <i class="bi bi-envelope"></i>
+          </div>
+          <h3>Contact</h3>
+          <p>Contactez notre équipe de support</p>
+          <span class="link-arrow">
+            <i class="bi bi-arrow-right"></i>
+          </span>
+        </a>
+
+        <a routerLink="/legal/conditions-utilisation" class="quick-link-card">
+          <div class="link-icon">
+            <i class="bi bi-file-text"></i>
+          </div>
+          <h3>CGU</h3>
+          <p>Conditions générales d'utilisation</p>
+          <span class="link-arrow">
+            <i class="bi bi-arrow-right"></i>
+          </span>
+        </a>
+
+        <a routerLink="/legal/politique-confidentialite" class="quick-link-card">
+          <div class="link-icon">
+            <i class="bi bi-shield-check"></i>
+          </div>
+          <h3>Confidentialité</h3>
+          <p>Notre politique de confidentialité</p>
+          <span class="link-arrow">
+            <i class="bi bi-arrow-right"></i>
+          </span>
+        </a>
+      </div>
+    </div>
+  </section>
+</div>

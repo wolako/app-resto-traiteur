@@ -1,0 +1,139 @@
+<nav class="navbar navbar-expand-lg navbar-custom">
+  <div class="container">
+    <a class="navbar-brand" routerLink="/">
+      <div class="brand-icon">
+        <img src="assets/images/logo.svg" alt="Logo" class="brand-logo">
+      </div>
+      <span class="brand-text">RestoTraiteur</span>
+    </a>
+    
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    
+    <div class="collapse navbar-collapse" id="navbarNav">
+      <ul class="navbar-nav me-auto">
+        <li class="nav-item">
+          <a class="nav-link" routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}">
+            <i class="bi bi-house-door-fill"></i>
+            <span>Accueil</span>
+          </a>
+        </li>
+      </ul>
+      
+      <ul class="navbar-nav">
+        <!-- Menu si PAS d'utilisateur connecté -->
+        <ng-container *ngIf="!currentUser; else userMenu">
+          <li class="nav-item">
+            <a class="nav-link nav-link-auth" routerLink="/login" routerLinkActive="active">
+              <i class="bi bi-box-arrow-in-right"></i>
+              <span>Connexion</span>
+            </a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link nav-link-register" routerLink="/register" routerLinkActive="active">
+              <i class="bi bi-person-plus-fill"></i>
+              <span>Inscription</span>
+            </a>
+          </li>
+        </ng-container>
+        
+        <!-- Menu utilisateur connecté -->
+        <ng-template #userMenu>
+          <!-- Notifications pour les clients -->
+          <li class="nav-item" *ngIf="currentUser?.role === 'client'">
+            <a 
+              class="nav-link nav-link-icon" 
+              [routerLink]="['/client/profile']" 
+              [queryParams]="{tab: 'notifications'}"
+              title="Mes notifications">
+              <div class="icon-wrapper">
+                <i class="bi bi-bell-fill"></i>
+                <span 
+                  *ngIf="clientNotificationCount > 0" 
+                  class="notification-badge">
+                  {{ clientNotificationCount > 99 ? '99+' : clientNotificationCount }}
+                </span>
+              </div>
+            </a>
+          </li>
+
+          <!-- Badge de chat -->
+          <li class="nav-item" 
+              *ngIf="currentUser?.role === 'client' || currentUser?.role === 'restaurant' || currentUser?.role === 'traiteur'">
+            <a 
+              class="nav-link nav-link-icon" 
+              href="javascript:void(0)"
+              (click)="openChatWidget()"
+              title="Mes conversations">
+              <div class="icon-wrapper">
+                <i class="bi bi-chat-dots-fill"></i>
+                <span 
+                  *ngIf="chatUnreadCount > 0" 
+                  class="notification-badge chat-badge">
+                  {{ chatUnreadCount > 99 ? '99+' : chatUnreadCount }}
+                </span>
+              </div>
+            </a>
+          </li>
+
+          <!-- Menu utilisateur -->
+          <li class="nav-item dropdown user-dropdown">
+            <a class="nav-link dropdown-toggle user-menu-toggle" href="#" role="button" data-bs-toggle="dropdown">
+              <div class="user-avatar">
+                <i class="bi bi-person-circle"></i>
+              </div>
+              <div class="user-info">
+                <span class="user-name">{{ currentUser?.first_name }} {{ currentUser?.last_name }}</span>
+                <span class="user-role">{{ getRoleLabel(currentUser?.role || '') }}</span>
+              </div>
+            </a>
+            <ul class="dropdown-menu dropdown-menu-end user-dropdown-menu">
+              <!-- Menu pour les clients -->
+              <li *ngIf="currentUser?.role === 'client'">
+                <a class="dropdown-item" routerLink="/client/profile">
+                  <i class="bi bi-person-fill"></i>
+                  <span>Mon profil</span>
+                </a>
+              </li>
+              
+              <!-- Menu pour les restaurants -->
+              <li *ngIf="currentUser?.role === 'restaurant'">
+                <a class="dropdown-item" routerLink="/restaurant/dashboard">
+                  <i class="bi bi-speedometer2"></i>
+                  <span>Dashboard Restaurant</span>
+                </a>
+              </li>
+              
+              <!-- Menu pour les traiteurs -->
+              <li *ngIf="currentUser?.role === 'traiteur'">
+                <a class="dropdown-item" routerLink="/traiteur/dashboard">
+                  <i class="bi bi-speedometer2"></i>
+                  <span>Dashboard Traiteur</span>
+                </a>
+              </li>
+              
+              <!-- Menu pour les super admins -->
+              <li *ngIf="currentUser?.role === 'superadmin'">
+                <a class="dropdown-item" routerLink="/admin/dashboard">
+                  <i class="bi bi-shield-check-fill"></i>
+                  <span>Administration</span>
+                </a>
+              </li>
+              
+              <li><hr class="dropdown-divider"></li>
+              
+              <!-- Déconnexion -->
+              <li>
+                <button class="dropdown-item logout-item" (click)="logout()">
+                  <i class="bi bi-box-arrow-right"></i>
+                  <span>Déconnexion</span>
+                </button>
+              </li>
+            </ul>
+          </li>
+        </ng-template>
+      </ul>
+    </div>
+  </div>
+</nav>

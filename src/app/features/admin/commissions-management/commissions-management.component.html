@@ -1,0 +1,229 @@
+<div class="commissions-management-container">
+  <div class="page-header">
+    <div>
+      <h1>💰 Gestion des Commissions</h1>
+      <p>Suivez et gérez toutes les commissions de la plateforme</p>
+    </div>
+  </div>
+
+  <!-- Statistics Cards -->
+  <div *ngIf="stats" class="stats-grid">
+    <div class="stat-card total">
+      <div class="stat-icon">💰</div>
+      <div class="stat-content">
+        <h3>Total Commissions</h3>
+        <p class="stat-value">{{ stats.total_amount | number:'1.0-0' }} FCFA</p>
+        <span class="stat-count">{{ stats.total_commissions }} transaction{{ stats.total_commissions > 1 ? 's' : '' }}</span>
+      </div>
+    </div>
+
+    <div class="stat-card pending">
+      <div class="stat-icon">⏳</div>
+      <div class="stat-content">
+        <h3>En Attente</h3>
+        <p class="stat-value">{{ stats.pending_amount | number:'1.0-0' }} FCFA</p>
+        <span class="stat-count">{{ stats.pending_count }} commission{{ stats.pending_count > 1 ? 's' : '' }}</span>
+      </div>
+    </div>
+
+    <div class="stat-card collected">
+      <div class="stat-icon">📦</div>
+      <div class="stat-content">
+        <h3>Collectées</h3>
+        <p class="stat-value">{{ stats.collected_amount | number:'1.0-0' }} FCFA</p>
+        <span class="stat-count">{{ stats.collected_count }} commission{{ stats.collected_count > 1 ? 's' : '' }}</span>
+      </div>
+    </div>
+
+    <div class="stat-card paid">
+      <div class="stat-icon">✅</div>
+      <div class="stat-content">
+        <h3>Payées</h3>
+        <p class="stat-value">{{ stats.paid_amount | number:'1.0-0' }} FCFA</p>
+        <span class="stat-count">{{ stats.paid_count }} commission{{ stats.paid_count > 1 ? 's' : '' }}</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filters -->
+  <div class="filters-section">
+    <h3>Filtres</h3>
+    <div class="filter-buttons">
+      <button 
+        (click)="filterByStatus('')"
+        [class.active]="selectedStatus === ''"
+        class="filter-btn">
+        📋 Tous
+      </button>
+      <button 
+        (click)="filterByStatus('pending')"
+        [class.active]="selectedStatus === 'pending'"
+        class="filter-btn pending">
+        ⏳ En attente
+      </button>
+      <button 
+        (click)="filterByStatus('collected')"
+        [class.active]="selectedStatus === 'collected'"
+        class="filter-btn collected">
+        📦 Collectées
+      </button>
+      <button 
+        (click)="filterByStatus('paid')"
+        [class.active]="selectedStatus === 'paid'"
+        class="filter-btn paid">
+        ✅ Payées
+      </button>
+      <button 
+        (click)="filterByStatus('cancelled')"
+        [class.active]="selectedStatus === 'cancelled'"
+        class="filter-btn cancelled">
+        ❌ Annulées
+      </button>
+    </div>
+  </div>
+
+  <!-- Loading -->
+  <div *ngIf="loading" class="loading-container">
+    <div class="spinner"></div>
+    <p>Chargement des commissions...</p>
+  </div>
+
+  <!-- Commissions Table -->
+  <div *ngIf="!loading" class="table-container">
+    <div class="table-responsive">
+      <table class="commissions-table">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Date</th>
+            <th>Restaurant</th>
+            <th>Type</th>
+            <th>Référence</th>
+            <th class="text-right">Montant Commande</th>
+            <th class="text-center">Taux</th>
+            <th class="text-right">Commission</th>
+            <th class="text-center">Statut</th>
+            <th class="text-center">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let commission of commissions">
+            <td class="id-cell">#{{ commission.id }}</td>
+            <td>{{ commission.created_at | date: 'dd/MM/yyyy HH:mm' }}</td>
+            <td class="business-cell">
+              <strong>{{ commission.business_name }}</strong>
+            </td>
+            <td>
+              <span class="type-badge" *ngIf="commission.order_id">
+                📦 Commande
+              </span>
+              <span class="type-badge special" *ngIf="commission.special_order_id">
+                ✨ Spéciale
+              </span>
+            </td>
+            <td>
+              <span *ngIf="commission.order_number" class="reference">
+                #{{ commission.order_number }}
+              </span>
+              <span *ngIf="commission.special_order_type" class="reference special">
+                {{ commission.special_order_type }}
+              </span>
+            </td>
+            <td class="text-right amount-cell">
+              {{ commission.order_amount | number:'1.0-0' }} FCFA
+            </td>
+            <td class="text-center rate-cell">
+              <span class="rate-badge">{{ commission.commission_rate }}%</span>
+            </td>
+            <td class="text-right commission-cell">
+              <strong>{{ commission.commission_amount | number:'1.0-0' }} FCFA</strong>
+            </td>
+            <td class="text-center">
+              <span class="status-badge" [ngClass]="getStatusClass(commission.status)">
+                {{ getStatusLabel(commission.status) }}
+              </span>
+            </td>
+            <td class="text-center actions-cell">
+              <!-- Bouton Collecter avec état de chargement -->
+              <button 
+                *ngIf="commission.status === 'pending'"
+                (click)="markAsCollected(commission)"
+                class="btn-action collect"
+                [disabled]="isUpdating(commission.id)"
+                title="Marquer comme collectée">
+                <span *ngIf="isUpdating(commission.id)" class="spinner-border spinner-border-sm me-1"></span>
+                <span *ngIf="!isUpdating(commission.id)">📦</span>
+                {{ isUpdating(commission.id) ? 'Collecte...' : 'Collecter' }}
+              </button>
+
+              <!-- Bouton Payer avec état de chargement -->
+              <button 
+                *ngIf="commission.status === 'collected'"
+                (click)="markAsPaid(commission)"
+                class="btn-action pay"
+                [disabled]="isUpdating(commission.id)"
+                title="Marquer comme payée">
+                <span *ngIf="isUpdating(commission.id)" class="spinner-border spinner-border-sm me-1"></span>
+                <span *ngIf="!isUpdating(commission.id)">✅</span>
+                {{ isUpdating(commission.id) ? 'Paiement...' : 'Payer' }}
+              </button>
+
+              <!-- Info pour les commissions payées -->
+              <span *ngIf="commission.status === 'paid'" class="action-placeholder text-success">
+                <i class="bi bi-check-circle-fill"></i>
+                Payée le {{ commission.paid_at | date: 'dd/MM/yyyy' }}
+              </span>
+
+              <!-- Info pour les commissions annulées -->
+              <span *ngIf="commission.status === 'cancelled'" class="action-placeholder text-danger">
+                <i class="bi bi-x-circle-fill"></i>
+                Annulée
+              </span>
+            </td>
+          </tr>
+          <tr *ngIf="commissions.length === 0">
+            <td colspan="10" class="no-data">
+              <div class="no-data-content">
+                <div class="no-data-icon">📭</div>
+                <p>Aucune commission trouvée</p>
+                <span class="text-muted">
+                  {{ selectedStatus ? 'Essayez de changer le filtre' : 'Les commissions apparaîtront ici après les ventes' }}
+                </span>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Pagination -->
+    <div *ngIf="commissions.length > 0 && totalPages > 1" class="pagination">
+      <button 
+        (click)="previousPage()" 
+        [disabled]="currentPage === 1"
+        class="pagination-btn">
+        <i class="bi bi-chevron-left"></i>
+        Précédent
+      </button>
+      <span class="pagination-info">
+        Page <strong>{{ currentPage }}</strong> sur <strong>{{ totalPages }}</strong>
+      </span>
+      <button 
+        (click)="nextPage()" 
+        [disabled]="currentPage === totalPages"
+        class="pagination-btn">
+        Suivant
+        <i class="bi bi-chevron-right"></i>
+      </button>
+    </div>
+
+    <!-- Info pagination -->
+    <div *ngIf="commissions.length > 0" class="pagination-details">
+      <small class="text-muted">
+        Affichage de {{ (currentPage - 1) * limit + 1 }} à 
+        {{ Math.min(currentPage * limit, commissions.length) }} 
+        commission{{ commissions.length > 1 ? 's' : '' }}
+      </small>
+    </div>
+  </div>
+</div>

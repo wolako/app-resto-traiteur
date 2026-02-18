@@ -1,0 +1,896 @@
+.subscription-container {
+  padding: 2rem;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+// Messages
+.alert {
+  padding: 1rem 1.5rem;
+  border-radius: 8px;
+  margin-bottom: 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  
+  i {
+    font-size: 1.25rem;
+  }
+  
+  &.alert-success {
+    background: #d4edda;
+    color: #155724;
+    border: 1px solid #c3e6cb;
+  }
+  
+  &.alert-danger {
+    background: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f5c6cb;
+  }
+}
+
+// Current subscription card
+.current-subscription-card {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 2rem;
+  border-radius: 16px;
+  margin-bottom: 2rem;
+  box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
+  
+  h3 {
+    margin: 0 0 1.5rem 0;
+    font-size: 1.5rem;
+  }
+  
+  .subscription-details {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1.5rem;
+  }
+  
+  .detail-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    
+    .label {
+      opacity: 0.9;
+      font-size: 0.875rem;
+    }
+    
+    .value {
+      font-size: 1.25rem;
+      font-weight: 600;
+    }
+    
+    .commission-rate {
+      color: #ffd700;
+    }
+  }
+  
+  .badge {
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    font-weight: 600;
+    width: fit-content;
+  }
+}
+
+// Usage stats
+.usage-stats-card {
+  background: white;
+  padding: 2rem;
+  border-radius: 16px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  margin-bottom: 2rem;
+  
+  h3 {
+    margin: 0 0 1.5rem 0;
+    color: #2d3748;
+  }
+  
+  .usage-items {
+    display: grid;
+    gap: 1.5rem;
+  }
+  
+  .usage-item {
+    .usage-header {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 0.5rem;
+      
+      .usage-label {
+        font-weight: 500;
+        color: #4a5568;
+      }
+      
+      .usage-value {
+        font-weight: 600;
+        color: #2d3748;
+      }
+    }
+    
+    .progress-bar {
+      height: 8px;
+      background: #e2e8f0;
+      border-radius: 4px;
+      overflow: hidden;
+      
+      .progress-fill {
+        height: 100%;
+        border-radius: 4px;
+        transition: width 0.3s ease;
+        
+        &.success {
+          background: linear-gradient(90deg, #48bb78, #38a169);
+        }
+        
+        &.warning {
+          background: linear-gradient(90deg, #ed8936, #dd6b20);
+        }
+        
+        &.danger {
+          background: linear-gradient(90deg, #f56565, #e53e3e);
+        }
+      }
+    }
+  }
+}
+
+// 🆕 Billing toggle section
+.billing-toggle-section {
+  margin-bottom: 2rem;
+  
+  h3 {
+    text-align: center;
+    margin-bottom: 1.5rem;
+    color: #2d3748;
+    font-size: 1.75rem;
+  }
+  
+  .billing-toggle {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+    margin-bottom: 2rem;
+    padding-top: 20px; // ✅ Espace pour le badge
+    
+    // ✅ Wrapper pour le bouton avec badge
+    .toggle-btn-wrapper {
+      position: relative;
+      display: inline-block;
+      
+      .save-badge {
+        position: absolute;
+        top: -25px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        color: white;
+        padding: 0.4rem 0.9rem;
+        border-radius: 12px;
+        font-size: 0.7rem;
+        font-weight: 700;
+        box-shadow: 0 4px 12px rgba(245, 87, 108, 0.4);
+        white-space: nowrap;
+        animation: pulse 2s infinite;
+        z-index: 10;
+        pointer-events: none;
+      }
+    }
+    
+    .toggle-btn {
+      padding: 1rem 2rem;
+      border: 2px solid #e2e8f0;
+      background: white;
+      border-radius: 12px;
+      font-weight: 600;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      
+      i {
+        font-size: 1.25rem;
+      }
+      
+      &:hover {
+        border-color: #667eea;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+      }
+      
+      &.active {
+        border-color: #667eea;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+      }
+    }
+  }
+}
+
+@keyframes pulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+}
+
+// Plans section
+.plans-section {
+  margin-bottom: 3rem;
+}
+
+.plans-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 2rem;
+}
+
+.plan-card {
+  background: white;
+  border-radius: 16px;
+  padding: 2rem;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  transition: all 0.3s ease;
+  position: relative;
+  border: 2px solid transparent;
+  
+  &:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+  }
+  
+  &.current-plan {
+    border-color: #48bb78;
+    box-shadow: 0 8px 30px rgba(72, 187, 120, 0.3);
+  }
+  
+  &.recommended {
+    border-color: #667eea;
+    box-shadow: 0 8px 30px rgba(102, 126, 234, 0.3);
+  }
+  
+  .plan-badge {
+    position: absolute;
+    top: -12px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 0.5rem 1.5rem;
+    border-radius: 20px;
+    font-weight: 600;
+    font-size: 0.875rem;
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+  }
+  
+  // 🆕 Badge d'économie
+  .savings-badge {
+    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    color: white;
+    padding: 0.75rem 1rem;
+    border-radius: 12px;
+    margin-bottom: 1rem;
+    font-weight: 600;
+    font-size: 0.875rem;
+    text-align: center;
+    box-shadow: 0 4px 12px rgba(245, 87, 108, 0.3);
+    
+    i {
+      margin-right: 0.5rem;
+    }
+    
+    .savings-percent {
+      font-weight: 700;
+      margin-left: 0.25rem;
+    }
+  }
+  
+  .plan-header {
+    text-align: center;
+    margin-bottom: 2rem;
+    padding-top: 0.5rem;
+    
+    h4 {
+      font-size: 1.5rem;
+      margin-bottom: 1rem;
+      color: #2d3748;
+    }
+    
+    .plan-price {
+      margin-bottom: 0.5rem;
+      
+      .price-amount {
+        font-size: 3rem;
+        font-weight: 700;
+        color: #667eea;
+      }
+      
+      .price-currency {
+        font-size: 1.25rem;
+        color: #718096;
+        margin-left: 0.25rem;
+      }
+      
+      .price-period {
+        display: block;
+        font-size: 0.875rem;
+        color: #718096;
+        margin-top: 0.25rem;
+      }
+    }
+    
+    // 🆕 Prix équivalent mensuel
+    .monthly-equivalent {
+      margin-top: 0.5rem;
+      padding: 0.5rem;
+      background: #f7fafc;
+      border-radius: 8px;
+      
+      small {
+        font-size: 0.875rem;
+        color: #4a5568;
+      }
+    }
+    
+    .plan-description {
+      color: #718096;
+      font-size: 0.875rem;
+      margin-top: 0.5rem;
+    }
+  }
+  
+  .plan-features {
+    margin-bottom: 2rem;
+    
+    .feature-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.75rem;
+      padding: 0.75rem 0;
+      border-bottom: 1px solid #f7fafc;
+      
+      &:last-child {
+        border-bottom: none;
+      }
+      
+      i {
+        font-size: 1.25rem;
+        margin-top: 2px;
+      }
+      
+      span {
+        color: #4a5568;
+        line-height: 1.6;
+      }
+      
+      &.commission-info {
+        background: #fef3cd;
+        padding: 0.75rem;
+        border-radius: 8px;
+        margin-top: 0.5rem;
+        
+        i {
+          color: #d69e2e;
+        }
+        
+        span {
+          color: #744210;
+          font-weight: 600;
+        }
+      }
+    }
+  }
+  
+  .plan-action {
+    .btn {
+      width: 100%;
+      padding: 1rem;
+      font-weight: 600;
+      border-radius: 12px;
+      border: none;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      
+      i {
+        font-size: 1.25rem;
+      }
+      
+      &.btn-primary {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        
+        &:hover:not(:disabled) {
+          transform: translateY(-2px);
+          box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+        }
+      }
+      
+      &.btn-current {
+        background: #48bb78;
+        color: white;
+      }
+      
+      &.btn-secondary {
+        background: #e2e8f0;
+        color: #718096;
+      }
+      
+      &:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+      }
+    }
+  }
+}
+
+// Cancel section
+.cancel-section {
+  text-align: center;
+  padding: 2rem;
+  background: #fff5f5;
+  border-radius: 16px;
+  border: 2px solid #fed7d7;
+  
+  .btn-danger {
+    background: #f56565;
+    color: white;
+    padding: 1rem 2rem;
+    border: none;
+    border-radius: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    
+    &:hover:not(:disabled) {
+      background: #e53e3e;
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(245, 101, 101, 0.4);
+    }
+    
+    &:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+  }
+  
+  .cancel-note {
+    margin-top: 1rem;
+    color: #742a2a;
+    font-size: 0.875rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+  }
+}
+
+// Responsive
+@media (max-width: 768px) {
+  .subscription-container {
+    padding: 1rem;
+  }
+  
+  .billing-toggle-section {
+    .billing-toggle {
+      flex-direction: column;
+      padding-top: 25px;
+      
+      .toggle-btn-wrapper {
+        width: 100%;
+        
+        .save-badge {
+          top: -28px;
+          font-size: 0.65rem;
+          padding: 0.35rem 0.75rem;
+        }
+        
+        .toggle-btn {
+          width: 100%;
+        }
+      }
+      
+      .toggle-btn {
+        width: 100%;
+      }
+    }
+  }
+  
+  .plans-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .current-subscription-card {
+    .subscription-details {
+      grid-template-columns: 1fr;
+    }
+  }
+}
+
+// ✅ STYLES POUR LE MODAL DE PROPOSITION ANNUELLE
+
+// Modal d'offre annuelle
+.yearly-offer-modal {
+  &.show {
+    display: block !important;
+  }
+
+  .modal-dialog {
+    max-width: 800px;
+  }
+
+  .modal-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-bottom: none;
+    padding: 1.5rem 2rem;
+
+    .modal-title {
+      font-size: 1.5rem;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+
+      i {
+        font-size: 2rem;
+        animation: bounce 2s infinite;
+      }
+    }
+
+    .btn-close {
+      filter: brightness(0) invert(1);
+      opacity: 0.8;
+
+      &:hover {
+        opacity: 1;
+      }
+    }
+  }
+
+  .modal-body {
+    padding: 2rem;
+  }
+
+  .modal-footer {
+    border-top: none;
+    padding: 1.5rem 2rem;
+    background-color: #f8f9fa;
+
+    .footer-actions {
+      display: flex;
+      gap: 1rem;
+      width: 100%;
+
+      @media (max-width: 576px) {
+        flex-direction: column;
+
+        .btn {
+          width: 100%;
+        }
+      }
+    }
+  }
+}
+
+// Comparaison des plans
+.offer-comparison {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  gap: 2rem;
+  margin-bottom: 2rem;
+
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+
+    .vs-separator {
+      display: none;
+    }
+  }
+
+  .comparison-plan {
+    border: 2px solid #e9ecef;
+    border-radius: 12px;
+    padding: 1.5rem;
+    text-align: center;
+    transition: all 0.3s ease;
+
+    &.recommended {
+      border-color: #28a745;
+      box-shadow: 0 4px 20px rgba(40, 167, 69, 0.2);
+      transform: scale(1.05);
+
+      @media (max-width: 768px) {
+        transform: scale(1);
+      }
+    }
+
+    .plan-label {
+      font-size: 0.875rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      color: #6c757d;
+      margin-bottom: 0.5rem;
+      letter-spacing: 0.5px;
+    }
+
+    h4 {
+      font-size: 1.25rem;
+      font-weight: 700;
+      margin-bottom: 1rem;
+      color: #212529;
+    }
+
+    .plan-price {
+      margin-bottom: 0.5rem;
+
+      .price-amount {
+        font-size: 2.5rem;
+        font-weight: 700;
+        color: #667eea;
+      }
+
+      .price-currency {
+        font-size: 1rem;
+        color: #6c757d;
+        margin-left: 0.25rem;
+      }
+
+      .price-period {
+        font-size: 0.875rem;
+        color: #6c757d;
+      }
+    }
+
+    .yearly-cost {
+      margin-top: 0.5rem;
+      padding: 0.5rem;
+      background-color: #f8f9fa;
+      border-radius: 6px;
+    }
+
+    .savings-highlight {
+      display: inline-block;
+      background: linear-gradient(135deg, #28a745, #20c997);
+      color: white;
+      padding: 0.5rem 1rem;
+      border-radius: 20px;
+      font-weight: 600;
+      font-size: 0.875rem;
+      margin-bottom: 1rem;
+      animation: pulse 2s infinite;
+
+      i {
+        margin-right: 0.5rem;
+      }
+    }
+
+    .savings-amount {
+      margin-top: 1rem;
+      padding: 0.75rem;
+      background-color: #d4edda;
+      border-radius: 8px;
+      font-size: 1rem;
+
+      i {
+        margin-right: 0.5rem;
+      }
+
+      strong {
+        font-size: 1.125rem;
+      }
+    }
+  }
+
+  .vs-separator {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    .vs-text {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 1.25rem;
+      box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+    }
+  }
+}
+
+// Avantages
+.offer-benefits {
+  background-color: #f8f9fa;
+  border-radius: 12px;
+  padding: 1.5rem;
+
+  h6 {
+    font-size: 1.125rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+    color: #212529;
+  }
+
+  .benefits-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+
+    li {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.75rem;
+      padding: 0.75rem 0;
+      font-size: 1rem;
+      color: #495057;
+
+      &:not(:last-child) {
+        border-bottom: 1px solid #dee2e6;
+      }
+
+      i {
+        font-size: 1.25rem;
+        margin-top: 0.125rem;
+        flex-shrink: 0;
+      }
+
+      strong {
+        color: #212529;
+      }
+    }
+  }
+}
+
+// Animations
+@keyframes bounce {
+  0%, 20%, 50%, 80%, 100% {
+    transform: translateY(0);
+  }
+  40% {
+    transform: translateY(-10px);
+  }
+  60% {
+    transform: translateY(-5px);
+  }
+}
+
+@keyframes pulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+}
+
+// Boutons du footer
+.modal-footer {
+  .btn-primary {
+    background: linear-gradient(135deg, #28a745, #20c997);
+    border: none;
+    font-weight: 600;
+    padding: 0.75rem 2rem;
+
+    &:hover {
+      background: linear-gradient(135deg, #20c997, #28a745);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
+    }
+
+    &:disabled {
+      background: #6c757d;
+      transform: none;
+    }
+  }
+
+  .btn-outline-secondary {
+    padding: 0.75rem 1.5rem;
+    font-weight: 500;
+
+    &:hover {
+      background-color: #6c757d;
+      color: white;
+    }
+  }
+}
+
+// Responsive
+@media (max-width: 768px) {
+  .yearly-offer-modal {
+    .modal-header {
+      padding: 1rem 1.5rem;
+
+      .modal-title {
+        font-size: 1.25rem;
+      }
+    }
+
+    .modal-body {
+      padding: 1.5rem;
+    }
+
+    .modal-footer {
+      padding: 1rem 1.5rem;
+    }
+
+    .offer-comparison {
+      .comparison-plan {
+        .plan-price {
+          .price-amount {
+            font-size: 2rem;
+          }
+        }
+      }
+    }
+  }
+}
+
+// Dark mode support (optionnel)
+@media (prefers-color-scheme: dark) {
+  .yearly-offer-modal {
+    .modal-content {
+      background-color: #212529;
+      color: #f8f9fa;
+    }
+
+    .comparison-plan {
+      background-color: #343a40;
+      border-color: #495057;
+
+      h4 {
+        color: #f8f9fa;
+      }
+
+      .yearly-cost {
+        background-color: #495057;
+      }
+
+      &.recommended {
+        border-color: #28a745;
+      }
+    }
+
+    .offer-benefits {
+      background-color: #343a40;
+
+      h6 {
+        color: #f8f9fa;
+      }
+
+      .benefits-list li {
+        color: #dee2e6;
+        border-bottom-color: #495057;
+
+        strong {
+          color: #f8f9fa;
+        }
+      }
+    }
+
+    .modal-footer {
+      background-color: #343a40;
+    }
+  }
+}

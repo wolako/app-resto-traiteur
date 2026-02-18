@@ -1,0 +1,14 @@
+.ticket-item {
+      background: #f8f9fa;
+      transition: all 0.3s ease;
+    }
+    .ticket-item:hover {
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    .response-box {
+      border-left: 3px solid #0d6efd;
+    }
+    .badge.bg-gold {
+      background: linear-gradient(135deg, #ffd700, #ffed4e);
+      color: #000;
+    }

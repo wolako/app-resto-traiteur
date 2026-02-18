@@ -1,0 +1,795 @@
+.client-profile-container {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  padding: 2rem 0;
+}
+
+.profile-header {
+  h1 {
+    color: #2c3e50;
+    font-weight: 700;
+  }
+
+  .notification-badge {
+    .badge {
+      font-size: 1rem;
+      padding: 0.5rem 1rem;
+    }
+  }
+}
+
+// Navigation Tabs
+.nav-tabs {
+  background: white;
+  border-radius: 10px;
+  padding: 0.5rem;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+
+  .nav-item {
+    margin: 0 0.25rem;
+
+    .nav-link {
+      border: none;
+      border-radius: 8px;
+      color: #666;
+      font-weight: 500;
+      padding: 0.75rem 1.5rem;
+      transition: all 0.3s;
+
+      &:hover {
+        background: #f8f9fa;
+        color: #667eea;
+      }
+
+      &.active {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+      }
+
+      i {
+        font-size: 1.1rem;
+      }
+    }
+  }
+}
+
+// Statistics Cards
+.stat-card {
+  background: white;
+  border-radius: 15px;
+  padding: 1.5rem;
+  display: flex;
+  align-items: center;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+  transition: all 0.3s;
+  height: 100%;
+
+  &:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.15);
+  }
+
+  .stat-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 1rem;
+    flex-shrink: 0;
+
+    // ✅ NOUVEAUX: Styles pour les icônes avec gradients
+    &.bg-primary {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+
+    &.bg-success {
+      background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+    }
+
+    &.bg-info {
+      background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+    }
+
+    &.bg-warning {
+      background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    }
+
+    // ✅ NOUVEAU: Style pour les commandes spéciales (violet/bleu)
+    &.bg-purple {
+      background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+    }
+
+    i {
+      font-size: 1.8rem;
+      color: white;
+    }
+  }
+
+  .stat-details {
+    flex: 1;
+
+    h3 {
+      margin: 0;
+      font-size: 1.8rem;
+      font-weight: 700;
+      color: #2c3e50;
+    }
+
+    p {
+      margin: 0;
+      color: #7f8c8d;
+      font-size: 0.9rem;
+      font-weight: 500;
+    }
+  }
+}
+
+// Cards
+.card {
+  border: none;
+  border-radius: 15px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+  overflow: hidden;
+
+  .card-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    padding: 1.25rem 1.5rem;
+
+    h5 {
+      margin: 0;
+      font-weight: 600;
+    }
+  }
+
+  .card-body {
+    padding: 1.5rem;
+  }
+}
+
+// Order Item
+.order-item {
+  background: white;
+  border: 1px solid #e0e0e0;
+  border-radius: 12px;
+  padding: 1.25rem;
+  margin-bottom: 1rem;
+  transition: all 0.3s;
+
+  &:hover {
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    transform: translateX(5px);
+  }
+
+  .order-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid #f0f0f0;
+
+    h6 {
+      font-weight: 600;
+      color: #2c3e50;
+    }
+  }
+
+  .order-body {
+    p {
+      margin-bottom: 0.5rem;
+      color: #555;
+
+      strong {
+        color: #2c3e50;
+      }
+    }
+  }
+}
+
+// Reservation Item
+.reservation-item {
+  display: flex;
+  align-items: center;
+  background: white;
+  border: 1px solid #e0e0e0;
+  border-radius: 12px;
+  padding: 1.25rem;
+  margin-bottom: 1rem;
+  transition: all 0.3s;
+
+  &:hover {
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    transform: translateX(5px);
+  }
+
+  .reservation-icon {
+    width: 50px;
+    height: 50px;
+    border-radius: 10px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 1rem;
+    flex-shrink: 0;
+
+    i {
+      font-size: 1.5rem;
+      color: white;
+    }
+  }
+
+  .reservation-details {
+    flex: 1;
+
+    h6 {
+      margin-bottom: 0.5rem;
+      font-weight: 600;
+      color: #2c3e50;
+    }
+
+    p {
+      margin-bottom: 0.25rem;
+      color: #666;
+      font-size: 0.9rem;
+
+      i {
+        color: #667eea;
+      }
+    }
+  }
+
+  .reservation-status {
+    margin-left: auto;
+    flex-shrink: 0;
+  }
+}
+
+// Notifications
+.notifications-list {
+  .notification-item {
+    display: flex;
+    align-items: flex-start;
+    padding: 1rem;
+    border-bottom: 1px solid #f0f0f0;
+    cursor: pointer;
+    transition: all 0.3s;
+    background: white;
+
+    &:last-child {
+      border-bottom: none;
+    }
+
+    &.unread {
+      background: #f8f9ff;
+      border-left: 4px solid #667eea;
+    }
+
+    &:hover {
+      background: #f8f9fa;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    }
+
+    .notification-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-right: 1rem;
+      flex-shrink: 0;
+
+      i {
+        font-size: 1.2rem;
+      }
+
+      &.text-success {
+        background: rgba(40, 167, 69, 0.15);
+        color: #28a745;
+      }
+
+      &.text-primary {
+        background: rgba(0, 123, 255, 0.15);
+        color: #007bff;
+      }
+
+      &.text-info {
+        background: rgba(23, 162, 184, 0.15);
+        color: #17a2b8;
+      }
+
+      &.text-warning {
+        background: rgba(255, 193, 7, 0.15);
+        color: #ffc107;
+      }
+
+      &.text-danger {
+        background: rgba(220, 53, 69, 0.15);
+        color: #dc3545;
+      }
+
+      &.text-secondary {
+        background: rgba(108, 117, 125, 0.15);
+        color: #6c757d;
+      }
+    }
+
+    .notification-content {
+      flex: 1;
+
+      h6 {
+        margin-bottom: 0.25rem;
+        font-weight: 600;
+        color: #2c3e50;
+        font-size: 0.95rem;
+      }
+
+      p {
+        margin-bottom: 0.25rem;
+        color: #666;
+        font-size: 0.9rem;
+      }
+
+      small {
+        font-size: 0.8rem;
+        color: #7f8c8d;
+      }
+    }
+
+    .notification-actions {
+      margin-left: 1rem;
+      flex-shrink: 0;
+
+      button {
+        opacity: 0;
+        transition: opacity 0.3s;
+      }
+    }
+
+    &:hover .notification-actions button {
+      opacity: 1;
+    }
+  }
+}
+
+// Table
+.table-responsive {
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+
+  .table {
+    margin-bottom: 0;
+
+    thead {
+      background: #f8f9fa;
+
+      th {
+        font-weight: 600;
+        color: #2c3e50;
+        border-bottom: 2px solid #e0e0e0;
+        padding: 1rem;
+        font-size: 0.9rem;
+      }
+    }
+
+    tbody {
+      tr {
+        border-bottom: 1px solid #f0f0f0;
+        transition: background 0.2s;
+
+        &:hover {
+          background: #f8f9fa;
+        }
+
+        &:last-child {
+          border-bottom: none;
+        }
+
+        td {
+          vertical-align: middle;
+          color: #555;
+          padding: 1rem;
+        }
+      }
+    }
+  }
+}
+
+// Badges
+.badge {
+  padding: 0.5rem 0.75rem;
+  font-weight: 500;
+  font-size: 0.85rem;
+  border-radius: 6px;
+
+  &.bg-warning {
+    background-color: #ffc107 !important;
+    color: #000;
+  }
+
+  &.bg-info {
+    background-color: #17a2b8 !important;
+  }
+
+  &.bg-success {
+    background-color: #28a745 !important;
+  }
+
+  &.bg-danger {
+    background-color: #dc3545 !important;
+  }
+
+  &.bg-secondary {
+    background-color: #6c757d !important;
+  }
+
+  &.bg-primary {
+    background-color: #007bff !important;
+  }
+}
+
+// Form Switches
+.form-check {
+  .form-check-input {
+    width: 3rem;
+    height: 1.5rem;
+    cursor: pointer;
+
+    &:checked {
+      background-color: #667eea;
+      border-color: #667eea;
+    }
+
+    &:focus {
+      border-color: #667eea;
+      box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+    }
+  }
+
+  .form-check-label {
+    margin-left: 0.5rem;
+    font-weight: 500;
+    cursor: pointer;
+    color: #495057;
+
+    i {
+      color: #667eea;
+    }
+  }
+}
+
+// Buttons
+.btn {
+  border-radius: 8px;
+  font-weight: 500;
+  padding: 0.5rem 1.5rem;
+  transition: all 0.3s;
+
+  &.btn-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border: none;
+
+    &:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+    }
+
+    &:disabled {
+      opacity: 0.6;
+      transform: none;
+      box-shadow: none;
+    }
+  }
+
+  &.btn-outline-primary {
+    color: #667eea;
+    border-color: #667eea;
+
+    &:hover {
+      background: #667eea;
+      border-color: #667eea;
+      color: white;
+    }
+  }
+
+  &.btn-success {
+    background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+    border: none;
+
+    &:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(40, 167, 69, 0.4);
+    }
+  }
+
+  &.btn-outline-danger {
+    &:hover {
+      transform: scale(1.05);
+    }
+  }
+
+  &.btn-sm {
+    padding: 0.375rem 0.75rem;
+    font-size: 0.875rem;
+  }
+}
+
+// Spinner
+.spinner-border {
+  width: 2rem;
+  height: 2rem;
+
+  &.spinner-border-sm {
+    width: 1rem;
+    height: 1rem;
+  }
+}
+
+// États vides (no data)
+.text-center {
+  &.py-4,
+  &.py-5 {
+    i {
+      opacity: 0.3;
+      color: #7f8c8d;
+    }
+
+    h5 {
+      color: #495057;
+      font-weight: 600;
+      margin-top: 1rem;
+    }
+
+    p {
+      color: #7f8c8d;
+    }
+  }
+}
+
+// Alerts
+.alert {
+  border-radius: 10px;
+  border: none;
+  padding: 1rem 1.25rem;
+  display: flex;
+  align-items: center;
+
+  i {
+    font-size: 1.2rem;
+  }
+
+  &.alert-success {
+    background: linear-gradient(135deg, rgba(40, 167, 69, 0.1) 0%, rgba(40, 167, 69, 0.05) 100%);
+    color: #155724;
+  }
+
+  &.alert-danger {
+    background: linear-gradient(135deg, rgba(220, 53, 69, 0.1) 0%, rgba(220, 53, 69, 0.05) 100%);
+    color: #721c24;
+  }
+
+  .btn-close {
+    opacity: 0.5;
+
+    &:hover {
+      opacity: 1;
+    }
+  }
+}
+
+// Responsive
+@media (max-width: 768px) {
+  .client-profile-container {
+    padding: 1rem 0;
+  }
+
+  .profile-header {
+    h1 {
+      font-size: 1.75rem;
+    }
+  }
+
+  .nav-tabs {
+    padding: 0.25rem;
+
+    .nav-item {
+      margin: 0.125rem;
+
+      .nav-link {
+        padding: 0.5rem 0.75rem;
+        font-size: 0.9rem;
+
+        i {
+          display: none; // Masquer les icônes sur mobile pour gagner de la place
+        }
+      }
+    }
+  }
+
+  .stat-card {
+    margin-bottom: 1rem;
+    padding: 1rem;
+
+    .stat-icon {
+      width: 50px;
+      height: 50px;
+
+      i {
+        font-size: 1.5rem;
+      }
+    }
+
+    .stat-details {
+      h3 {
+        font-size: 1.5rem;
+      }
+
+      p {
+        font-size: 0.85rem;
+      }
+    }
+  }
+
+  .order-item,
+  .reservation-item {
+    padding: 1rem;
+
+    .order-header {
+      flex-direction: column;
+      align-items: flex-start;
+
+      .badge {
+        margin-top: 0.5rem;
+      }
+    }
+
+    .order-body {
+      .col-md-6:last-child {
+        margin-top: 1rem;
+        text-align: left !important;
+      }
+    }
+  }
+
+  .reservation-item {
+    flex-direction: column;
+    align-items: flex-start;
+
+    .reservation-icon {
+      margin-bottom: 0.75rem;
+    }
+
+    .reservation-status {
+      margin-left: 0;
+      margin-top: 0.75rem;
+      width: 100%;
+    }
+  }
+
+  .notification-item {
+    flex-wrap: wrap;
+    padding: 0.75rem;
+
+    .notification-icon {
+      width: 35px;
+      height: 35px;
+
+      i {
+        font-size: 1rem;
+      }
+    }
+
+    .notification-content {
+      h6 {
+        font-size: 0.9rem;
+      }
+
+      p {
+        font-size: 0.85rem;
+      }
+    }
+
+    .notification-actions {
+      margin-left: 0;
+      margin-top: 0.5rem;
+      width: 100%;
+
+      button {
+        opacity: 1; // Toujours visible sur mobile
+      }
+    }
+  }
+
+  .table-responsive {
+    font-size: 0.85rem;
+
+    .table {
+      thead th,
+      tbody td {
+        padding: 0.75rem 0.5rem;
+      }
+    }
+  }
+
+  .card {
+    .card-header {
+      padding: 1rem;
+
+      h5 {
+        font-size: 1rem;
+      }
+    }
+
+    .card-body {
+      padding: 1rem;
+    }
+  }
+
+  .btn {
+    padding: 0.5rem 1rem;
+    font-size: 0.9rem;
+
+    &.btn-sm {
+      padding: 0.375rem 0.75rem;
+      font-size: 0.85rem;
+    }
+  }
+}
+
+// ✅ Styles additionnels pour améliorer l'UX
+.tab-pane-content {
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+// Loading state
+.loading-overlay {
+  position: relative;
+
+  &::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(255, 255, 255, 0.8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+}
+
+// Empty state illustrations
+.text-muted {
+  i[style*="font-size: 3rem"],
+  i[style*="font-size: 4rem"] {
+    animation: float 3s ease-in-out infinite;
+  }
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}

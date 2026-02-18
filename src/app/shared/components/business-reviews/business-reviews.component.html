@@ -1,0 +1,288 @@
+<div class="reviews-container">
+
+  <!-- ── Statistiques ──────────────────────────────────────────── -->
+  <div class="reviews-header mb-4">
+    <h4>
+      <i class="bi bi-star-fill text-warning"></i>
+      Avis clients
+    </h4>
+
+    <div class="rating-summary" *ngIf="stats">
+      <div class="overall-rating">
+        <h2 class="rating-value">{{ stats.average_rating | number:'1.1-1' }}</h2>
+        <div class="stars mb-2">
+          <i *ngFor="let star of [1,2,3,4,5]" class="bi"
+             [ngClass]="star <= stats.average_rating ? 'bi-star-fill text-warning' : 'bi-star text-muted'">
+          </i>
+        </div>
+        <p class="text-muted mb-0">{{ stats.total_reviews }} avis</p>
+      </div>
+
+      <div class="rating-distribution">
+        <div class="rating-bar" *ngFor="let star of [5,4,3,2,1]">
+          <span class="rating-label">{{ star }} <i class="bi bi-star-fill text-warning"></i></span>
+          <div class="progress flex-grow-1 mx-2">
+            <div class="progress-bar bg-warning" [style.width.%]="getPercentage(star)"></div>
+          </div>
+          <span class="rating-count">{{ getStarCount(star) }}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════ -->
+  <!--  FORMULAIRE CLIENT CONNECTÉ                               -->
+  <!-- ══════════════════════════════════════════════════════════ -->
+  <div class="review-form-section mb-4"
+       *ngIf="formMode === 'client' && !hasReviewed">
+    <div class="card border-primary">
+      <div class="card-header bg-primary text-white">
+        <h5 class="mb-0">
+          <i class="bi bi-pencil-square"></i>
+          Laisser un avis
+        </h5>
+      </div>
+      <div class="card-body">
+        <form [formGroup]="reviewForm" (ngSubmit)="submitReview()">
+
+          <div class="mb-3">
+            <label class="form-label fw-bold">Votre note *</label>
+            <div class="star-rating-input">
+              <i *ngFor="let star of [1,2,3,4,5]" class="bi star-input fs-3"
+                 [ngClass]="(star <= hoverRating || star <= currentRating) ? 'bi-star-fill text-warning' : 'bi-star'"
+                 (click)="setRating(star, 'client')"
+                 (mouseenter)="hoverRating = star"
+                 (mouseleave)="hoverRating = 0">
+              </i>
+              <span class="ms-2 text-muted" *ngIf="currentRating > 0">
+                {{ getRatingLabel(currentRating) }}
+              </span>
+            </div>
+            <div class="text-danger small mt-1"
+                 *ngIf="reviewForm.get('rating')?.invalid && reviewForm.get('rating')?.touched">
+              Veuillez sélectionner une note
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label class="form-label">Votre commentaire</label>
+            <textarea class="form-control" formControlName="comment"
+                      rows="4" maxlength="1000"
+                      placeholder="Partagez votre expérience..."></textarea>
+            <small class="text-muted">
+              {{ reviewForm.get('comment')?.value?.length || 0 }}/1000
+            </small>
+          </div>
+
+          <div class="d-flex gap-2">
+            <button type="submit" class="btn btn-primary"
+                    [disabled]="reviewForm.invalid || loading">
+              <span *ngIf="loading" class="spinner-border spinner-border-sm me-2"></span>
+              <i class="bi bi-send" *ngIf="!loading"></i>
+              Publier mon avis
+            </button>
+            <button type="button" class="btn btn-outline-secondary"
+                    (click)="resetClientForm()">
+              Annuler
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════ -->
+  <!--  FORMULAIRE INVITÉ                                        -->
+  <!-- ══════════════════════════════════════════════════════════ -->
+  <div class="review-form-section mb-4"
+       *ngIf="formMode === 'guest' && !hasReviewed">
+    <div class="card border-secondary">
+      <div class="card-header bg-secondary text-white">
+        <h5 class="mb-0">
+          <i class="bi bi-person"></i>
+          Laisser un avis en tant qu'invité
+        </h5>
+      </div>
+      <div class="card-body">
+
+        <!-- Info -->
+        <div class="alert alert-light border mb-3">
+          <i class="bi bi-info-circle text-primary"></i>
+          Vous pouvez noter cet établissement sans créer de compte.
+          <a routerLink="/login" class="ms-1">Se connecter</a> pour gérer vos avis.
+        </div>
+
+        <form [formGroup]="guestReviewForm" (ngSubmit)="submitGuestReview()">
+
+          <!-- Nom et téléphone côte à côte -->
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label class="form-label fw-bold">Votre nom *</label>
+              <input type="text" class="form-control"
+                     formControlName="guest_name"
+                     placeholder="Ex : Jean Dupont"
+                     [class.is-invalid]="guestReviewForm.get('guest_name')?.invalid && guestReviewForm.get('guest_name')?.touched">
+              <div class="invalid-feedback">
+                Nom requis (min. 2 caractères)
+              </div>
+            </div>
+
+            <div class="col-md-6 mb-3">
+              <label class="form-label fw-bold">Téléphone *</label>
+              <input type="tel" class="form-control"
+                     formControlName="guest_phone"
+                     placeholder="Ex : +228 90 12 34 56"
+                     [class.is-invalid]="guestReviewForm.get('guest_phone')?.invalid && guestReviewForm.get('guest_phone')?.touched">
+              <div class="invalid-feedback">
+                Numéro valide requis (8-15 chiffres)
+              </div>
+              <small class="text-muted">
+                <i class="bi bi-shield-check"></i>
+                Utilisé uniquement pour éviter les doublons
+              </small>
+            </div>
+          </div>
+
+          <!-- Note -->
+          <div class="mb-3">
+            <label class="form-label fw-bold">Votre note *</label>
+            <div class="star-rating-input">
+              <i *ngFor="let star of [1,2,3,4,5]" class="bi star-input fs-3"
+                 [ngClass]="(star <= hoverRating || star <= currentRating) ? 'bi-star-fill text-warning' : 'bi-star'"
+                 (click)="setRating(star, 'guest')"
+                 (mouseenter)="hoverRating = star"
+                 (mouseleave)="hoverRating = 0">
+              </i>
+              <span class="ms-2 text-muted" *ngIf="currentRating > 0">
+                {{ getRatingLabel(currentRating) }}
+              </span>
+            </div>
+            <div class="text-danger small mt-1"
+                 *ngIf="guestReviewForm.get('rating')?.invalid && guestReviewForm.get('rating')?.touched">
+              Veuillez sélectionner une note
+            </div>
+          </div>
+
+          <!-- Commentaire -->
+          <div class="mb-3">
+            <label class="form-label">Votre commentaire</label>
+            <textarea class="form-control" formControlName="comment"
+                      rows="4" maxlength="1000"
+                      placeholder="Partagez votre expérience..."></textarea>
+            <small class="text-muted">
+              {{ guestReviewForm.get('comment')?.value?.length || 0 }}/1000
+            </small>
+          </div>
+
+          <div class="d-flex gap-2">
+            <button type="submit" class="btn btn-secondary"
+                    [disabled]="guestReviewForm.invalid || loading">
+              <span *ngIf="loading" class="spinner-border spinner-border-sm me-2"></span>
+              <i class="bi bi-send" *ngIf="!loading"></i>
+              Publier mon avis
+            </button>
+            <button type="button" class="btn btn-outline-secondary"
+                    (click)="resetGuestForm()">
+              Annuler
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Restaurant/Traiteur connecté : pas de formulaire -->
+  <div class="alert alert-secondary" *ngIf="isLoggedIn && !isClient">
+    <i class="bi bi-info-circle"></i>
+    Seuls les clients peuvent laisser un avis.
+  </div>
+
+  <!-- Avis déjà soumis -->
+  <div class="alert alert-success" *ngIf="hasReviewed && (isClient || formMode === 'guest')">
+    <i class="bi bi-check-circle"></i>
+    <strong> Merci !</strong> Votre avis a bien été publié.
+  </div>
+
+  <!-- ── Liste des avis ─────────────────────────────────────── -->
+  <div class="reviews-list">
+    <h5 class="mb-3">
+      <i class="bi bi-chat-left-text"></i>
+      Tous les avis ({{ reviews.length }})
+    </h5>
+
+    <!-- Filtres par étoile -->
+    <div class="filters mb-3 d-flex gap-2 flex-wrap">
+      <button class="btn btn-sm"
+              [ngClass]="filterRating === 0 ? 'btn-primary' : 'btn-outline-primary'"
+              (click)="setFilter(0)">Tous</button>
+      <button *ngFor="let star of [5,4,3,2,1]"
+              class="btn btn-sm"
+              [ngClass]="filterRating === star ? 'btn-warning' : 'btn-outline-warning'"
+              (click)="setFilter(star)">
+        {{ star }} <i class="bi bi-star-fill"></i>
+      </button>
+    </div>
+
+    <!-- Avis -->
+    <div class="review-item card mb-3 p-3" *ngFor="let review of filteredReviews">
+      <div class="d-flex justify-content-between align-items-start">
+
+        <div class="d-flex gap-3 align-items-center">
+          <i class="bi bi-person-circle fs-2"
+             [ngClass]="review.is_guest ? 'text-secondary' : 'text-primary'">
+          </i>
+          <div>
+            <div class="d-flex align-items-center gap-2">
+              <strong>{{ getReviewerName(review) }}</strong>
+              <!-- ✅ Badge "Avis non vérifié" pour les invités -->
+              <span *ngIf="review.is_guest"
+                    class="badge bg-secondary"
+                    title="Avis soumis sans compte">
+                <i class="bi bi-person-fill-question"></i> Non vérifié
+              </span>
+              <span *ngIf="!review.is_guest"
+                    class="badge bg-success"
+                    title="Client vérifié">
+                <i class="bi bi-patch-check-fill"></i> Vérifié
+              </span>
+            </div>
+            <div>
+              <i *ngFor="let star of [1,2,3,4,5]" class="bi"
+                 [ngClass]="star <= review.rating ? 'bi-star-fill text-warning' : 'bi-star text-muted'">
+              </i>
+            </div>
+          </div>
+        </div>
+
+        <small class="text-muted">{{ review.created_at | date:'dd/MM/yyyy' }}</small>
+      </div>
+
+      <!-- Commentaire -->
+      <div class="mt-2">
+        <p *ngIf="review.comment" class="mb-0">{{ review.comment }}</p>
+        <p *ngIf="!review.comment" class="text-muted fst-italic mb-0">
+          Aucun commentaire laissé
+        </p>
+      </div>
+
+      <!-- Réponse de l'établissement -->
+      <div class="mt-2 ps-3 border-start border-primary" *ngIf="review.response">
+        <div class="d-flex align-items-center gap-2 mb-1">
+          <i class="bi bi-reply text-primary"></i>
+          <strong class="text-primary">Réponse de l'établissement</strong>
+          <small class="text-muted">{{ review.responded_at | date:'dd/MM/yyyy' }}</small>
+        </div>
+        <p class="mb-0">{{ review.response }}</p>
+      </div>
+    </div>
+
+    <!-- Aucun avis -->
+    <div class="text-center text-muted py-5" *ngIf="filteredReviews.length === 0">
+      <i class="bi bi-chat-left-dots fs-1"></i>
+      <p class="mt-2">
+        Aucun avis<span *ngIf="filterRating > 0"> avec {{ filterRating }} étoile(s)</span>
+      </p>
+    </div>
+  </div>
+
+</div>

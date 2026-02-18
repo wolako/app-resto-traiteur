@@ -1,0 +1,373 @@
+.register-container {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  display: flex;
+  align-items: center;
+  padding: 40px 0;
+}
+
+.register-card {
+  background: white;
+  border-radius: 20px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  overflow: hidden;
+  animation: slideIn 0.5s ease-out;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.card-header-register {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 40px 30px;
+  text-align: center;
+
+  i {
+    font-size: 4rem;
+    margin-bottom: 15px;
+    display: block;
+  }
+
+  h2 {
+    margin: 0 0 10px 0;
+    font-weight: 700;
+    font-size: 2rem;
+  }
+
+  p {
+    margin: 0;
+    opacity: 0.9;
+    font-size: 1.1rem;
+  }
+}
+
+.card-body-register {
+  padding: 40px 30px;
+}
+
+.form-section {
+  margin-bottom: 30px;
+  padding-bottom: 30px;
+  border-bottom: 2px solid #f8f9fa;
+  animation: slideIn 0.3s ease-out;
+
+  &:last-of-type {
+    border-bottom: none;
+  }
+
+  .section-title {
+    color: #495057;
+    font-weight: 600;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+
+    &:before {
+      content: '';
+      width: 4px;
+      height: 24px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border-radius: 2px;
+    }
+  }
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.form-label {
+  font-weight: 600;
+  color: #495057;
+  margin-bottom: 8px;
+}
+
+.form-control {
+  border: 2px solid #e9ecef;
+  border-radius: 10px;
+  padding: 12px 15px;
+  font-size: 1rem;
+  transition: all 0.3s ease;
+
+  &:focus {
+    border-color: #667eea;
+    box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+  }
+
+  &.is-invalid {
+    border-color: #dc3545;
+
+    &:focus {
+      box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25);
+    }
+  }
+}
+
+.input-group {
+  .input-group-text {
+    background: #f8f9fa;
+    border: 2px solid #e9ecef;
+    border-right: none;
+    border-radius: 10px 0 0 10px;
+    color: #667eea;
+    font-size: 1.2rem;
+  }
+
+  .form-control {
+    border-left: none;
+    border-radius: 0 10px 10px 0;
+
+    &:focus {
+      border-left: 2px solid #667eea;
+    }
+  }
+}
+
+// Role Selection
+.role-selection {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 15px;
+
+  .role-option {
+    background: white;
+    border: 3px solid #e9ecef;
+    border-radius: 12px;
+    padding: 20px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+
+    &:hover {
+      border-color: #667eea;
+      transform: translateY(-5px);
+      box-shadow: 0 8px 20px rgba(102, 126, 234, 0.2);
+    }
+
+    &.selected {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      border-color: #667eea;
+      color: white;
+      transform: scale(1.05);
+      box-shadow: 0 10px 25px rgba(102, 126, 234, 0.3);
+
+      i {
+        color: white;
+      }
+
+      .role-info {
+        strong, small {
+          color: white;
+        }
+      }
+    }
+
+    i {
+      font-size: 2.5rem;
+      color: #667eea;
+      margin-bottom: 10px;
+      display: block;
+      transition: all 0.3s ease;
+    }
+
+    .role-info {
+      strong {
+        display: block;
+        font-size: 1.1rem;
+        margin-bottom: 5px;
+        color: #212529;
+      }
+
+      small {
+        display: block;
+        color: #6c757d;
+        font-size: 0.85rem;
+      }
+    }
+  }
+}
+
+.alert {
+  border-radius: 10px;
+  border: none;
+  padding: 15px 20px;
+  margin-bottom: 25px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+
+  i {
+    font-size: 1.3rem;
+  }
+
+  &.alert-danger {
+    background: #f8d7da;
+    color: #721c24;
+
+    i {
+      color: #dc3545;
+    }
+  }
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border: none;
+  border-radius: 10px;
+  padding: 15px;
+  font-weight: 600;
+  font-size: 1.1rem;
+  transition: all 0.3s ease;
+
+  &:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 25px rgba(102, 126, 234, 0.4);
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+
+  i {
+    margin-right: 8px;
+  }
+}
+
+.register-footer {
+  margin-top: 30px;
+  text-align: center;
+  padding-top: 30px;
+  border-top: 2px solid #f8f9fa;
+
+  p {
+    color: #6c757d;
+    margin-bottom: 15px;
+    font-size: 1.05rem;
+  }
+
+  .btn-outline-primary {
+    border: 2px solid #667eea;
+    color: #667eea;
+    border-radius: 10px;
+    padding: 12px 30px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+
+    &:hover {
+      background: #667eea;
+      color: white;
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
+    }
+
+    i {
+      margin-right: 8px;
+    }
+  }
+}
+
+.invalid-feedback {
+  display: block;
+  margin-top: 5px;
+  font-size: 0.875rem;
+  color: #dc3545;
+}
+
+.form-text {
+  display: block;
+  margin-top: 5px;
+  font-size: 0.875rem;
+}
+
+.password-requirements {
+  .requirement-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+
+    li {
+      padding: 4px 0;
+      font-size: 0.875rem;
+      color: #6c757d;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+
+      i {
+        font-size: 1rem;
+      }
+
+      &.valid {
+        color: #28a745;
+      }
+    }
+  }
+}
+
+.role-option {
+  position: relative;
+
+  .check-icon {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    color: #28a745;
+    font-size: 1.5rem;
+  }
+}
+
+.valid-feedback.d-block {
+  display: block !important;
+  color: #28a745;
+  font-size: 0.875rem;
+  margin-top: 0.25rem;
+}
+
+// Responsive
+@media (max-width: 768px) {
+  .register-container {
+    padding: 20px 0;
+  }
+
+  .card-header-register {
+    padding: 30px 20px;
+
+    i {
+      font-size: 3rem;
+    }
+
+    h2 {
+      font-size: 1.5rem;
+    }
+
+    p {
+      font-size: 1rem;
+    }
+  }
+
+  .card-body-register {
+    padding: 30px 20px;
+  }
+
+  .role-selection {
+    grid-template-columns: 1fr;
+  }
+}

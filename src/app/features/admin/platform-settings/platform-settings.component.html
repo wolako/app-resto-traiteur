@@ -1,0 +1,472 @@
+<div class="settings-container">
+  <div class="page-header">
+    <div>
+      <h1>⚙️ Paramètres de la Plateforme</h1>
+      <p>Gérez les paramètres globaux de l'application</p>
+    </div>
+    <div class="header-actions">
+      <!-- Bouton Mode Maintenance -->
+      <button 
+        (click)="openMaintenanceModal()" 
+        class="btn btn-maintenance"
+        [class.active]="isMaintenanceEnabled()">
+        <span class="maintenance-icon">
+          <i [class]="isMaintenanceEnabled() ? 'bi bi-exclamation-triangle-fill' : 'bi bi-tools'"></i>
+        </span>
+        <span>{{ isMaintenanceEnabled() ? 'Maintenance Active' : 'Mode Maintenance' }}</span>
+      </button>
+      
+      <button (click)="openNewSettingModal()" class="btn btn-primary">
+        <i class="bi bi-plus-circle"></i>
+        Nouveau Paramètre
+      </button>
+    </div>
+  </div>
+
+  <!-- Loading -->
+  <div *ngIf="loading" class="loading-container">
+    <div class="spinner"></div>
+    <p>Chargement des paramètres...</p>
+  </div>
+
+  <!-- Empty State -->
+  <div *ngIf="!loading && settings.length === 0" class="empty-state">
+    <div class="empty-icon">📋</div>
+    <h3>Aucun paramètre</h3>
+    <p>Commencez par créer votre premier paramètre</p>
+    <button (click)="openNewSettingModal()" class="btn btn-primary">
+      <i class="bi bi-plus-circle"></i>
+      Créer un paramètre
+    </button>
+  </div>
+
+  <!-- Content -->
+  <div *ngIf="!loading && settings.length > 0" class="settings-content">
+    <!-- Categories Sidebar -->
+    <div class="categories-sidebar">
+      <h3>
+        <i class="bi bi-folder"></i>
+        Catégories
+      </h3>
+      <ul class="categories-list">
+        <li 
+          *ngFor="let category of categories"
+          [class.active]="selectedCategory === category"
+          (click)="selectCategory(category)">
+          <span class="category-name">{{ getCategoryLabel(category) }}</span>
+          <span class="count">{{ settingsByCategory[category].length }}</span>
+        </li>
+      </ul>
+    </div>
+
+    <!-- Settings List -->
+    <div class="settings-list">
+      <div *ngIf="selectedCategory" class="category-section">
+        <div class="category-header">
+          <h2>{{ getCategoryLabel(selectedCategory) }}</h2>
+          <span class="settings-count">
+            {{ settingsByCategory[selectedCategory].length }} paramètre{{ settingsByCategory[selectedCategory].length > 1 ? 's' : '' }}
+          </span>
+        </div>
+
+        <div class="settings-table">
+          <div 
+            *ngFor="let setting of settingsByCategory[selectedCategory]" 
+            class="setting-row">
+            
+            <div class="setting-info">
+              <div class="setting-header">
+                <div class="setting-title-group">
+                  <h4>{{ getSettingLabel(setting.key) }}</h4>
+                  <span class="setting-key-badge">{{ setting.key }}</span>
+                  <span class="setting-type-badge" [class]="'type-' + setting.value_type">
+                    {{ getTypeLabel(setting.value_type) }}
+                  </span>
+                </div>
+              </div>
+              
+              <p *ngIf="setting.description" class="setting-description">
+                <i class="bi bi-info-circle"></i>
+                {{ setting.description }}
+              </p>
+
+              <!-- Display Mode pour NON-Boolean -->
+              <div *ngIf="setting.value_type !== 'boolean' && !editingSettings[setting.key]" class="setting-value-display">
+                <div class="value-label">Valeur actuelle:</div>
+                <div class="value-content" [class.json-value]="setting.value_type === 'json'">
+                  <pre *ngIf="setting.value_type === 'json'">{{ getDisplayValue(setting) }}</pre>
+                  <span *ngIf="setting.value_type !== 'json'">{{ getDisplayValue(setting) }}</span>
+                </div>
+              </div>
+
+              <!-- Toggle DIRECT pour Boolean -->
+              <div *ngIf="setting.value_type === 'boolean'" class="setting-value-display">
+                <div class="boolean-toggle-direct">
+                  <label class="switch">
+                    <input 
+                      type="checkbox"
+                      [checked]="parseValue(setting)"
+                      (change)="toggleBoolean(setting)">
+                    <span class="slider"></span>
+                  </label>
+                  <span class="toggle-label">
+                    <i [class]="parseValue(setting) ? 'bi bi-check-circle-fill text-success' : 'bi bi-x-circle text-muted'"></i>
+                    {{ parseValue(setting) ? 'Activé' : 'Désactivé' }}
+                  </span>
+                </div>
+              </div>
+
+              <!-- Edit Mode pour NON-Boolean -->
+              <div *ngIf="setting.value_type !== 'boolean' && editingSettings[setting.key]" class="setting-value-edit">
+                <div class="value-label">Nouvelle valeur:</div>
+                
+                <!-- String -->
+                <input 
+                  *ngIf="setting.value_type === 'string'"
+                  type="text"
+                  [(ngModel)]="tempValues[setting.key]"
+                  class="form-control"
+                  placeholder="Entrez une valeur">
+
+                <!-- Number -->
+                <input 
+                  *ngIf="setting.value_type === 'number'"
+                  type="number"
+                  [(ngModel)]="tempValues[setting.key]"
+                  class="form-control"
+                  placeholder="Entrez un nombre">
+
+                <!-- JSON -->
+                <textarea 
+                  *ngIf="setting.value_type === 'json'"
+                  [(ngModel)]="tempValues[setting.key]"
+                  class="form-control json-textarea"
+                  rows="5"
+                  placeholder='{"key": "value"}'></textarea>
+                <small *ngIf="setting.value_type === 'json'" class="form-text text-muted">
+                  <i class="bi bi-info-circle"></i>
+                  Format JSON valide requis
+                </small>
+              </div>
+            </div>
+
+            <div class="setting-actions" *ngIf="setting.value_type !== 'boolean'">
+              <button 
+                *ngIf="!editingSettings[setting.key]"
+                (click)="startEdit(setting)"
+                class="btn btn-sm btn-secondary"
+                title="Modifier">
+                <i class="bi bi-pencil"></i>
+                Modifier
+              </button>
+
+              <div *ngIf="editingSettings[setting.key]" class="edit-actions">
+                <button 
+                  (click)="saveEdit(setting)"
+                  class="btn btn-sm btn-success"
+                  title="Sauvegarder">
+                  <i class="bi bi-check-lg"></i>
+                  Sauvegarder
+                </button>
+                <button 
+                  (click)="cancelEdit(setting)"
+                  class="btn btn-sm btn-outline-secondary"
+                  title="Annuler">
+                  <i class="bi bi-x-lg"></i>
+                  Annuler
+                </button>
+              </div>
+
+              <button 
+                *ngIf="!editingSettings[setting.key]"
+                (click)="deleteSetting(setting.key)"
+                class="btn btn-sm btn-danger"
+                title="Supprimer">
+                <i class="bi bi-trash"></i>
+              </button>
+            </div>
+          </div>
+
+          <!-- Empty state pour catégorie vide -->
+          <div *ngIf="settingsByCategory[selectedCategory].length === 0" class="empty-category">
+            <i class="bi bi-inbox"></i>
+            <p>Aucun paramètre dans cette catégorie</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- New Setting Modal -->
+  <div *ngIf="showNewSettingModal" class="modal-overlay" (click)="closeNewSettingModal()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>
+          <i class="bi bi-plus-circle"></i>
+          Nouveau Paramètre
+        </h2>
+        <button (click)="closeNewSettingModal()" class="close-btn">
+          <i class="bi bi-x-lg"></i>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <form #settingForm="ngForm">
+          <div class="form-group">
+            <label>
+              Clé <span class="required">*</span>
+            </label>
+            <input 
+              type="text" 
+              [(ngModel)]="newSetting.key" 
+              name="key"
+              class="form-control"
+              placeholder="ex: max_upload_size"
+              required>
+            <small class="form-text">
+              Identifiant unique du paramètre (minuscules, underscores)
+            </small>
+          </div>
+
+          <div class="form-group">
+            <label>
+              Catégorie <span class="required">*</span>
+            </label>
+            <select 
+              [(ngModel)]="newSetting.category" 
+              name="category" 
+              class="form-control"
+              required>
+              <option *ngFor="let cat of categories" [value]="cat">
+                {{ getCategoryLabel(cat) }}
+              </option>
+              <option value="">-- Nouvelle catégorie --</option>
+            </select>
+          </div>
+
+          <div class="form-group" *ngIf="newSetting.category === ''">
+            <label>Nom de la nouvelle catégorie</label>
+            <input 
+              type="text" 
+              [(ngModel)]="newSetting.category" 
+              name="new_category"
+              class="form-control"
+              placeholder="ex: notifications">
+          </div>
+
+          <div class="form-group">
+            <label>
+              Type de valeur <span class="required">*</span>
+            </label>
+            <select 
+              [(ngModel)]="newSetting.value_type" 
+              name="value_type" 
+              class="form-control"
+              required>
+              <option value="string">Texte</option>
+              <option value="number">Nombre</option>
+              <option value="boolean">Booléen</option>
+              <option value="json">JSON</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>
+              Valeur <span class="required">*</span>
+            </label>
+            
+            <input 
+              *ngIf="newSetting.value_type === 'string'"
+              type="text" 
+              [(ngModel)]="newSetting.value" 
+              name="value"
+              class="form-control"
+              placeholder="Entrez une valeur"
+              required>
+
+            <input 
+              *ngIf="newSetting.value_type === 'number'"
+              type="number" 
+              [(ngModel)]="newSetting.value" 
+              name="value"
+              class="form-control"
+              placeholder="0"
+              required>
+
+            <select 
+              *ngIf="newSetting.value_type === 'boolean'"
+              [(ngModel)]="newSetting.value" 
+              name="value"
+              class="form-control"
+              required>
+              <option value="true">Vrai</option>
+              <option value="false">Faux</option>
+            </select>
+
+            <textarea 
+              *ngIf="newSetting.value_type === 'json'"
+              [(ngModel)]="newSetting.value" 
+              name="value"
+              class="form-control"
+              rows="5"
+              placeholder='{"key": "value"}'
+              required></textarea>
+            <small *ngIf="newSetting.value_type === 'json'" class="form-text">
+              Format JSON valide requis
+            </small>
+          </div>
+
+          <div class="form-group">
+            <label>Description</label>
+            <textarea 
+              [(ngModel)]="newSetting.description" 
+              name="description"
+              class="form-control"
+              rows="3"
+              placeholder="Description du paramètre (optionnel)"></textarea>
+          </div>
+
+          <div class="form-group">
+            <label class="checkbox-label">
+              <input 
+                type="checkbox" 
+                [(ngModel)]="newSetting.is_public" 
+                name="is_public">
+              <span>
+                <i class="bi bi-globe"></i>
+                Paramètre public (accessible sans authentification)
+              </span>
+            </label>
+          </div>
+        </form>
+      </div>
+
+      <div class="modal-footer">
+        <button 
+          (click)="closeNewSettingModal()" 
+          class="btn btn-secondary"
+          [disabled]="creatingSetting">
+          <i class="bi bi-x-circle"></i>
+          Annuler
+        </button>
+        <button 
+          (click)="createSetting()" 
+          class="btn btn-primary"
+          [disabled]="creatingSetting">
+          <span *ngIf="creatingSetting" class="spinner-border spinner-border-sm me-2"></span>
+          <i class="bi bi-check-circle" *ngIf="!creatingSetting"></i>
+          {{ creatingSetting ? 'Création...' : 'Créer' }}
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Maintenance Modal -->
+  <div *ngIf="showMaintenanceModal" class="modal-overlay" (click)="closeMaintenanceModal()">
+    <div class="modal-content maintenance-modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>
+          <i class="bi bi-tools"></i>
+          Mode Maintenance
+        </h2>
+        <button (click)="closeMaintenanceModal()" class="close-btn">
+          <i class="bi bi-x-lg"></i>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <div class="maintenance-warning" *ngIf="maintenanceData.enabled">
+          <div class="warning-icon">
+            <i class="bi bi-exclamation-triangle-fill"></i>
+          </div>
+          <div class="warning-text">
+            <strong>Attention !</strong>
+            <p>Le mode maintenance est actuellement <strong>ACTIVÉ</strong>. Les utilisateurs (sauf les super-admins) ne peuvent pas accéder à l'application.</p>
+          </div>
+        </div>
+
+        <div class="maintenance-info" *ngIf="!maintenanceData.enabled">
+          <div class="info-icon">
+            <i class="bi bi-info-circle-fill"></i>
+          </div>
+          <div class="info-text">
+            <p>Le mode maintenance est actuellement <strong>DÉSACTIVÉ</strong>. Tous les utilisateurs peuvent accéder normalement à l'application.</p>
+          </div>
+        </div>
+
+        <form>
+          <div class="form-group">
+            <label class="toggle-label">
+              <div class="toggle-header">
+                <span class="toggle-title">
+                  <i class="bi bi-toggle-on"></i>
+                  Activer le mode maintenance
+                </span>
+                <label class="switch">
+                  <input 
+                    type="checkbox"
+                    [(ngModel)]="maintenanceData.enabled"
+                    name="enabled">
+                  <span class="slider"></span>
+                </label>
+              </div>
+              <p class="toggle-description">
+                Lorsque activé, seuls les super-admins pourront accéder à l'application
+              </p>
+            </label>
+          </div>
+
+          <div class="form-group">
+            <label>
+              <i class="bi bi-chat-text"></i>
+              Message de maintenance
+            </label>
+            <textarea 
+              [(ngModel)]="maintenanceData.message" 
+              name="message"
+              class="form-control"
+              rows="4"
+              placeholder="Message qui sera affiché aux utilisateurs"></textarea>
+            <small class="form-text">
+              Ce message sera affiché sur la page de maintenance visible par les utilisateurs
+            </small>
+          </div>
+
+          <div class="form-group">
+            <label>
+              <i class="bi bi-clock"></i>
+              Heure de fin estimée (optionnel)
+            </label>
+            <input 
+              type="time"
+              [(ngModel)]="maintenanceData.end_time" 
+              name="end_time"
+              class="form-control"
+              placeholder="ex: 14:30">
+            <small class="form-text">
+              Laissez vide si vous ne connaissez pas la durée estimée
+            </small>
+          </div>
+        </form>
+      </div>
+
+      <div class="modal-footer">
+        <button 
+          (click)="closeMaintenanceModal()" 
+          class="btn btn-secondary"
+          [disabled]="savingMaintenance">
+          <i class="bi bi-x-circle"></i>
+          Annuler
+        </button>
+        <button 
+          (click)="toggleMaintenance()" 
+          [class]="maintenanceData.enabled ? 'btn btn-warning' : 'btn btn-success'"
+          [disabled]="savingMaintenance">
+          <span *ngIf="savingMaintenance" class="spinner-border spinner-border-sm me-2"></span>
+          <i *ngIf="!savingMaintenance" [class]="maintenanceData.enabled ? 'bi bi-exclamation-triangle' : 'bi bi-check-circle'"></i>
+          {{ savingMaintenance ? 'Enregistrement...' : (maintenanceData.enabled ? 'Activer la Maintenance' : 'Désactiver la Maintenance') }}
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

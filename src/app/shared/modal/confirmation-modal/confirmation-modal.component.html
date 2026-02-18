@@ -1,0 +1,41 @@
+<!-- src/app/shared/modal/confirmation-modal/confirmation-modal.component.html -->
+<div class="confirmation-modal" [class.show]="modal.show" [style.display]="modal.show ? 'block' : 'none'">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header" [ngClass]="'modal-header-' + modal.type">
+        <div class="modal-icon">
+          <i [class]="getIcon()"></i>
+        </div>
+        <h5 class="modal-title">{{ modal.title }}</h5>
+      </div>
+      
+      <div class="modal-body">
+        <p>{{ modal.message }}</p>
+      </div>
+      
+      <div class="modal-footer">
+        <button 
+          type="button" 
+          class="btn btn-secondary" 
+          (click)="cancel()">
+          <i class="bi bi-x-lg"></i>
+          {{ modal.cancelText }}
+        </button>
+        <button 
+          type="button" 
+          class="btn"
+          [ngClass]="{
+            'btn-primary': modal.type === 'info',
+            'btn-warning': modal.type === 'warning',
+            'btn-danger': modal.type === 'danger',
+            'btn-success': modal.type === 'success'
+          }"
+          (click)="confirm()">
+          <i class="bi bi-check-lg"></i>
+          {{ modal.confirmText }}
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="modal-backdrop fade" [class.show]="modal.show" *ngIf="modal.show"></div>

@@ -1,0 +1,317 @@
+.login-container {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  display: flex;
+  align-items: center;
+  padding: 40px 0;
+}
+
+.login-card {
+  background: white;
+  border-radius: 20px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  overflow: hidden;
+  animation: slideIn 0.5s ease-out;
+  max-width: 450px;
+  margin: 0 auto;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.card-header-login {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 50px 30px;
+  text-align: center;
+
+  i {
+    font-size: 4.5rem;
+    margin-bottom: 20px;
+    display: block;
+    animation: fadeInDown 0.8s ease-out;
+  }
+
+  h2 {
+    margin: 0 0 10px 0;
+    font-weight: 700;
+    font-size: 2.2rem;
+  }
+
+  p {
+    margin: 0;
+    opacity: 0.9;
+    font-size: 1.1rem;
+  }
+}
+
+@keyframes fadeInDown {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.card-body-login {
+  padding: 40px 30px;
+}
+
+.form-label {
+  font-weight: 600;
+  color: #495057;
+  margin-bottom: 8px;
+}
+
+.form-control {
+  border: 2px solid #e9ecef;
+  border-radius: 10px;
+  padding: 12px 15px;
+  font-size: 1rem;
+  transition: all 0.3s ease;
+
+  &:focus {
+    border-color: #667eea;
+    box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+  }
+
+  &.is-invalid {
+    border-color: #dc3545;
+
+    &:focus {
+      box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25);
+    }
+  }
+}
+
+.input-group {
+  .input-group-text {
+    background: #f8f9fa;
+    border: 2px solid #e9ecef;
+    border-right: none;
+    border-radius: 10px 0 0 10px;
+    color: #667eea;
+    font-size: 1.2rem;
+  }
+
+  .form-control {
+    border-left: none;
+    border-radius: 0 10px 10px 0;
+
+    &:focus {
+      border-left: 2px solid #667eea;
+    }
+  }
+}
+
+.error-message {
+  background: #fee;
+  border-left: 4px solid #e53e3e;
+  padding: 15px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  animation: shake 0.3s ease-in-out;
+
+  i {
+    color: #e53e3e;
+    font-size: 20px;
+    flex-shrink: 0;
+  }
+
+  span {
+    color: #c53030;
+    font-size: 14px;
+    line-height: 1.5;
+  }
+}
+
+// @keyframes shake {
+//   0%, 100% { transform: translateX(0); }
+//   25% { transform: translateX(-10px); }
+//   75% { transform: translateX(10px); }
+// }
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+  20%, 40%, 60%, 80% { transform: translateX(5px); }
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border: none;
+  border-radius: 10px;
+  padding: 15px;
+  font-weight: 600;
+  font-size: 1.1rem;
+  transition: all 0.3s ease;
+
+  &:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 25px rgba(102, 126, 234, 0.4);
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+
+  i {
+    margin-right: 8px;
+  }
+}
+
+.login-footer {
+  margin-top: 30px;
+  text-align: center;
+  padding-top: 30px;
+  border-top: 2px solid #f8f9fa;
+
+  p {
+    color: #6c757d;
+    margin-bottom: 15px;
+    font-size: 1.05rem;
+  }
+
+  .btn-outline-primary {
+    border: 2px solid #667eea;
+    color: #667eea;
+    border-radius: 10px;
+    padding: 12px 30px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+
+    &:hover {
+      background: #667eea;
+      color: white;
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
+    }
+
+    i {
+      margin-right: 8px;
+    }
+  }
+}
+
+.invalid-feedback {
+  display: block;
+  margin-top: 5px;
+  font-size: 0.875rem;
+  color: #dc3545;
+}
+
+// Responsive
+@media (max-width: 768px) {
+  .login-container {
+    padding: 20px;
+  }
+
+  .card-header-login {
+    padding: 40px 20px;
+
+    i {
+      font-size: 3.5rem;
+    }
+
+    h2 {
+      font-size: 1.8rem;
+    }
+
+    p {
+      font-size: 1rem;
+    }
+  }
+
+  .card-body-login {
+    padding: 30px 20px;
+  }
+}
+
+// Styles pour le champ mot de passe avec icône et bouton de visibilité
+.input-wrapper {
+  position: relative;
+
+  > i {
+    position: absolute;
+    left: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #a0aec0;
+    font-size: 1.1rem;
+    z-index: 1;
+  }
+
+  .form-control {
+    width: 100%;
+    padding: 12px 3.5rem 12px 3rem;
+    border: 2px solid #e9ecef;
+    border-radius: 10px;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+
+    &:focus {
+      outline: none;
+      border-color: #667eea;
+      box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.1);
+    }
+
+    &.is-invalid {
+      border-color: #f56565;
+    }
+
+    &::placeholder {
+      color: #cbd5e0;
+    }
+  }
+
+  .toggle-password {
+    position: absolute;
+    right: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    background: transparent;
+    border: none;
+    color: #a0aec0;
+    font-size: 1.1rem;
+    cursor: pointer;
+    padding: 0.25rem;
+    transition: color 0.3s ease;
+    z-index: 1;
+
+    &:hover {
+      color: #667eea;
+    }
+  }
+}
+
+// Ajustements pour le responsive
+@media (max-width: 768px) {
+  .input-wrapper {
+    .form-control {
+      padding: 12px 3rem 12px 2.5rem;
+    }
+
+    > i {
+      left: 0.8rem;
+    }
+
+    .toggle-password {
+      right: 0.8rem;
+    }
+  }
+}

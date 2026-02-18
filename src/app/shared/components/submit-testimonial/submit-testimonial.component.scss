@@ -1,0 +1,418 @@
+// ==========================================
+// SUBMIT TESTIMONIAL COMPONENT STYLES
+// ==========================================
+
+.submit-testimonial-container {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 1rem;
+}
+
+// ==========================================
+// LOADING STATE
+// ==========================================
+
+.loading-state {
+  text-align: center;
+  padding: 4rem 2rem;
+  
+  .spinner-border {
+    width: 3rem;
+    height: 3rem;
+  }
+}
+
+// ==========================================
+// ELIGIBILITY ERROR
+// ==========================================
+
+.eligibility-error {
+  .requirements-card {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border-radius: 12px;
+    padding: 2rem;
+    margin-top: 1.5rem;
+    
+    h5 {
+      color: #495057;
+      margin-bottom: 1.5rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      
+      i {
+        color: #667eea;
+      }
+    }
+  }
+  
+  .requirement-item {
+    display: flex;
+    gap: 1rem;
+    padding: 1rem;
+    background: white;
+    border-radius: 8px;
+    margin-bottom: 1rem;
+    border-left: 3px solid #e9ecef;
+    transition: all 0.3s ease;
+    
+    &.met {
+      border-left-color: #28a745;
+    }
+    
+    .requirement-icon {
+      font-size: 1.5rem;
+      
+      i {
+        transition: all 0.3s ease;
+      }
+    }
+    
+    .requirement-text {
+      flex: 1;
+      
+      strong {
+        display: block;
+        margin-bottom: 0.25rem;
+        color: #212529;
+      }
+      
+      p {
+        color: #6c757d;
+        font-size: 0.9rem;
+      }
+    }
+  }
+}
+
+// ==========================================
+// TESTIMONIAL APPROVED
+// ==========================================
+
+.testimonial-approved {
+  .testimonial-display-card {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border-radius: 12px;
+    padding: 2rem;
+    margin-top: 1.5rem;
+    
+    .testimonial-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1.5rem;
+      
+      .stars {
+        font-size: 1.3rem;
+        
+        i {
+          margin-right: 0.2rem;
+        }
+      }
+      
+      .rating-value {
+        font-weight: 700;
+        color: #495057;
+        font-size: 1.1rem;
+      }
+      
+      .badge {
+        font-size: 0.9rem;
+        padding: 0.5rem 1rem;
+      }
+    }
+    
+    .testimonial-content {
+      background: white;
+      border-radius: 8px;
+      padding: 1.5rem;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+      
+      .testimonial-text {
+        font-size: 1.05rem;
+        line-height: 1.6;
+        color: #212529;
+        font-style: italic;
+        margin-bottom: 1rem;
+      }
+      
+      .testimonial-footer {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding-top: 1rem;
+        border-top: 1px solid #e9ecef;
+        
+        .author {
+          font-weight: 600;
+          color: #667eea;
+        }
+        
+        .date {
+          color: #6c757d;
+          font-size: 0.9rem;
+        }
+      }
+    }
+  }
+}
+
+// ==========================================
+// TESTIMONIAL FORM
+// ==========================================
+
+.testimonial-form {
+  .guidelines-card {
+    background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+    
+    h5 {
+      color: #1976d2;
+      margin-bottom: 1rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    
+    ul {
+      margin: 0;
+      padding-left: 1.5rem;
+      
+      li {
+        color: #0d47a1;
+        margin-bottom: 0.5rem;
+        
+        &:last-child {
+          margin-bottom: 0;
+        }
+      }
+    }
+  }
+  
+  // Rating Selector
+  .rating-selector {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    
+    .star-btn {
+      background: none;
+      border: none;
+      padding: 0;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      
+      i {
+        font-size: 2rem;
+        transition: all 0.2s ease;
+      }
+      
+      &:hover i {
+        transform: scale(1.2);
+      }
+      
+      &:focus {
+        outline: none;
+      }
+    }
+    
+    .rating-label {
+      margin-left: 1rem;
+      font-weight: 700;
+      font-size: 1.2rem;
+      color: #667eea;
+    }
+  }
+  
+  // Character Counter
+  .char-counter {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 0.5rem;
+    font-size: 0.9rem;
+    font-weight: 500;
+    
+    i {
+      font-size: 1rem;
+    }
+    
+    &.text-danger i {
+      color: #dc3545;
+    }
+    
+    &.text-success i {
+      color: #28a745;
+    }
+    
+    &.text-warning i {
+      color: #ffc107;
+    }
+  }
+  
+  // Form Controls
+  .form-control {
+    border-radius: 8px;
+    border: 2px solid #e9ecef;
+    transition: all 0.3s ease;
+    
+    &:focus {
+      border-color: #667eea;
+      box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.15);
+    }
+    
+    &.is-valid {
+      border-color: #28a745;
+      
+      &:focus {
+        box-shadow: 0 0 0 0.2rem rgba(40, 167, 69, 0.15);
+      }
+    }
+    
+    &.is-invalid {
+      border-color: #dc3545;
+      
+      &:focus {
+        box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.15);
+      }
+    }
+  }
+  
+  textarea.form-control {
+    resize: vertical;
+    min-height: 150px;
+  }
+  
+  // Form Check
+  .form-check-input {
+    width: 1.5rem;
+    height: 1.5rem;
+    cursor: pointer;
+    
+    &:checked {
+      background-color: #667eea;
+      border-color: #667eea;
+    }
+    
+    &:focus {
+      box-shadow: 0 0 0 0.2rem rgba(102, 126, 234, 0.25);
+    }
+  }
+  
+  .form-check-label {
+    cursor: pointer;
+    margin-left: 0.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  
+  // Submit Button
+  .btn-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border: none;
+    border-radius: 8px;
+    padding: 1rem 2rem;
+    font-weight: 600;
+    font-size: 1.05rem;
+    transition: all 0.3s ease;
+    
+    &:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+    }
+    
+    &:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+    
+    i {
+      margin-right: 0.5rem;
+    }
+  }
+}
+
+// ==========================================
+// INFO BOX
+// ==========================================
+
+.info-box {
+  display: flex;
+  gap: 1rem;
+  padding: 1rem;
+  background: #e7f3ff;
+  border-left: 4px solid #2196f3;
+  border-radius: 8px;
+  margin-top: 1rem;
+  
+  i {
+    color: #2196f3;
+    font-size: 1.3rem;
+    flex-shrink: 0;
+  }
+  
+  p {
+    color: #0d47a1;
+    margin: 0;
+    line-height: 1.5;
+  }
+}
+
+// ==========================================
+// RESPONSIVE
+// ==========================================
+
+@media (max-width: 768px) {
+  .submit-testimonial-container {
+    padding: 0.5rem;
+  }
+  
+  .testimonial-approved {
+    .testimonial-display-card {
+      padding: 1.5rem;
+      
+      .testimonial-header {
+        flex-direction: column;
+        gap: 1rem;
+        align-items: flex-start;
+      }
+    }
+  }
+  
+  .testimonial-form {
+    .rating-selector {
+      flex-wrap: wrap;
+      
+      .star-btn i {
+        font-size: 1.5rem;
+      }
+    }
+    
+    .btn-primary {
+      font-size: 1rem;
+      padding: 0.875rem 1.5rem;
+    }
+  }
+}
+
+@media (max-width: 480px) {
+  .eligibility-error {
+    .requirement-item {
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+  }
+  
+  .testimonial-approved {
+    .testimonial-content {
+      .testimonial-footer {
+        flex-direction: column;
+        gap: 0.5rem;
+        align-items: flex-start;
+      }
+    }
+  }
+}

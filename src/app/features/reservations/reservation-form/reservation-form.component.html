@@ -1,0 +1,194 @@
+<div class="reservation-container">
+  <div class="container">
+    <div class="row justify-content-center">
+      <div class="col-md-10 col-lg-8">
+        <div class="reservation-card">
+          <div class="card-header-reservation">
+            <i class="bi bi-calendar-plus"></i>
+            <h2>Réserver une table</h2>
+            <p class="restaurant-name">{{ restaurant?.name }}</p>
+          </div>
+
+          <div class="card-body-reservation">
+            <!-- Success Message -->
+            <div *ngIf="success" class="success-message">
+              <div class="success-icon">
+                <i class="bi bi-check-circle"></i>
+              </div>
+              <h3>Réservation confirmée !</h3>
+              <p>Nous avons bien reçu votre réservation. Vous recevrez une confirmation par email.</p>
+              <button class="btn btn-primary" (click)="goBack()">
+                <i class="bi bi-house"></i>
+                Retour à l'accueil
+              </button>
+            </div>
+
+            <!-- Reservation Form -->
+            <form [formGroup]="reservationForm" (ngSubmit)="onSubmit()" *ngIf="!success">
+              <div class="row">
+                <!-- Client Information -->
+                <div class="col-md-6 mb-3">
+                  <label for="client_name" class="form-label">
+                    <i class="bi bi-person"></i>
+                    Nom complet *
+                  </label>
+                  <input 
+                    type="text" 
+                    class="form-control" 
+                    id="client_name" 
+                    formControlName="client_name"
+                    placeholder="Votre nom complet"
+                    [class.is-invalid]="reservationForm.get('client_name')?.invalid && reservationForm.get('client_name')?.touched">
+                  <div class="invalid-feedback">Nom requis</div>
+                </div>
+
+                <div class="col-md-6 mb-3">
+                  <label for="client_phone" class="form-label">
+                    <i class="bi bi-telephone"></i>
+                    Téléphone *
+                  </label>
+                  <input 
+                    type="tel" 
+                    class="form-control" 
+                    id="client_phone" 
+                    formControlName="client_phone"
+                    placeholder="+228 90 12 34 56"
+                    [class.is-invalid]="reservationForm.get('client_phone')?.invalid && reservationForm.get('client_phone')?.touched">
+                  <div class="invalid-feedback">Téléphone requis</div>
+                </div>
+
+                <div class="col-12 mb-3">
+                  <label for="client_email" class="form-label">
+                    <i class="bi bi-envelope"></i>
+                    Email (optionnel)
+                  </label>
+                  <input 
+                    type="email" 
+                    class="form-control" 
+                    id="client_email" 
+                    formControlName="client_email"
+                    placeholder="votre@email.com">
+                </div>
+
+                <!-- Reservation Details -->
+                <div class="col-md-6 mb-3">
+                  <label for="reservation_date" class="form-label">
+                    <i class="bi bi-calendar"></i>
+                    Date de réservation *
+                  </label>
+                  <input 
+                    type="date" 
+                    class="form-control" 
+                    id="reservation_date" 
+                    formControlName="reservation_date"
+                    [min]="minDate"
+                    (change)="onDateChange()"
+                    [class.is-invalid]="reservationForm.get('reservation_date')?.invalid && reservationForm.get('reservation_date')?.touched">
+                  <div class="invalid-feedback">Date requise</div>
+                </div>
+
+                <div class="col-md-6 mb-3">
+                  <label for="number_of_people" class="form-label">
+                    <i class="bi bi-people"></i>
+                    Nombre de personnes *
+                  </label>
+                  <select 
+                    class="form-select" 
+                    id="number_of_people" 
+                    formControlName="number_of_people"
+                    [class.is-invalid]="reservationForm.get('number_of_people')?.invalid && reservationForm.get('number_of_people')?.touched">
+                    <option value="">Sélectionner</option>
+                    <option [value]="i" *ngFor="let i of [1,2,3,4,5,6,7,8,9,10]">
+                      {{ i }} personne{{ i > 1 ? 's' : '' }}
+                    </option>
+                  </select>
+                  <div class="invalid-feedback">Nombre de personnes requis</div>
+                </div>
+
+                <div class="col-12 mb-3">
+                  <label for="time_slot" class="form-label">
+                    <i class="bi bi-clock"></i>
+                    Créneau horaire *
+                  </label>
+                  
+                  <div *ngIf="loadingSlots" class="loading-slots">
+                    <div class="spinner-border spinner-border-sm"></div>
+                    <span>Chargement des créneaux disponibles...</span>
+                  </div>
+
+                  <div *ngIf="!loadingSlots && availableSlots.length === 0 && reservationForm.get('reservation_date')?.value" 
+                       class="alert alert-warning">
+                    <i class="bi bi-exclamation-circle"></i>
+                    Aucun créneau disponible pour cette date
+                  </div>
+
+                  <!-- <div *ngIf="!loadingSlots && availableSlots.length > 0" class="time-slots-grid">
+                    <div 
+                      *ngFor="let slot of availableSlots" 
+                      class="time-slot"
+                      [class.selected]="reservationForm.get('time_slot')?.value === slot"
+                      (click)="selectTimeSlot(slot)">
+                      <i class="bi bi-clock"></i>
+                      {{ slot }}
+                    </div>
+                  </div> -->
+
+                  <select 
+                    class="form-select mb-3" 
+                    id="time_slot" 
+                    formControlName="time_slot"
+                    (change)="onTimeSlotChange()"
+                    [class.is-invalid]="reservationForm.get('time_slot')?.invalid && reservationForm.get('time_slot')?.touched">
+                    <option value="">Sélectionner un créneau</option>
+                    <option [value]="slot" *ngFor="let slot of availableSlots">{{ slot }}</option>
+                  </select>
+
+                  <div class="invalid-feedback">
+                    Veuillez sélectionner un créneau horaire
+                  </div>
+
+                  <div class="invalid-feedback d-block" 
+                       *ngIf="reservationForm.get('time_slot')?.invalid && reservationForm.get('time_slot')?.touched">
+                    Créneau horaire requis
+                  </div>
+                </div>
+
+                <div class="col-12 mb-3">
+                  <label for="special_requests" class="form-label">
+                    <i class="bi bi-chat-left-text"></i>
+                    Demandes spéciales (optionnel)
+                  </label>
+                  <textarea 
+                    class="form-control" 
+                    id="special_requests" 
+                    rows="4" 
+                    formControlName="special_requests"
+                    placeholder="Allergie, préférence de table, occasion spéciale..."></textarea>
+                </div>
+              </div>
+
+              <div class="form-actions">
+                <button 
+                  type="button" 
+                  class="btn btn-secondary"
+                  (click)="goBack()"
+                  [disabled]="loading">
+                  <i class="bi bi-x-circle"></i>
+                  Annuler
+                </button>
+                <button 
+                  type="submit" 
+                  class="btn btn-success" 
+                  [disabled]="reservationForm.invalid || loading">
+                  <span *ngIf="loading" class="spinner-border spinner-border-sm me-2"></span>
+                  <i class="bi bi-calendar-check" *ngIf="!loading"></i>
+                  {{ loading ? 'Confirmation...' : 'Confirmer la réservation' }}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

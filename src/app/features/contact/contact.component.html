@@ -1,0 +1,303 @@
+<div class="contact-container">
+  <!-- Hero Section -->
+  <section class="hero-section">
+    <div class="container">
+      <div class="hero-content">
+        <h1 class="hero-title">
+          <i class="bi bi-envelope-fill"></i>
+          Contactez-Nous
+        </h1>
+        <p class="hero-subtitle">
+          Notre équipe est disponible pour répondre à toutes vos questions
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Main Content -->
+  <section class="main-section">
+    <div class="container">
+      <div class="contact-grid">
+        
+        <!-- Contact Form -->
+        <div class="form-section">
+          <div class="form-card">
+            <div class="form-header">
+              <h2>
+                <i class="bi bi-chat-dots-fill"></i>
+                Envoyez-nous un Message
+              </h2>
+              <p>Remplissez le formulaire ci-dessous et nous vous répondrons dans les plus brefs délais</p>
+            </div>
+
+            <!-- Success Message -->
+            <div class="alert alert-success" *ngIf="submitSuccess">
+              <i class="bi bi-check-circle-fill"></i>
+              <div class="alert-content">
+                <h4>Message envoyé avec succès !</h4>
+                <p>Nous avons bien reçu votre message et vous répondrons dans les 24 heures.</p>
+              </div>
+            </div>
+
+            <!-- Error Message -->
+            <div class="alert alert-danger" *ngIf="submitError">
+              <i class="bi bi-exclamation-triangle-fill"></i>
+              <div class="alert-content">
+                <h4>Erreur lors de l'envoi</h4>
+                <p>Une erreur s'est produite. Veuillez réessayer ou nous contacter directement par email.</p>
+              </div>
+            </div>
+
+            <!-- Form -->
+            <form [formGroup]="contactForm" (ngSubmit)="onSubmit()" class="contact-form">
+              
+              <!-- Name Field -->
+              <div class="form-group">
+                <label for="name" class="form-label">
+                  <i class="bi bi-person-fill"></i>
+                  Nom Complet <span class="required">*</span>
+                </label>
+                <input
+                  type="text"
+                  id="name"
+                  formControlName="name"
+                  class="form-control"
+                  [class.is-invalid]="hasError('name')"
+                  [class.is-valid]="f['name'].valid && f['name'].touched"
+                  placeholder="Votre nom complet"
+                >
+                <div class="invalid-feedback" *ngIf="hasError('name')">
+                  {{ getErrorMessage('name') }}
+                </div>
+              </div>
+
+              <!-- Email Field -->
+              <div class="form-group">
+                <label for="email" class="form-label">
+                  <i class="bi bi-envelope-fill"></i>
+                  Email <span class="required">*</span>
+                </label>
+                <input
+                  type="email"
+                  id="email"
+                  formControlName="email"
+                  class="form-control"
+                  [class.is-invalid]="hasError('email')"
+                  [class.is-valid]="f['email'].valid && f['email'].touched"
+                  placeholder="votre.email@exemple.com"
+                >
+                <div class="invalid-feedback" *ngIf="hasError('email')">
+                  {{ getErrorMessage('email') }}
+                </div>
+              </div>
+
+              <!-- Phone Field -->
+              <div class="form-group">
+                <label for="phone" class="form-label">
+                  <i class="bi bi-telephone-fill"></i>
+                  Téléphone <span class="required">*</span>
+                </label>
+                <input
+                  type="tel"
+                  id="phone"
+                  formControlName="phone"
+                  class="form-control"
+                  [class.is-invalid]="hasError('phone')"
+                  [class.is-valid]="f['phone'].valid && f['phone'].touched"
+                  placeholder="+228 90 00 00 00"
+                >
+                <div class="invalid-feedback" *ngIf="hasError('phone')">
+                  {{ getErrorMessage('phone') }}
+                </div>
+              </div>
+
+              <!-- Subject Field -->
+              <div class="form-group">
+                <label for="subject" class="form-label">
+                  <i class="bi bi-tag-fill"></i>
+                  Sujet <span class="required">*</span>
+                </label>
+                <select
+                  id="subject"
+                  formControlName="subject"
+                  class="form-control"
+                  [class.is-invalid]="hasError('subject')"
+                  [class.is-valid]="f['subject'].valid && f['subject'].touched"
+                >
+                  <option value="">Sélectionnez un sujet</option>
+                  <option *ngFor="let subject of subjects" [value]="subject.value">
+                    {{ subject.label }}
+                  </option>
+                </select>
+                <div class="invalid-feedback" *ngIf="hasError('subject')">
+                  {{ getErrorMessage('subject') }}
+                </div>
+              </div>
+
+              <!-- Message Field -->
+              <div class="form-group">
+                <label for="message" class="form-label">
+                  <i class="bi bi-chat-text-fill"></i>
+                  Message <span class="required">*</span>
+                </label>
+                <textarea
+                  id="message"
+                  formControlName="message"
+                  class="form-control"
+                  rows="6"
+                  [class.is-invalid]="hasError('message')"
+                  [class.is-valid]="f['message'].valid && f['message'].touched"
+                  placeholder="Décrivez votre demande en détail..."
+                ></textarea>
+                <div class="invalid-feedback" *ngIf="hasError('message')">
+                  {{ getErrorMessage('message') }}
+                </div>
+                <div class="char-count" *ngIf="f['message'].value">
+                  {{ f['message'].value.length }} caractères
+                </div>
+              </div>
+
+              <!-- Submit Button -->
+              <button 
+                type="submit" 
+                class="btn btn-submit"
+                [disabled]="isSubmitting"
+              >
+                <span *ngIf="!isSubmitting">
+                  <i class="bi bi-send-fill"></i>
+                  Envoyer le Message
+                </span>
+                <span *ngIf="isSubmitting">
+                  <i class="bi bi-arrow-repeat spinner"></i>
+                  Envoi en cours...
+                </span>
+              </button>
+
+            </form>
+          </div>
+        </div>
+
+        <!-- Contact Info -->
+        <div class="info-section">
+          
+          <!-- Contact Cards -->
+          <div class="info-card">
+            <div class="info-icon">
+              <i class="bi bi-geo-alt-fill"></i>
+            </div>
+            <div class="info-content">
+              <h3>Adresse</h3>
+              <p>{{ contactInfo.address }}</p>
+            </div>
+          </div>
+
+          <div class="info-card">
+            <div class="info-icon">
+              <i class="bi bi-telephone-fill"></i>
+            </div>
+            <div class="info-content">
+              <h3>Téléphone</h3>
+              <p>
+                <a [href]="'tel:' + contactInfo.phone">{{ contactInfo.phone }}</a>
+              </p>
+            </div>
+          </div>
+
+          <div class="info-card">
+            <div class="info-icon">
+              <i class="bi bi-envelope-fill"></i>
+            </div>
+            <div class="info-content">
+              <h3>Email</h3>
+              <p>
+                <a [href]="'mailto:' + contactInfo.email">{{ contactInfo.email }}</a>
+              </p>
+            </div>
+          </div>
+
+          <div class="info-card">
+            <div class="info-icon">
+              <i class="bi bi-clock-fill"></i>
+            </div>
+            <div class="info-content">
+              <h3>Horaires</h3>
+              <p>{{ contactInfo.hours }}</p>
+            </div>
+          </div>
+
+          <!-- Social Links -->
+          <div class="social-card">
+            <h3>Suivez-nous</h3>
+            <div class="social-links">
+              <a href="https://facebook.com" target="_blank" rel="noopener noreferrer" class="social-link facebook">
+                <i class="bi bi-facebook"></i>
+              </a>
+              <a href="https://tiktok.com" target="_blank" rel="noopener noreferrer" class="social-link tiktok">
+                <i class="bi bi-tiktok"></i>
+              </a>
+              <a href="https://instagram.com" target="_blank" rel="noopener noreferrer" class="social-link instagram">
+                <i class="bi bi-instagram"></i>
+              </a>
+              <a href="https://linkedin.com" target="_blank" rel="noopener noreferrer" class="social-link linkedin">
+                <i class="bi bi-linkedin"></i>
+              </a>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- Quick FAQ Section -->
+  <section class="quick-faq-section">
+    <div class="container">
+      <div class="section-header">
+        <h2>
+          <i class="bi bi-question-circle-fill"></i>
+          Questions Fréquentes
+        </h2>
+        <p>Peut-être que votre réponse se trouve ici</p>
+      </div>
+
+      <div class="faq-grid">
+        <div *ngFor="let faq of quickFaqs" class="faq-card">
+          <div class="faq-icon">
+            <i class="bi bi-patch-question-fill"></i>
+          </div>
+          <h3>{{ faq.question }}</h3>
+          <p>{{ faq.answer }}</p>
+        </div>
+      </div>
+
+      <div class="faq-cta">
+        <a routerLink="/faq" class="btn btn-primary">
+          <i class="bi bi-question-circle"></i>
+          Voir Toutes les Questions
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Map Section (Optional) -->
+  <section class="map-section">
+    <div class="container">
+      <div class="map-card">
+        <div class="map-header">
+          <h2>
+            <i class="bi bi-map-fill"></i>
+            Notre Localisation
+          </h2>
+          <p>Trouvez-nous facilement à Lomé</p>
+        </div>
+        <div class="map-placeholder">
+          <i class="bi bi-geo-alt-fill"></i>
+          <p>Carte Google Maps</p>
+          <small>Intégration à venir</small>
+          <!-- Vous pouvez intégrer Google Maps ici -->
+        </div>
+      </div>
+    </div>
+  </section>
+</div>

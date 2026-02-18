@@ -1,0 +1,16 @@
+.modal.show {
+      display: block;
+    }
+    .card-header {
+      font-weight: bold;
+    }
+    .modal-body .card:last-child {
+      margin-bottom: 0;
+    }
+    label.small {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 0.25rem;
+      display: block;
+    }

@@ -1,0 +1,1155 @@
+<div class="container-fluid mt-4">
+  <div class="row">
+    <!-- Sidebar -->
+    <div class="col-md-3 col-lg-2">
+      <div class="list-group">
+        <button 
+          class="list-group-item list-group-item-action"
+          [class.active]="activeTab === 'overview'"
+          (click)="activeTab = 'overview'">
+          <i class="bi bi-house"></i> Aperçu
+        </button>
+        <button 
+          class="list-group-item list-group-item-action"
+          [class.active]="activeTab === 'profile'"
+          (click)="activeTab = 'profile'">
+          <i class="bi bi-person-circle"></i> Mon Profil
+        </button>
+        <button 
+          class="list-group-item list-group-item-action"
+          [class.active]="activeTab === 'notifications'"
+          (click)="activeTab = 'notifications'; loadNotifications()">
+          <i class="bi bi-bell"></i> Notifications
+          <span class="badge bg-danger ms-2" *ngIf="unreadCount > 0">{{ unreadCount }}</span>
+        </button>
+        <button 
+          class="list-group-item list-group-item-action"
+          [class.active]="activeTab === 'hours'"
+          (click)="activeTab = 'hours'">
+          <i class="bi bi-clock"></i> Horaires
+        </button>
+        <button 
+          class="list-group-item list-group-item-action"
+          [class.active]="activeTab === 'menus'"
+          (click)="activeTab = 'menus'">
+          <i class="bi bi-list"></i> Menus
+        </button>
+        <button 
+          class="list-group-item list-group-item-action"
+          [class.active]="activeTab === 'orders'"
+          (click)="activeTab = 'orders'; loadOrders()">
+          <i class="bi bi-cart"></i> Commandes
+          <span class="badge bg-primary ms-2" *ngIf="orders.length">{{ orders.length }}</span>
+        </button>
+        <button 
+          class="list-group-item list-group-item-action"
+          [class.active]="activeTab === 'reservations'"
+          (click)="activeTab = 'reservations'; loadReservations()">
+          <i class="bi bi-calendar"></i> Réservations
+          <span class="badge bg-success ms-2" *ngIf="reservations.length">{{ reservations.length }}</span>
+        </button>
+        <button 
+          class="list-group-item list-group-item-action"
+          [class.active]="activeTab === 'subscription'"
+          (click)="activeTab = 'subscription'">
+          <i class="bi bi-credit-card"></i> Abonnement
+        </button>
+        <button 
+          class="list-group-item list-group-item-action"
+          [class.active]="activeTab === 'commissions'"
+          (click)="activeTab = 'commissions'">
+          <i class="bi bi-percent"></i> Commissions
+        </button>
+        <button 
+          class="list-group-item list-group-item-action"
+          [class.active]="activeTab === 'support'"
+          (click)="activeTab = 'support'">
+          <i class="bi bi-headset"></i> Support
+        </button>
+        <button 
+          class="list-group-item list-group-item-action"
+          [class.active]="activeTab === 'branding'"
+          (click)="activeTab = 'branding'">
+          <i class="bi bi-palette"></i> Branding
+          <span class="badge bg-warning ms-2">Premium</span>
+        </button>
+        <button 
+          class="list-group-item list-group-item-action"
+          [class.active]="activeTab === 'reviews'"
+          (click)="activeTab = 'reviews'">
+          <i class="bi bi-star"></i> Avis Clients
+          <span class="badge bg-info ms-2" *ngIf="business?.reviews_count">
+            {{ business?.reviews_count }}
+          </span>
+        </button>
+        <button 
+          class="list-group-item list-group-item-action"
+          [class.active]="activeTab === 'testimonial'"
+          (click)="activeTab = 'testimonial'">
+          <i class="bi bi-chat-quote-fill"></i> Mon Témoignage
+        </button>
+      </div>
+    </div>
+
+    <!-- Main content -->
+    <div class="col-md-9 col-lg-10">
+      <!-- Notification Bell -->
+      <div class="notification-bell-container mb-3">
+        <button class="notification-bell-btn" (click)="toggleNotifications()">
+          <i class="bi bi-bell-fill"></i>
+          <span class="notification-badge" *ngIf="unreadCount > 0">{{ unreadCount }}</span>
+        </button>
+
+        <!-- Notification Dropdown Panel -->
+        <div class="notification-panel" *ngIf="showNotifications">
+          <div class="notification-header">
+            <h5><i class="bi bi-bell"></i> Notifications récentes</h5>
+            <div class="notification-actions">
+              <button class="btn btn-sm btn-link" (click)="markAllNotificationsAsRead()" *ngIf="unreadCount > 0">
+                <i class="bi bi-check-all"></i> Tout lire
+              </button>
+              <button class="btn btn-sm btn-link text-danger" (click)="showNotifications = false">
+                <i class="bi bi-x"></i>
+              </button>
+            </div>
+          </div>
+
+          <div class="notification-body">
+            <div class="notification-list" *ngIf="notifications.length > 0">
+              <div 
+                class="notification-item" 
+                *ngFor="let notification of notifications.slice(0, 5)"
+                [class.unread]="!notification.is_read"
+                (click)="markNotificationAsRead(notification)">
+                <div class="notification-icon" [ngClass]="getNotificationClass(notification.type)">
+                  <i class="bi" [ngClass]="getNotificationIcon(notification.type)"></i>
+                </div>
+                <div class="notification-content">
+                  <div class="notification-title">{{ notification.title }}</div>
+                  <div class="notification-message">{{ notification.message }}</div>
+                  <div class="notification-time">
+                    <i class="bi bi-clock"></i>
+                    {{ notification.created_at | date:'short' }}
+                  </div>
+                </div>
+                <div class="notification-status" *ngIf="!notification.is_read">
+                  <span class="unread-dot"></span>
+                </div>
+              </div>
+            </div>
+
+            <div class="notification-empty" *ngIf="notifications.length === 0">
+              <i class="bi bi-bell-slash"></i>
+              <p>Aucune notification</p>
+            </div>
+          </div>
+
+          <div class="notification-footer">
+            <button class="btn btn-sm btn-outline-primary w-100" (click)="activeTab = 'notifications'; showNotifications = false">
+              <i class="bi bi-list"></i> Voir toutes les notifications
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Overview Tab -->
+      <div *ngIf="activeTab === 'overview'">
+        <h2>Dashboard Restaurant - {{ business?.name }}</h2>
+        
+        <div class="row mb-4">
+          <div class="col-md-3">
+            <div class="card bg-primary text-white">
+              <div class="card-body">
+                <h5 class="card-title">
+                  <i class="bi bi-cart"></i> Commandes
+                </h5>
+                <h3>{{ orderStats.total || 0 | number:'1.0-0' }}</h3>
+                <small>Total aujourd'hui</small>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="card bg-success text-white">
+              <div class="card-body">
+                <h5 class="card-title">
+                  <i class="bi bi-calendar-check"></i> Réservations
+                </h5>
+                <h3>{{ reservationStats.total || 0 }}</h3>
+                <small>Total aujourd'hui</small>
+                <!-- ✅ Indicateur de limite -->
+                <div class="mt-2" *ngIf="subscriptionLimits && subscriptionLimits.max_reservations_per_month !== null">
+                  <small class="d-block">
+                    {{ subscriptionLimits.current_reservations }}/{{ subscriptionLimits.max_reservations_per_month }} ce mois
+                  </small>
+                  <div class="progress" style="height: 5px;">
+                    <div class="progress-bar" 
+                         [ngClass]="(subscriptionLimits.current_reservations / subscriptionLimits.max_reservations_per_month * 100) >= 90 ? 'bg-danger' : 'bg-white'"
+                         [style.width.%]="(subscriptionLimits.current_reservations / subscriptionLimits.max_reservations_per_month * 100)">
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="card bg-info text-white">
+              <div class="card-body">
+                <h5 class="card-title">
+                  <i class="bi bi-currency-exchange"></i> Revenus
+                </h5>
+                <h3>{{ orderStats.revenue || 0 }} FCFA</h3>
+                <small>Aujourd'hui</small>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-3">
+            <div class="card" [ngClass]="isOpen ? 'bg-success text-white' : 'bg-danger text-white'">
+              <div class="card-body">
+                <h5 class="card-title">
+                  <i class="bi bi-clock"></i> Statut
+                </h5>
+                <h3>{{ isOpen ? 'Ouvert' : 'Fermé' }}</h3>
+                <small>{{ business?.opening_hour }} - {{ business?.closing_hour }}</small>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ✅ Statistiques d'utilisation de l'abonnement -->
+        <div class="card mb-4" *ngIf="subscriptionLimits">
+          <div class="card-header bg-light">
+            <h5 class="mb-0">
+              <i class="bi bi-graph-up"></i> Utilisation de votre abonnement
+            </h5>
+          </div>
+          <div class="card-body">
+            <div class="row">
+              <!-- Articles de menu -->
+              <div class="col-md-6 mb-3">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                  <span><i class="bi bi-list"></i> Articles de menu</span>
+                  <span class="fw-bold">
+                    {{ subscriptionLimits.current_menu_items }}
+                    <span *ngIf="subscriptionLimits.max_menu_items !== null">
+                      / {{ subscriptionLimits.max_menu_items }}
+                    </span>
+                    <span *ngIf="subscriptionLimits.max_menu_items === null" class="text-success">
+                      / Illimité
+                    </span>
+                  </span>
+                </div>
+                <div class="progress" *ngIf="subscriptionLimits.max_menu_items !== null">
+                  <div class="progress-bar" 
+                       [ngClass]="(subscriptionLimits.current_menu_items / subscriptionLimits.max_menu_items * 100) >= 90 ? 'bg-danger' : 
+                                  (subscriptionLimits.current_menu_items / subscriptionLimits.max_menu_items * 100) >= 70 ? 'bg-warning' : 'bg-success'"
+                       [style.width.%]="(subscriptionLimits.current_menu_items / subscriptionLimits.max_menu_items * 100) > 100 ? 100 : (subscriptionLimits.current_menu_items / subscriptionLimits.max_menu_items * 100)">
+                  </div>
+                </div>
+              </div>
+
+              <!-- Réservations mensuelles -->
+              <div class="col-md-6 mb-3">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                  <span><i class="bi bi-calendar"></i> Réservations ce mois</span>
+                  <span class="fw-bold">
+                    {{ subscriptionLimits.current_reservations }}
+                    <span *ngIf="subscriptionLimits.max_reservations_per_month !== null">
+                      / {{ subscriptionLimits.max_reservations_per_month }}
+                    </span>
+                    <span *ngIf="subscriptionLimits.max_reservations_per_month === null" class="text-success">
+                      / Illimité
+                    </span>
+                  </span>
+                </div>
+                <div class="progress" *ngIf="subscriptionLimits.max_reservations_per_month !== null">
+                  <div class="progress-bar" 
+                       [ngClass]="(subscriptionLimits.current_reservations / subscriptionLimits.max_reservations_per_month * 100) >= 90 ? 'bg-danger' : 
+                                  (subscriptionLimits.current_reservations / subscriptionLimits.max_reservations_per_month * 100) >= 70 ? 'bg-warning' : 'bg-success'"
+                       [style.width.%]="(subscriptionLimits.current_reservations / subscriptionLimits.max_reservations_per_month * 100) > 100 ? 100 : (subscriptionLimits.current_reservations / subscriptionLimits.max_reservations_per_month * 100)">
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="text-center mt-3">
+              <button class="btn btn-outline-primary" (click)="navigateToSubscription()">
+                <i class="bi bi-credit-card"></i> Gérer mon abonnement
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Profile Tab -->
+      <div *ngIf="activeTab === 'profile'">
+        <h3><i class="bi bi-person-circle"></i> Mon Profil Restaurant</h3>
+        
+        <!-- Informations personnelles -->
+        <div class="card mb-4">
+          <div class="card-header bg-primary text-white">
+            <h5 class="mb-0"><i class="bi bi-person"></i> Informations personnelles</h5>
+          </div>
+          <div class="card-body">
+            <form [formGroup]="profileForm" (ngSubmit)="updateProfile()">
+              <div class="row">
+                <div class="col-md-6 mb-3">
+                  <label for="first_name" class="form-label">Prénom *</label>
+                  <input 
+                    type="text" 
+                    class="form-control" 
+                    id="first_name" 
+                    formControlName="first_name"
+                    [class.is-invalid]="profileForm.get('first_name')?.invalid && profileForm.get('first_name')?.touched">
+                  <div class="invalid-feedback">Le prénom est requis</div>
+                </div>
+                <div class="col-md-6 mb-3">
+                  <label for="last_name" class="form-label">Nom *</label>
+                  <input 
+                    type="text" 
+                    class="form-control" 
+                    id="last_name" 
+                    formControlName="last_name"
+                    [class.is-invalid]="profileForm.get('last_name')?.invalid && profileForm.get('last_name')?.touched">
+                  <div class="invalid-feedback">Le nom est requis</div>
+                </div>
+              </div>
+
+              <div class="row">
+                <div class="col-md-6 mb-3">
+                  <label for="email" class="form-label">Email</label>
+                  <input 
+                    type="email" 
+                    class="form-control" 
+                    id="email" 
+                    formControlName="email">
+                  <small class="text-muted">L'email ne peut pas être modifié</small>
+                </div>
+                <div class="col-md-6 mb-3">
+                  <label for="phone" class="form-label">Téléphone</label>
+                  <input 
+                    type="tel" 
+                    class="form-control" 
+                    id="phone" 
+                    formControlName="phone"
+                    placeholder="+228 90 12 34 56">
+                </div>
+              </div>
+
+              <div class="d-flex gap-2">
+                <button 
+                  type="submit" 
+                  class="btn btn-primary"
+                  [disabled]="profileLoading || profileForm.invalid">
+                  <span *ngIf="profileLoading" class="spinner-border spinner-border-sm me-2"></span>
+                  <i class="bi bi-save" *ngIf="!profileLoading"></i>
+                  Enregistrer les modifications
+                </button>
+                <button 
+                  type="button" 
+                  class="btn btn-outline-secondary"
+                  (click)="openPasswordModal()">
+                  <i class="bi bi-key"></i>
+                  Changer le mot de passe
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+
+        <!-- Informations du restaurant -->
+        <div class="card">
+          <div class="card-header bg-success text-white">
+            <h5 class="mb-0"><i class="bi bi-building"></i> Informations du restaurant</h5>
+          </div>
+          <div class="card-body">
+            <form [formGroup]="businessForm" (ngSubmit)="updateBusiness()">
+              <div class="mb-3">
+                <label for="business_name" class="form-label">Nom du restaurant *</label>
+                <input 
+                  type="text" 
+                  class="form-control" 
+                  id="business_name" 
+                  formControlName="name"
+                  [class.is-invalid]="businessForm.get('name')?.invalid && businessForm.get('name')?.touched">
+                <div class="invalid-feedback">Le nom du restaurant est requis</div>
+              </div>
+
+              <div class="mb-3">
+                <label for="business_description" class="form-label">Description</label>
+                <textarea 
+                  class="form-control" 
+                  id="business_description" 
+                  formControlName="description"
+                  rows="4"
+                  placeholder="Décrivez votre restaurant, votre spécialité, votre ambiance..."></textarea>
+                <small class="text-muted">Cette description sera visible par vos clients</small>
+              </div>
+
+              <div class="row">
+                <div class="col-md-6 mb-3">
+                  <label for="business_address" class="form-label">Adresse</label>
+                  <input 
+                    type="text" 
+                    class="form-control" 
+                    id="business_address" 
+                    formControlName="address"
+                    placeholder="123 Rue Exemple, Lomé">
+                </div>
+                <div class="col-md-6 mb-3">
+                  <label for="business_phone" class="form-label">Téléphone du restaurant</label>
+                  <input 
+                    type="tel" 
+                    class="form-control" 
+                    id="business_phone" 
+                    formControlName="phone"
+                    placeholder="+228 22 12 34 56">
+                </div>
+              </div>
+
+              <button 
+                type="submit" 
+                class="btn btn-success"
+                [disabled]="businessLoading || businessForm.invalid">
+                <span *ngIf="businessLoading" class="spinner-border spinner-border-sm me-2"></span>
+                <i class="bi bi-save" *ngIf="!businessLoading"></i>
+                Enregistrer les modifications
+              </button>
+            </form>
+          </div>
+        </div>
+      </div>
+
+      <!-- Notifications Tab -->
+      <div *ngIf="activeTab === 'notifications'">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <h3><i class="bi bi-bell"></i> Toutes les notifications</h3>
+          <button class="btn btn-outline-primary" (click)="markAllNotificationsAsRead()" *ngIf="unreadCount > 0">
+            <i class="bi bi-check-all"></i> Tout marquer comme lu
+          </button>
+        </div>
+
+        <div class="notifications-container">
+          <div 
+            class="notification-card" 
+            *ngFor="let notification of notifications"
+            [class.unread]="!notification.is_read"
+            (click)="markNotificationAsRead(notification)">
+            <div class="notification-card-icon" [ngClass]="getNotificationClass(notification.type)">
+              <i class="bi" [ngClass]="getNotificationIcon(notification.type)"></i>
+            </div>
+            <div class="notification-card-content">
+              <div class="notification-card-header">
+                <h5>{{ notification.title }}</h5>
+                <span class="notification-card-time">
+                  <i class="bi bi-clock"></i>
+                  {{ notification.created_at | date:'medium' }}
+                </span>
+              </div>
+              <p class="notification-card-message">{{ notification.message }}</p>
+              <div class="notification-card-footer">
+                <span class="badge" [ngClass]="notification.priority === 'high' || notification.priority === 'urgent' ? 'bg-danger' : notification.priority === 'normal' ? 'bg-primary' : 'bg-secondary'">
+                  {{ notification.priority }}
+                </span>
+                <span class="notification-card-type">
+                  <i class="bi bi-tag"></i> {{ notification.type.replace('_', ' ') }}
+                </span>
+              </div>
+            </div>
+            <div class="notification-card-status" *ngIf="!notification.is_read">
+              <span class="unread-indicator"></span>
+            </div>
+          </div>
+
+          <div class="alert alert-info text-center" *ngIf="notifications.length === 0">
+            <i class="bi bi-bell-slash fs-1"></i>
+            <p class="mb-0 mt-2">Aucune notification pour le moment</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Hours Tab -->
+      <div *ngIf="activeTab === 'hours'">
+        <h3>Gestion des horaires</h3>
+        
+        <div class="card">
+          <div class="card-body">
+            <form [formGroup]="hoursForm" (ngSubmit)="updateHours()">
+              <div class="row">
+                <div class="col-md-6 mb-3">
+                  <label for="opening_hour" class="form-label">Heure d'ouverture *</label>
+                  <input 
+                    type="time" 
+                    class="form-control" 
+                    id="opening_hour" 
+                    formControlName="opening_hour"
+                    [class.is-invalid]="hoursForm.get('opening_hour')?.invalid && hoursForm.get('opening_hour')?.touched">
+                  <div class="invalid-feedback">L'heure d'ouverture est requise</div>
+                </div>
+                <div class="col-md-6 mb-3">
+                  <label for="closing_hour" class="form-label">Heure de fermeture *</label>
+                  <input 
+                    type="time" 
+                    class="form-control" 
+                    id="closing_hour" 
+                    formControlName="closing_hour"
+                    [class.is-invalid]="hoursForm.get('closing_hour')?.invalid && hoursForm.get('closing_hour')?.touched">
+                  <div class="invalid-feedback">L'heure de fermeture est requise</div>
+                </div>
+              </div>
+              
+              <div class="alert alert-info">
+                <i class="bi bi-info-circle"></i>
+                <strong>Note :</strong> Si votre restaurant ferme après minuit, l'heure de fermeture peut être inférieure à l'heure d'ouverture (ex: 22:00 - 02:00).
+              </div>
+
+              <div class="mt-3">
+                <button 
+                  type="submit" 
+                  class="btn btn-primary"
+                  [disabled]="hoursLoading || hoursForm.invalid">
+                  <span *ngIf="hoursLoading" class="spinner-border spinner-border-sm me-2"></span>
+                  <i class="bi bi-clock" *ngIf="!hoursLoading"></i>
+                  Mettre à jour les horaires
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+
+      <!-- Menus Tab -->
+      <div *ngIf="activeTab === 'menus'">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <h3>Gestion des menus</h3>
+          <button class="btn btn-primary" (click)="showCreateMenuModal()" [disabled]="!canAddMenuItem()">
+            <i class="bi bi-plus"></i> Nouveau menu
+          </button>
+        </div>
+        
+        <div class="row">
+          <div class="col-12" *ngIf="menus.length === 0">
+            <div class="alert alert-info text-center">
+              <i class="bi bi-info-circle"></i>
+              Aucun menu créé. Ajoutez votre premier menu !
+            </div>
+          </div>
+          
+          <div class="col-md-6 mb-4" *ngFor="let menu of menus">
+            <div class="card">
+              <div class="card-header d-flex justify-content-between">
+                <h5>{{ menu.name }}</h5>
+                <div class="btn-group btn-group-sm">
+                  <button class="btn btn-outline-secondary" (click)="editMenu(menu)">
+                    <i class="bi bi-pencil"></i>
+                  </button>
+                  <button class="btn btn-outline-primary" (click)="manageMenuItems(menu)">
+                    <i class="bi bi-list"></i> Items
+                  </button>
+                  <button class="btn btn-outline-danger" (click)="deleteMenu(menu.id!)">
+                    <i class="bi bi-trash"></i>
+                  </button>
+                </div>
+              </div>
+              <div class="card-body">
+                <p>{{ menu.description || 'Pas de description' }}</p>
+                <div class="d-flex justify-content-between">
+                  <span class="badge" [ngClass]="menu.is_active ? 'bg-success' : 'bg-secondary'">
+                    {{ menu.is_active ? 'Actif' : 'Inactif' }}
+                  </span>
+                  <small class="text-muted">{{ menu.items?.length || 0 }} items</small>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Orders Tab -->
+      <div *ngIf="activeTab === 'orders'">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <h3>Commandes</h3>
+          <div class="btn-group" role="group">
+            <input type="radio" class="btn-check" name="orderFilter" id="all" value="" [(ngModel)]="orderFilter" (change)="filterOrders()">
+            <label class="btn btn-outline-primary" for="all">Toutes</label>
+            
+            <input type="radio" class="btn-check" name="orderFilter" id="pending" value="pending" [(ngModel)]="orderFilter" (change)="filterOrders()">
+            <label class="btn btn-outline-warning" for="pending">En attente</label>
+            
+            <input type="radio" class="btn-check" name="orderFilter" id="confirmed" value="confirmed" [(ngModel)]="orderFilter" (change)="filterOrders()">
+            <label class="btn btn-outline-info" for="confirmed">Confirmées</label>
+            
+            <input type="radio" class="btn-check" name="orderFilter" id="ready" value="ready" [(ngModel)]="orderFilter" (change)="filterOrders()">
+            <label class="btn btn-outline-success" for="ready">Prêtes</label>
+          </div>
+        </div>
+        
+        <div class="table-responsive">
+          <table class="table table-striped">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Client</th>
+                <th>Téléphone</th>
+                <th>Total</th>
+                <th>Statut commande</th>
+                <th>Statut paiement</th>
+                <th>Date</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let order of filteredOrders">
+                <td>{{ order.id }}</td>
+                <td>{{ order.client_name }}</td>
+                <td>{{ order.client_phone }}</td>
+                <td>{{ order.total_amount }} FCFA</td>
+                <td>
+                  <span class="badge" [ngClass]="getOrderStatusClass(order.status)">
+                    {{ getOrderStatusLabel(order.status) }}
+                  </span>
+                </td>
+                <td>
+                  <span class="badge" [ngClass]="getPaymentStatusClass(order.payment_status)">
+                    {{ getPaymentStatusLabel(order.payment_status) }}
+                  </span>
+                </td>
+                <td>{{ order.created_at | date:'short' }}</td>
+                <!-- <td>
+                  <div class="btn-group btn-group-sm">
+                    <button class="btn btn-outline-info" (click)="viewOrder(order)">
+                      <i class="bi bi-eye"></i>
+                    </button>
+                    <div class="dropdown">
+                      <button class="btn btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown">
+                        <i class="bi bi-gear"></i>
+                      </button>
+                      <ul class="dropdown-menu">
+                        <li *ngIf="order.status === 'pending'">
+                          <button class="dropdown-item" (click)="updateOrderStatus(order.id!, 'confirmed')">
+                            <i class="bi bi-check-circle text-info"></i> Confirmer
+                          </button>
+                        </li>
+                        <li *ngIf="order.status === 'confirmed'">
+                          <button class="dropdown-item" (click)="updateOrderStatus(order.id!, 'preparing')">
+                            <i class="bi bi-clock text-warning"></i> En préparation
+                          </button>
+                        </li>
+                        <li *ngIf="order.status === 'preparing'">
+                          <button class="dropdown-item" (click)="updateOrderStatus(order.id!, 'ready')">
+                            <i class="bi bi-check-circle text-success"></i> Prête
+                          </button>
+                        </li>
+                        <li *ngIf="order.status === 'ready'">
+                          <button class="dropdown-item" (click)="updateOrderStatus(order.id!, 'delivered')">
+                            <i class="bi bi-truck text-primary"></i> Livrée
+                          </button>
+                        </li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li>
+                          <button class="dropdown-item text-danger" (click)="updateOrderStatus(order.id!, 'cancelled')">
+                            <i class="bi bi-x-circle"></i> Annuler
+                          </button>
+                        </li>
+                      </ul>
+                    </div>
+                  </div>
+                </td> -->
+                <td>
+                  <div class="btn-group btn-group-sm">
+                    <button class="btn btn-outline-info" (click)="viewOrder(order)" title="Voir détails">
+                      <i class="bi bi-eye"></i>
+                    </button>
+                    <!-- Bouton payer (sandbox ou live) - visible si non payée -->
+                    <button
+                      *ngIf="order.payment_status !== 'paid'"
+                      class="btn btn-outline-success"
+                      (click)="openPaymentModal(order)"
+                      title="{{ isSandbox ? 'Payer (sandbox)' : 'Payer via CinetPay' }}">
+                      <i class="bi bi-credit-card"></i>
+                      <span *ngIf="isSandbox" class="ms-1 badge bg-warning text-dark" style="font-size:9px;">Sandbox</span>
+                    </button>
+                    <span *ngIf="order.payment_status === 'paid'" class="badge bg-success align-self-center ms-1">
+                      <i class="bi bi-check-circle"></i> Payé
+                    </span>
+                    <div class="dropdown">
+                      <button class="btn btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown">
+                        <i class="bi bi-gear"></i>
+                      </button>
+                      <ul class="dropdown-menu">
+                        <li *ngIf="order.status === 'pending'">
+                          <button class="dropdown-item" (click)="updateOrderStatus(order.id!, 'confirmed')">
+                            <i class="bi bi-check-circle text-info"></i> Confirmer
+                          </button>
+                        </li>
+                        <li *ngIf="order.status === 'confirmed'">
+                          <button class="dropdown-item" (click)="updateOrderStatus(order.id!, 'preparing')">
+                            <i class="bi bi-clock text-warning"></i> En préparation
+                          </button>
+                        </li>
+                        <li *ngIf="order.status === 'preparing'">
+                          <button class="dropdown-item" (click)="updateOrderStatus(order.id!, 'ready')">
+                            <i class="bi bi-check-circle text-success"></i> Prête
+                          </button>
+                        </li>
+                        <li *ngIf="order.status === 'ready'">
+                          <button class="dropdown-item" (click)="updateOrderStatus(order.id!, 'delivered')">
+                            <i class="bi bi-truck text-primary"></i> Livrée
+                          </button>
+                        </li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li>
+                          <button class="dropdown-item text-danger" (click)="updateOrderStatus(order.id!, 'cancelled')">
+                            <i class="bi bi-x-circle"></i> Annuler
+                          </button>
+                        </li>
+                      </ul>
+                    </div>
+                  </div>
+                </td>
+              </tr>
+              <tr *ngIf="filteredOrders.length === 0">
+                <td colspan="8" class="text-center text-muted">Aucune commande</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Reservations Tab -->
+      <div *ngIf="activeTab === 'reservations'">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <h3>Réservations</h3>
+          <div class="btn-group" role="group">
+            <input type="radio" class="btn-check" name="reservationFilter" id="allRes" value="" [(ngModel)]="reservationFilter" (change)="filterReservations()">
+            <label class="btn btn-outline-primary" for="allRes">Toutes</label>
+            
+            <input type="radio" class="btn-check" name="reservationFilter" id="pendingRes" value="pending" [(ngModel)]="reservationFilter" (change)="filterReservations()">
+            <label class="btn btn-outline-warning" for="pendingRes">En attente</label>
+            
+            <input type="radio" class="btn-check" name="reservationFilter" id="confirmedRes" value="confirmed" [(ngModel)]="reservationFilter" (change)="filterReservations()">
+            <label class="btn btn-outline-success" for="confirmedRes">Confirmées</label>
+          </div>
+        </div>
+
+        <!-- ✅ Message si limite atteinte -->
+        <div class="alert alert-info mb-3" *ngIf="!canAcceptReservation()">
+          <i class="bi bi-info-circle-fill"></i>
+          <strong>Information :</strong> Vous avez atteint la limite de réservations mensuelles de votre plan. 
+          Les nouvelles réservations ne pourront pas être confirmées.
+        </div>
+        
+        <div class="table-responsive">
+          <table class="table table-striped">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Client</th>
+                <th>Téléphone</th>
+                <th>Date</th>
+                <th>Heure</th>
+                <th>Personnes</th>
+                <th>Statut</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let reservation of filteredReservations">
+                <td>{{ reservation.id }}</td>
+                <td>{{ reservation.client_name }}</td>
+                <td>{{ reservation.client_phone }}</td>
+                <td>{{ reservation.reservation_date | date:'shortDate' }}</td>
+                <td>{{ reservation.time_slot }}</td>
+                <td>{{ reservation.number_of_people }}</td>
+                <td>
+                  <span class="badge" [ngClass]="getReservationStatusClass(reservation.status)">
+                    {{ getReservationStatusLabel(reservation.status) }}
+                  </span>
+                </td>
+                <td>
+                  <div class="btn-group btn-group-sm">
+                    <button class="btn btn-outline-info" (click)="viewReservation(reservation)">
+                      <i class="bi bi-eye"></i>
+                    </button>
+                    <button 
+                      *ngIf="reservation.status === 'pending'"
+                      class="btn btn-outline-success" 
+                      (click)="updateReservationStatus(reservation.id!,'confirmed')"
+                      [disabled]="!canAcceptReservation()">
+                      <i class="bi bi-check"></i>
+                    </button>
+                    <button
+                      class="btn btn-outline-danger"
+                      (click)="updateReservationStatus(reservation.id!, 'cancelled')">
+                      <i class="bi bi-x"></i>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+              <tr *ngIf="filteredReservations.length === 0">
+                <td colspan="8" class="text-center text-muted">Aucune réservation</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Subscription Tab -->
+      <div *ngIf="activeTab === 'subscription'" class="tab-pane-custom">
+        <app-subscription-management></app-subscription-management>
+      </div>
+
+      <!-- Commissions Tab -->
+      <div *ngIf="activeTab === 'commissions'" class="tab-pane-custom">
+        <app-commissions-view 
+          [pageTitle]="'Mes Commissions Restaurant'" 
+          [businessType]="'restaurant'">
+        </app-commissions-view>
+      </div>
+
+      <div *ngIf="activeTab === 'support'" class="tab-pane-custom">
+        <app-support-ticket></app-support-ticket>
+      </div>
+
+      <div *ngIf="activeTab === 'branding'" class="tab-pane-custom">
+        <app-branding-setting></app-branding-setting>
+      </div>
+
+      <!-- Reviews Tab -->
+      <div *ngIf="activeTab === 'reviews'">
+        <h3><i class="bi bi-star"></i> Avis Clients</h3>
+        
+        <div class="alert alert-info mb-3">
+          <i class="bi bi-info-circle"></i>
+          <strong>Note moyenne :</strong> {{ business?.average_rating || 0 | number:'1.1-1' }}/5 
+          ({{ business?.reviews_count || 0 }} avis)
+        </div>
+
+        <app-business-reviews 
+          *ngIf="business"
+          [businessId]="business.id!">
+        </app-business-reviews>
+      </div>
+
+      <!-- Testimonial Tab -->
+      <div *ngIf="activeTab === 'testimonial'">
+        <h3><i class="bi bi-chat-quote-fill"></i> Mon Témoignage sur RestoTraiteur</h3>
+        
+        <div class="alert alert-info mb-3">
+          <i class="bi bi-info-circle"></i>
+          Partagez votre expérience en tant que partenaire restaurant de RestoTraiteur.
+          Votre témoignage aidera d'autres restaurateurs à rejoindre notre plateforme !
+        </div>
+
+        <app-submit-testimonial></app-submit-testimonial>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal pour créer/éditer un menu -->
+  <div class="modal" [class.show]="showMenuModal" [style.display]="showMenuModal ? 'block' : 'none'">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">
+            <i class="bi bi-list"></i>
+            {{ editingMenu ? 'Modifier le menu' : 'Nouveau menu' }}
+          </h5>
+          <button type="button" class="btn-close" (click)="closeMenuModal()"></button>
+        </div>
+        <form [formGroup]="menuForm" (ngSubmit)="saveMenu()">
+          <div class="modal-body">
+            <div class="mb-3">
+              <label for="menuName" class="form-label">Nom du menu *</label>
+              <input 
+                type="text" 
+                class="form-control" 
+                id="menuName" 
+                formControlName="name"
+                placeholder="Ex: Menu du jour"
+                [class.is-invalid]="menuForm.get('name')?.invalid && menuForm.get('name')?.touched">
+              <div class="invalid-feedback">Le nom du menu est requis</div>
+            </div>
+            <div class="mb-3">
+              <label for="menuDescription" class="form-label">Description</label>
+              <textarea 
+                class="form-control" 
+                id="menuDescription" 
+                formControlName="description"
+                rows="3"
+                placeholder="Décrivez votre menu..."></textarea>
+            </div>
+            <div class="form-check">
+              <input 
+                class="form-check-input" 
+                type="checkbox" 
+                id="menuActive" 
+                formControlName="is_active">
+              <label class="form-check-label" for="menuActive">
+                Menu actif
+              </label>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" (click)="closeMenuModal()">
+              Annuler
+            </button>
+            <button 
+              type="submit" 
+              class="btn btn-primary"
+              [disabled]="menuForm.invalid || menuLoading">
+              <span *ngIf="menuLoading" class="spinner-border spinner-border-sm me-2"></span>
+              <i class="bi bi-check" *ngIf="!menuLoading"></i>
+              {{ editingMenu ? 'Mettre à jour' : 'Créer' }}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+  <div class="modal-backdrop fade" [class.show]="showMenuModal" *ngIf="showMenuModal"></div>
+
+  <!-- Modal pour changer le mot de passe -->
+  <div class="modal" [class.show]="showPasswordModal" [style.display]="showPasswordModal ? 'block' : 'none'">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">
+            <i class="bi bi-key"></i>
+            Changer le mot de passe
+          </h5>
+          <button type="button" class="btn-close" (click)="closePasswordModal()"></button>
+        </div>
+        <form [formGroup]="passwordForm" (ngSubmit)="changePassword()">
+          <div class="modal-body">
+            <div class="mb-3">
+              <label for="currentPassword" class="form-label">Mot de passe actuel *</label>
+              <input 
+                type="password" 
+                class="form-control" 
+                id="currentPassword" 
+                formControlName="currentPassword"
+                [class.is-invalid]="passwordForm.get('currentPassword')?.invalid && passwordForm.get('currentPassword')?.touched">
+              <div class="invalid-feedback">Le mot de passe actuel est requis</div>
+            </div>
+
+            <div class="mb-3">
+              <label for="newPassword" class="form-label">Nouveau mot de passe *</label>
+              <input 
+                type="password" 
+                class="form-control" 
+                id="newPassword" 
+                formControlName="newPassword"
+                [class.is-invalid]="passwordForm.get('newPassword')?.invalid && passwordForm.get('newPassword')?.touched">
+              <div class="password-requirements mt-2">
+                <small class="text-muted d-block mb-1">
+                  <i class="bi bi-info-circle"></i>
+                  Le mot de passe doit contenir :
+                </small>
+                <ul class="requirement-list">
+                  <li [class.valid]="hasMinLength()">
+                    <i class="bi" [ngClass]="hasMinLength() ? 'bi-check-circle text-success' : 'bi-circle'"></i>
+                    Au moins 8 caractères
+                  </li>
+                  <li [class.valid]="hasUpperCase()">
+                    <i class="bi" [ngClass]="hasUpperCase() ? 'bi-check-circle text-success' : 'bi-circle'"></i>
+                    Une lettre majuscule
+                  </li>
+                  <li [class.valid]="hasLowerCase()">
+                    <i class="bi" [ngClass]="hasLowerCase() ? 'bi-check-circle text-success' : 'bi-circle'"></i>
+                    Une lettre minuscule
+                  </li>
+                  <li [class.valid]="hasNumber()">
+                    <i class="bi" [ngClass]="hasNumber() ? 'bi-check-circle text-success' : 'bi-circle'"></i>
+                    Un chiffre
+                  </li>
+                  <li [class.valid]="hasSpecialChar()">
+                    <i class="bi" [ngClass]="hasSpecialChar() ? 'bi-check-circle text-success' : 'bi-circle'"></i>
+                    Un caractère spécial
+                  </li>
+                </ul>
+              </div>
+            </div>
+
+            <div class="mb-3">
+              <label for="confirmPassword" class="form-label">Confirmer le nouveau mot de passe *</label>
+              <input 
+                type="password" 
+                class="form-control" 
+                id="confirmPassword" 
+                formControlName="confirmPassword"
+                [class.is-invalid]="passwordForm.get('confirmPassword')?.invalid && passwordForm.get('confirmPassword')?.touched">
+              <div class="invalid-feedback" *ngIf="passwordForm.hasError('mismatch') && passwordForm.get('confirmPassword')?.touched">
+                Les mots de passe ne correspondent pas
+              </div>
+              <div class="valid-feedback d-block" *ngIf="!passwordForm.hasError('mismatch') && passwordForm.get('confirmPassword')?.value && passwordForm.get('confirmPassword')?.touched">
+                <i class="bi bi-check-circle"></i> Les mots de passe correspondent
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" (click)="closePasswordModal()">
+              Annuler
+            </button>
+            <button 
+              type="submit" 
+              class="btn btn-primary"
+              [disabled]="passwordForm.invalid || passwordLoading">
+              <span *ngIf="passwordLoading" class="spinner-border spinner-border-sm me-2"></span>
+              <i class="bi bi-check" *ngIf="!passwordLoading"></i>
+              Changer le mot de passe
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+  <div class="modal-backdrop fade" [class.show]="showPasswordModal" *ngIf="showPasswordModal"></div>
+  
+  <!-- Modal Items -->
+  <app-menu-items-modal
+    [menu]="selectedMenuForItems"
+    [show]="showItemsModal"
+    (closed)="closeItemsModal()">
+  </app-menu-items-modal>
+
+  <!-- Modal Détails Réservation -->
+  <app-reservation-details-modal
+    [reservation]="selectedReservation"
+    [show]="showReservationDetailsModal"
+    (closed)="closeReservationDetailsModal()">
+  </app-reservation-details-modal>
+
+  <!-- Modale Paiement -->
+<div class="modal" [class.show]="showPaymentModal" [style.display]="showPaymentModal ? 'block' : 'none'">
+  <div class="modal-dialog">
+    <div class="modal-content">
+
+      <div class="modal-header">
+        <h5 class="modal-title">
+          <i class="bi bi-credit-card me-2"></i>
+          Paiement — Commande #{{ selectedOrderForPayment?.id }}
+        </h5>
+        <button type="button" class="btn-close" (click)="closePaymentModal()"></button>
+      </div>
+
+      <div class="modal-body" *ngIf="selectedOrderForPayment">
+
+        <!-- Badge Sandbox -->
+        <div class="alert alert-warning d-flex align-items-center gap-2 mb-3" *ngIf="isSandbox">
+          <i class="bi bi-shield-fill-check fs-5"></i>
+          <div>
+            <strong>Mode Sandbox</strong> — Le paiement sera accepté immédiatement sans déduction réelle.
+          </div>
+        </div>
+
+        <!-- Récap commande -->
+        <div class="card mb-3 border-0 bg-light">
+          <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center">
+              <div>
+                <strong>{{ selectedOrderForPayment.client_name }}</strong>
+                <br>
+                <small class="text-muted">{{ selectedOrderForPayment.client_phone }}</small>
+              </div>
+              <div class="text-end">
+                <span class="fs-4 fw-bold text-success">
+                  {{ formatMontant(selectedOrderForPayment.total_amount) }} FCFA
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Choix méthode de paiement -->
+        <label class="form-label fw-bold mb-2">
+          <i class="bi bi-credit-card me-1"></i>
+          Méthode de paiement
+        </label>
+
+        <div class="d-flex flex-column gap-2">
+
+          <!-- Mixx By Yas -->
+          <div class="payment-method-card"
+               [ngClass]="{ 'selected-mixx': paymentMethod === 'Mixx By Yas' }"
+               (click)="paymentMethod = 'Mixx By Yas'">
+            <div class="d-flex align-items-center gap-3">
+              <span class="fs-4">📱</span>
+              <div class="flex-grow-1">
+                <strong>Mixx By Yas</strong>
+                <br>
+                <small class="text-muted">T-Money / Flooz via Mixx By Yas</small>
+              </div>
+              <i class="bi bi-check-circle-fill text-primary fs-5"
+                 *ngIf="paymentMethod === 'Mixx By Yas'"></i>
+              <i class="bi bi-circle text-muted fs-5"
+                 *ngIf="paymentMethod !== 'Mixx By Yas'"></i>
+            </div>
+          </div>
+
+          <!-- Flooz -->
+          <div class="payment-method-card"
+               [ngClass]="{ 'selected-flooz': paymentMethod === 'flooz' }"
+               (click)="paymentMethod = 'flooz'">
+            <div class="d-flex align-items-center gap-3">
+              <span class="fs-4">💚</span>
+              <div class="flex-grow-1">
+                <strong>Flooz</strong>
+                <br>
+                <small class="text-muted">Paiement mobile Flooz</small>
+              </div>
+              <i class="bi bi-check-circle-fill text-success fs-5"
+                 *ngIf="paymentMethod === 'flooz'"></i>
+              <i class="bi bi-circle text-muted fs-5"
+                 *ngIf="paymentMethod !== 'flooz'"></i>
+            </div>
+          </div>
+
+          <!-- Carte bancaire -->
+          <div class="payment-method-card"
+               [ngClass]="{ 'selected-card': paymentMethod === 'card' }"
+               (click)="paymentMethod = 'card'">
+            <div class="d-flex align-items-center gap-3">
+              <span class="fs-4">💳</span>
+              <div class="flex-grow-1">
+                <strong>Carte bancaire</strong>
+                <br>
+                <small class="text-muted">Visa / Mastercard via CinetPay</small>
+              </div>
+              <i class="bi bi-check-circle-fill fs-5"
+                 style="color: #6f42c1;"
+                 *ngIf="paymentMethod === 'card'"></i>
+              <i class="bi bi-circle text-muted fs-5"
+                 *ngIf="paymentMethod !== 'card'"></i>
+            </div>
+          </div>
+
+        </div>
+
+      </div><!-- /modal-body -->
+
+      <div class="modal-footer">
+        <button type="button"
+                class="btn btn-outline-secondary"
+                (click)="closePaymentModal()"
+                [disabled]="paymentLoading">
+          Annuler
+        </button>
+        <button type="button"
+                class="btn btn-success px-4"
+                (click)="payOrder()"
+                [disabled]="paymentLoading || !paymentMethod">
+          <span *ngIf="paymentLoading"
+                class="spinner-border spinner-border-sm me-2"
+                role="status"></span>
+          <i class="bi bi-credit-card me-1" *ngIf="!paymentLoading"></i>
+          {{ paymentLoading ? 'Traitement...' : (isSandbox ? 'Valider (Sandbox)' : 'Payer maintenant') }}
+        </button>
+      </div>
+
+    </div>
+  </div>
+</div>
+<!-- Backdrop -->
+<div class="modal-backdrop fade show" *ngIf="showPaymentModal"></div>
+
+</div>

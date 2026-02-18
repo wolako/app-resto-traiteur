@@ -1,0 +1,100 @@
+<!-- admin-login.component.html -->
+<div class="admin-login-container">
+  <div class="admin-login-card">
+    <!-- Logo et titre -->
+    <div class="admin-header">
+      <div class="admin-logo">
+        <i class="fas fa-shield-alt"></i>
+      </div>
+      <h1 class="admin-title">Espace Administrateur</h1>
+      <p class="admin-subtitle">Connectez-vous pour accéder au panneau d'administration</p>
+    </div>
+
+    <!-- Message d'erreur -->
+    <div class="error-message" *ngIf="errorMessage">
+      <i class="fas fa-exclamation-circle"></i>
+      <span>{{ errorMessage }}</span>
+    </div>
+
+    <!-- Formulaire de connexion -->
+    <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" class="admin-login-form">
+      <!-- Champ Email -->
+      <div class="form-group">
+        <label for="email" class="form-label">
+          <i class="fas fa-envelope"></i>
+          Adresse email
+        </label>
+        <input
+          type="email"
+          id="email"
+          formControlName="email"
+          class="form-control"
+          [class.invalid]="isFieldInvalid('email')"
+          placeholder="admin@restaurant.com"
+          autocomplete="username"
+        />
+        <span class="error-text" *ngIf="isFieldInvalid('email')">
+          {{ getErrorMessage('email') }}
+        </span>
+      </div>
+
+      <!-- Champ Mot de passe -->
+      <div class="form-group">
+        <label for="password" class="form-label">
+          <i class="fas fa-lock"></i>
+          Mot de passe
+        </label>
+        <div class="password-input-wrapper">
+          <input
+            [type]="hidePassword ? 'password' : 'text'"
+            id="password"
+            formControlName="password"
+            class="form-control"
+            [class.invalid]="isFieldInvalid('password')"
+            placeholder="••••••••"
+            autocomplete="current-password"
+          />
+          <button
+            type="button"
+            class="toggle-password"
+            (click)="togglePasswordVisibility()"
+            tabindex="-1"
+          >
+            <i [class]="hidePassword ? 'fas fa-eye' : 'fas fa-eye-slash'"></i>
+          </button>
+        </div>
+        <span class="error-text" *ngIf="isFieldInvalid('password')">
+          {{ getErrorMessage('password') }}
+        </span>
+      </div>
+
+      <!-- Bouton de connexion -->
+      <button
+        type="submit"
+        class="btn-submit"
+        [disabled]="loading"
+        [class.loading]="loading"
+      >
+        <span *ngIf="!loading">
+          <i class="fas fa-sign-in-alt"></i>
+          Se connecter
+        </span>
+        <span *ngIf="loading" class="spinner-container">
+          <i class="fas fa-spinner fa-spin"></i>
+          Connexion en cours...
+        </span>
+      </button>
+    </form>
+
+    <!-- Avertissement de sécurité -->
+    <div class="security-warning">
+      <i class="fas fa-info-circle"></i>
+      <p>Cette page est réservée aux administrateurs autorisés. Toute tentative d'accès non autorisée sera enregistrée.</p>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <div class="admin-footer">
+    <p>&copy; 2025 Restaurant Traiteur. Tous droits réservés.</p>
+  </div>
+</div>
