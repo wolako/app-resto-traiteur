@@ -1,0 +1,20 @@
+.pa-admin-container { padding-bottom: 40px; }
+    .detail-block {
+      background: var(--rt-raised);
+      border: 1px solid var(--rt-bdr);
+      border-radius: var(--rt-r);
+      padding: 12px 14px;
+    }
+    .db-label {
+      font-size: .7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .7px;
+      color: var(--rt-t3);
+      margin-bottom: 4px;
+    }
+    .db-val {
+      font-weight: 600;
+      color: var(--rt-t1);
+      font-size: .92rem;
+    }

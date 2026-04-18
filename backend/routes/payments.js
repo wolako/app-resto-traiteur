@@ -27,6 +27,15 @@ router.post(
 );
 
 /**
+ * 🔹 Route publique : Webhook CinetPay pour ACOMPTES commandes spéciales
+ */
+router.post(
+  '/webhook/cinetpay/deposit',
+  webhookLimiter,
+  paymentController.cinetpayDepositWebhook
+);
+
+/**
  * 🔹 Route protégée : Vérifier le statut d’un paiement
  */
 router.get(

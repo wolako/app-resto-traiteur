@@ -1,1331 +1,863 @@
-<div class="caterer-dashboard">
-  <div class="container-fluid">
-    <!-- Header avec notification bell -->
-    <div class="dashboard-header">
-      <div class="d-flex justify-content-between align-items-center">
-        <div>
-          <h2>
-            <i class="bi bi-cake2"></i>
-            Dashboard Traiteur
-          </h2>
-          <p class="text-muted">{{ business?.name }}</p>
-        </div>
-        
-        <!-- Notification Bell -->
-        <div class="notification-bell-container">
-          <button class="notification-bell-btn" (click)="toggleNotifications()">
+<div class="dash-layout">
+
+  <!-- ═══════════════════════════════════════════ -->
+  <!-- SIDEBAR TRAITEUR                             -->
+  <!-- ═══════════════════════════════════════════ -->
+  <aside class="dash-sidebar">
+    <div class="sb-brand">
+      <div class="sb-ico"><i class="bi bi-cake2-fill"></i></div>
+      <div>
+        <div class="sb-title">Espace Traiteur</div>
+        <div class="sb-sub">{{ business?.name }}</div>
+      </div>
+    </div>
+
+    <div class="sb-status" (click)="toggleAvailability()" [title]="business?.is_available ? 'Cliquer pour se rendre indisponible' : 'Cliquer pour se rendre disponible'">
+      <div class="ss-dot" [ngClass]="business?.is_available ? 'green' : 'orange'"></div>
+      <div class="ss-info">
+        <div class="ss-lbl">{{ business?.is_available ? 'Disponible' : 'Indisponible' }}</div>
+        <div class="ss-sub">Cliquer pour changer</div>
+      </div>
+      <i class="bi bi-toggle-on ss-toggle" *ngIf="business?.is_available"></i>
+      <i class="bi bi-toggle-off ss-toggle" *ngIf="!business?.is_available"></i>
+    </div>
+
+    <nav class="sb-nav">
+      <div class="sb-section-label">Tableau de bord</div>
+      <button class="sb-btn" [class.active]="activeTab==='overview'" (click)="activeTab='overview'"><span class="sb-ico-w"><i class="bi bi-speedometer2"></i></span><span class="sb-lbl">Aperçu</span></button>
+
+      <div class="sb-section-label">Activité</div>
+      <button class="sb-btn" [class.active]="activeTab==='orders'" (click)="activeTab='orders'; loadOrders(); markOrdersAsSeen()"><span class="sb-ico-w"><i class="bi bi-cart-check-fill"></i></span><span class="sb-lbl">Commandes</span><span class="sb-badge red" *ngIf="hasNewOrders">{{ orders.length }}</span></button>
+      <button class="sb-btn" [class.active]="activeTab==='special-orders'" (click)="activeTab='special-orders'; loadSpecialOrders()"><span class="sb-ico-w"><i class="bi bi-stars"></i></span><span class="sb-lbl">Cmd Spéciales</span><span class="sb-badge orange" *ngIf="hasNewSpecialOrders">{{ specialOrders.length }}</span></button>
+      <button class="sb-btn" [class.active]="activeTab==='menus'" (click)="activeTab='menus'; loadMenus()"><span class="sb-ico-w"><i class="bi bi-journal-richtext"></i></span><span class="sb-lbl">Menus</span></button>
+
+      <div class="sb-section-label">Réglages</div>
+      <button class="sb-btn" [class.active]="activeTab==='profile'" (click)="activeTab='profile'"><span class="sb-ico-w"><i class="bi bi-person-circle"></i></span><span class="sb-lbl">Mon Profil</span></button>
+      <button class="sb-btn" [class.active]="activeTab==='location'"
+        (click)="activeTab='location'">
+        <span class="sb-ico-w"><i class="bi bi-geo-alt-fill"></i></span>
+        <span class="sb-lbl">Localisation</span>
+        <span class="sb-badge green" *ngIf="hasCoordinates">✓</span>
+      </button>
+      <button class="sb-btn" [class.active]="activeTab==='availability'" (click)="activeTab='availability'"><span class="sb-ico-w"><i class="bi bi-toggle-on"></i></span><span class="sb-lbl">Disponibilité</span></button>
+      <button class="sb-btn" [class.active]="activeTab==='hours'" (click)="activeTab='hours'"><span class="sb-ico-w"><i class="bi bi-clock-fill"></i></span><span class="sb-lbl">Horaires</span></button>
+      <button class="sb-btn" [class.active]="activeTab==='deposit-settings'" (click)="activeTab='deposit-settings'"><span class="sb-ico-w"><i class="bi bi-cash-coin"></i></span><span class="sb-lbl">Acomptes</span><span class="sb-badge blue">{{ getDepositPercentage() }}%</span></button>
+
+      <div class="sb-section-label">Financier</div>
+      <button class="sb-btn"
+        [class.active]="activeTab==='payment-account'"
+        (click)="activeTab='payment-account'">
+        <span class="sb-ico-w"><i class="bi bi-bank"></i></span>
+        <span class="sb-lbl">Compte paiement</span>
+        <span class="sb-badge green"
+          *ngIf="paymentAccountStatus === 'verified'">✓</span>
+        <span class="sb-badge orange"
+          *ngIf="paymentAccountStatus === 'pending_verification'">⏳</span>
+        <span class="sb-badge red"
+          *ngIf="paymentAccountStatus === 'rejected' || paymentAccountStatus === 'suspended'">!</span>
+      </button>
+      <button class="sb-btn" [class.active]="activeTab==='commissions'" (click)="activeTab='commissions'"><span class="sb-ico-w"><i class="bi bi-percent"></i></span><span class="sb-lbl">Commissions</span></button>
+      <button class="sb-btn" [class.active]="activeTab==='subscription'" (click)="activeTab='subscription'"><span class="sb-ico-w"><i class="bi bi-credit-card-2-front-fill"></i></span><span class="sb-lbl">Abonnement</span></button>
+
+      <div class="sb-section-label">Communauté</div>
+      <button class="sb-btn" [class.active]="activeTab==='notifications'" (click)="activeTab='notifications'; loadNotifications()"><span class="sb-ico-w"><i class="bi bi-bell-fill"></i></span><span class="sb-lbl">Notifications</span><span class="sb-badge red" *ngIf="unreadCount > 0">{{ unreadCount }}</span></button>
+      <button class="sb-btn" [class.active]="activeTab==='support'" (click)="activeTab='support'; markSupportAsSeen()"><span class="sb-ico-w"><i class="bi bi-headset"></i></span><span class="sb-lbl">Support</span><span class="sb-badge green" *ngIf="hasNewSupportResponse">!</span></button>
+      <button class="sb-btn" [class.active]="activeTab==='reviews'" (click)="activeTab='reviews'; markReviewsAsSeen()"><span class="sb-ico-w"><i class="bi bi-star-fill"></i></span><span class="sb-lbl">Avis Clients</span><span class="sb-badge orange" *ngIf="hasNewReviews">{{ currentReviewsCount }}</span></button>
+      <button class="sb-btn" [class.active]="activeTab==='testimonial'" (click)="activeTab='testimonial'"><span class="sb-ico-w"><i class="bi bi-chat-quote-fill"></i></span><span class="sb-lbl">Mon Témoignage</span></button>
+      <button class="sb-btn" [class.active]="activeTab==='cover-image'" 
+        (click)="activeTab='cover-image'">
+        <span class="sb-ico-w"><i class="bi bi-house-heart-fill"></i></span>
+        <span class="sb-lbl">Image d'accueil</span>
+        <span class="sb-badge green">Gratuit</span>
+      </button>
+      <button class="sb-btn" [class.active]="activeTab==='branding'" (click)="activeTab='branding'"><span class="sb-ico-w"><i class="bi bi-palette-fill"></i></span><span class="sb-lbl">Branding</span><span class="sb-badge premium">Premium</span></button>
+      <button class="sb-btn" [class.active]="activeTab==='analytics'" (click)="activeTab='analytics'"><span class="sb-ico-w"><i class="bi bi-bar-chart-line-fill"></i></span><span class="sb-lbl">Analytics</span><span class="sb-badge premium" *ngIf="!analyticsAccess">Premium</span></button>
+    </nav>
+
+    <div class="sb-mini-stats">
+      <div class="ms-row"><span><i class="bi bi-cart-check-fill"></i> Commandes</span><span class="ms-val">{{ orderStats.total }}</span></div>
+      <div class="ms-row"><span><i class="bi bi-wallet2"></i> Net aujourd'hui</span><span class="ms-val">{{ orderStats.netRevenue | number:'1.0-0' }}</span></div>
+    </div>
+  </aside>
+
+  <!-- ═══════════════════════════════════════════ -->
+  <!-- MAIN                                         -->
+  <!-- ═══════════════════════════════════════════ -->
+  <div class="dash-main">
+
+    <!-- Header page -->
+    <div class="dash-head">
+      <div class="dh-left">
+        <h2 class="pg-title"><i class="bi bi-cake2" style="color:var(--rt-green);margin-right:8px;"></i>Dashboard Traiteur</h2>
+        <p class="pg-sub">{{ business?.name }} · Bienvenue, {{ currentUser?.first_name }}</p>
+      </div>
+      <div class="dh-right">
+        <!-- ✅ Cloche notification — masquée sur mobile (bottom nav l'a déjà) -->
+        <div style="position:relative;" class="d-none d-md-block">
+          <button class="btn-ghost-d sm" (click)="toggleNotifications()" style="position:relative;">
             <i class="bi bi-bell-fill"></i>
-            <span class="notification-badge" *ngIf="unreadCount > 0">{{ unreadCount }}</span>
+            <span *ngIf="unreadCount > 0" style="position:absolute;top:-4px;right:-4px;background:var(--rt-primary);color:#fff;font-size:.52rem;font-weight:700;padding:1px 5px;border-radius:8px;border:2px solid var(--rt-sfc);">{{ unreadCount }}</span>
           </button>
-
-          <!-- Notification Dropdown Panel -->
-          <div class="notification-panel" *ngIf="showNotifications">
-            <div class="notification-header">
-              <h5><i class="bi bi-bell"></i> Notifications récentes</h5>
-              <div class="notification-actions">
-                <button class="btn btn-sm btn-link" (click)="markAllNotificationsAsRead()" *ngIf="unreadCount > 0">
-                  <i class="bi bi-check-all"></i> Tout lire
-                </button>
-                <button class="btn btn-sm btn-link text-danger" (click)="showNotifications = false">
-                  <i class="bi bi-x"></i>
-                </button>
+          <!-- Panneau notifications dropdown -->
+          <div *ngIf="showNotifications" style="position:absolute;right:0;top:calc(100% + 8px);width:320px;background:var(--rt-sfc);border:1px solid var(--rt-bdr);border-radius:var(--rt-rl);box-shadow:var(--shadow-xl);z-index:9999;overflow:hidden;">
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:var(--rt-raised);border-bottom:1px solid var(--rt-bdr);">
+              <span style="font-family:'Playfair Display',serif;font-size:.9rem;font-weight:700;color:var(--rt-t1);"><i class="bi bi-bell" style="color:var(--rt-green);"></i> Notifications</span>
+              <div style="display:flex;gap:6px;align-items:center;">
+                <button class="btn-ghost-d sm" *ngIf="unreadCount > 0" (click)="markAllNotificationsAsRead()"><i class="bi bi-check-all"></i> Tout lire</button>
+                <button class="ico-btn" (click)="showNotifications=false"><i class="bi bi-x-lg"></i></button>
               </div>
             </div>
+            <div style="max-height:300px;overflow-y:auto;">
+              <div *ngFor="let n of notifications.slice(0,5)" class="notif-card" [class.unread]="!n.is_read" (click)="markNotificationAsRead(n)" style="border-radius:0;border-left:none;border-right:none;border-top:none;">
+                <div class="nc-ico" [ngClass]="getNotificationClass(n.type)"><i class="bi" [ngClass]="getNotificationIcon(n.type)"></i></div>
+                <div class="nc-body"><h5>{{ n.title }}</h5><p>{{ n.message }}</p><small><i class="bi bi-clock"></i> {{ n.created_at | date:'short' }}</small></div>
+                <div class="nc-dot" *ngIf="!n.is_read"></div>
+              </div>
+              <div *ngIf="notifications.length === 0" class="empty-blk" style="padding:20px;"><i class="bi bi-bell-slash"></i><p>Aucune notification</p></div>
+            </div>
+            <div style="padding:10px 14px;border-top:1px solid var(--rt-bdr);background:var(--rt-raised);">
+              <button class="btn-d sm" style="width:100%;" (click)="activeTab='notifications'; showNotifications=false; loadNotifications()"><i class="bi bi-list"></i> Toutes les notifications</button>
+            </div>
+          </div>
+        </div>
 
-            <div class="notification-body">
-              <div class="notification-list" *ngIf="notifications.length > 0">
-                <div 
-                  class="notification-item" 
-                  *ngFor="let notification of notifications.slice(0, 5)"
-                  [class.unread]="!notification.is_read"
-                  (click)="markNotificationAsRead(notification)">
-                  <div class="notification-icon" [ngClass]="getNotificationClass(notification.type)">
-                    <i class="bi" [ngClass]="getNotificationIcon(notification.type)"></i>
-                  </div>
-                  <div class="notification-content">
-                    <div class="notification-title">{{ notification.title }}</div>
-                    <div class="notification-message">{{ notification.message }}</div>
-                    <div class="notification-time">
-                      <i class="bi bi-clock"></i>
-                      {{ notification.created_at | date:'short' }}
-                    </div>
-                  </div>
-                  <div class="notification-status" *ngIf="!notification.is_read">
-                    <span class="unread-dot"></span>
-                  </div>
+        <button class="btn-ghost-d sm" (click)="loadData()"><i class="bi bi-arrow-clockwise"></i> Actualiser</button>
+        <span class="stag" [ngClass]="business?.is_available ? 'b-active' : 'b-inactive'">
+          <i class="bi bi-circle-fill" style="font-size:.45rem;"></i>{{ business?.is_available ? 'Disponible' : 'Indisponible' }}
+        </span>
+      </div>
+    </div>
+
+    <!-- ════════════════ OVERVIEW ════════════════ -->
+    <div class="dash-tab" *ngIf="activeTab==='overview'">
+      <div class="kpi-grid">
+        <div class="kpi-card green"><div class="kc-ico"><i class="bi bi-cart-check-fill"></i></div><div><div class="kc-val">{{ orderStats.total }}</div><p class="kc-lbl">Commandes aujourd'hui</p></div></div>
+        <div class="kpi-card gold"><div class="kc-ico"><i class="bi bi-currency-exchange"></i></div><div><div class="kc-val">{{ orderStats.revenue | number:'1.0-0' }}</div><p class="kc-lbl">FCFA bruts</p></div></div>
+        <div class="kpi-card teal"><div class="kc-ico"><i class="bi bi-wallet2"></i></div><div><div class="kc-val">{{ orderStats.netRevenue | number:'1.0-0' }}</div><p class="kc-lbl">FCFA nets reçus</p><p class="kc-sub">Commission : {{ orderStats.commissions | number:'1.0-0' }} FCFA</p></div></div>
+        <div class="kpi-card orange"><div class="kc-ico"><i class="bi bi-stars"></i></div><div><div class="kc-val">{{ specialOrders.length }}</div><p class="kc-lbl">Commandes spéciales</p><p class="kc-sub" *ngIf="subscriptionLimits?.max_special_orders_per_month">{{ subscriptionLimits?.current_special_orders }}/{{ subscriptionLimits?.max_special_orders_per_month }} ce mois</p></div></div>
+        <div class="kpi-card" [ngClass]="business?.is_available ? 'green' : 'red'"><div class="kc-ico"><i [class]="'bi ' + (business?.is_available ? 'bi-check-circle-fill' : 'bi-x-circle-fill')"></i></div><div><div class="kc-val" style="font-size:1.1rem;">{{ business?.is_available ? 'Disponible' : 'Indisponible' }}</div><p class="kc-lbl">Statut actuel</p></div></div>
+      </div>
+
+      <div class="d-card" *ngIf="revenueStats">
+        <div class="dc-head"><span class="dc-title"><i class="bi bi-graph-up-arrow"></i> Revenus cumulés</span></div>
+        <div class="rev-grid">
+          <div class="rev-item"><div class="ri-val">{{ revenueStats.total_orders_amount | number:'1.0-0' }}</div><div class="ri-lbl">FCFA total commandes</div><div class="ri-sub">{{ revenueStats.transaction_count }} transactions</div></div>
+          <div class="rev-item"><div class="ri-val green">{{ revenueStats.total_received | number:'1.0-0' }}</div><div class="ri-lbl">FCFA reçus net</div><div class="ri-sub"><i class="bi bi-arrow-down-circle" style="color:var(--rt-green)"></i> Directement sur votre compte</div></div>
+          <div class="rev-item"><div class="ri-val orange">{{ revenueStats.total_commissions | number:'1.0-0' }}</div><div class="ri-lbl">FCFA commissions</div></div>
+        </div>
+        <div class="info-banner" style="margin:0 18px 16px;"><i class="bi bi-info-circle-fill"></i><div><strong>Split payment automatique</strong> — Votre montant net est versé instantanément, la commission prélevée automatiquement par CinetPay.</div></div>
+      </div>
+
+      <div class="row g-3">
+        <div class="col-md-6">
+          <div class="d-card h-100">
+            <div class="dc-head"><span class="dc-title"><i class="bi bi-lightning-charge-fill"></i> Actions rapides</span></div>
+            <div class="qa-grid" style="padding:14px 18px 16px;">
+              <button class="qa-btn" [ngClass]="business?.is_available ? 'orange' : 'green'" (click)="toggleAvailability()" [disabled]="availabilityLoading">
+                <span *ngIf="availabilityLoading" class="spinner-border spinner-border-sm"></span>
+                <i class="bi" [ngClass]="business?.is_available ? 'bi-toggle-off' : 'bi-toggle-on'" *ngIf="!availabilityLoading"></i>
+                {{ business?.is_available ? 'Se rendre indisponible' : 'Se rendre disponible' }}
+              </button>
+              <button class="qa-btn ghost" (click)="activeTab='menus'; loadMenus()"><i class="bi bi-journal-richtext"></i> Gérer les menus</button>
+              <button class="qa-btn ghost" (click)="activeTab='special-orders'; loadSpecialOrders()"><i class="bi bi-stars"></i> Commandes spéciales</button>
+              <button class="qa-btn ghost" (click)="activeTab='deposit-settings'"><i class="bi bi-cash-coin"></i> Paramètres acomptes</button>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-6">
+          <div class="d-card h-100">
+            <div class="dc-head"><span class="dc-title"><i class="bi bi-clock-fill"></i> Horaires de disponibilité</span></div>
+            <div class="dc-body">
+              <div class="d-flex gap-3 mb-3">
+                <div style="flex:1;background:var(--rt-raised);border:1px solid var(--rt-bdr);border-radius:var(--rt-r);padding:12px 14px;text-align:center;">
+                  <div style="font-size:.68rem;color:var(--rt-t3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:3px;">Début</div>
+                  <div style="font-family:'Playfair Display',serif;font-size:1.3rem;font-weight:700;color:var(--rt-green);">{{ business?.availability_start || '—' }}</div>
+                </div>
+                <div style="display:flex;align-items:center;color:var(--rt-t4);font-size:1.2rem;">→</div>
+                <div style="flex:1;background:var(--rt-raised);border:1px solid var(--rt-bdr);border-radius:var(--rt-r);padding:12px 14px;text-align:center;">
+                  <div style="font-size:.68rem;color:var(--rt-t3);text-transform:uppercase;letter-spacing:.8px;margin-bottom:3px;">Fin</div>
+                  <div style="font-family:'Playfair Display',serif;font-size:1.3rem;font-weight:700;color:var(--rt-primary);">{{ business?.availability_end || '—' }}</div>
                 </div>
               </div>
-
-              <div class="notification-empty" *ngIf="notifications.length === 0">
-                <i class="bi bi-bell-slash"></i>
-                <p>Aucune notification</p>
-              </div>
+              <button class="btn-ghost-d sm" (click)="activeTab='hours'"><i class="bi bi-pencil-fill"></i> Modifier les horaires</button>
             </div>
+          </div>
+        </div>
+      </div>
 
-            <div class="notification-footer">
-              <button class="btn btn-sm btn-outline-primary w-100" (click)="activeTab = 'notifications'; showNotifications = false">
-                <i class="bi bi-list"></i> Voir toutes les notifications
-              </button>
-            </div>
+      <div class="d-card" *ngIf="subscriptionLimits">
+        <div class="dc-head"><span class="dc-title"><i class="bi bi-graph-up"></i> Utilisation de votre abonnement</span><button class="btn-ghost-d sm" (click)="navigateToSubscription()"><i class="bi bi-credit-card-2-front-fill"></i> Gérer</button></div>
+        <div class="dc-body">
+          <div class="row g-3">
+            <div class="col-md-6"><div class="usage-bar"><div class="ub-top"><span class="ub-lbl"><i class="bi bi-journal-richtext"></i> Articles de menu</span><span class="ub-val">{{ subscriptionLimits.current_menu_items }}<span *ngIf="subscriptionLimits.max_menu_items !== null"> / {{ subscriptionLimits.max_menu_items }}</span><span *ngIf="subscriptionLimits.max_menu_items === null" style="color:var(--rt-green)"> / ∞</span></span></div><div class="ub-bg" *ngIf="subscriptionLimits.max_menu_items !== null"><div class="ub-fill" [ngClass]="(subscriptionLimits.current_menu_items / subscriptionLimits.max_menu_items * 100) >= 90 ? 'red' : (subscriptionLimits.current_menu_items / subscriptionLimits.max_menu_items * 100) >= 70 ? 'orange' : 'green'" [style.width.%]="Math.min(subscriptionLimits.current_menu_items / subscriptionLimits.max_menu_items * 100, 100)"></div></div></div></div>
+            <div class="col-md-6"><div class="usage-bar"><div class="ub-top"><span class="ub-lbl"><i class="bi bi-stars"></i> Commandes spéciales</span><span class="ub-val">{{ subscriptionLimits.current_special_orders }}<span *ngIf="subscriptionLimits.max_special_orders_per_month !== null"> / {{ subscriptionLimits.max_special_orders_per_month }}</span><span *ngIf="subscriptionLimits.max_special_orders_per_month === null" style="color:var(--rt-green)"> / ∞</span></span></div><div class="ub-bg" *ngIf="subscriptionLimits.max_special_orders_per_month !== null"><div class="ub-fill" [ngClass]="(subscriptionLimits.current_special_orders / subscriptionLimits.max_special_orders_per_month * 100) >= 90 ? 'red' : (subscriptionLimits.current_special_orders / subscriptionLimits.max_special_orders_per_month * 100) >= 70 ? 'orange' : 'green'" [style.width.%]="Math.min(subscriptionLimits.current_special_orders / subscriptionLimits.max_special_orders_per_month * 100, 100)"></div></div></div></div>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- Statistics Cards -->
-    <div class="row mb-4">
-      <div class="col-md-3 mb-3">
-        <div class="stat-card stat-primary">
-          <div class="stat-icon">
-            <i class="bi bi-cart"></i>
-          </div>
-          <div class="stat-details">
-            <h3>{{ orderStats.total || 0 }}</h3>
-            <p>Commandes aujourd'hui</p>
-          </div>
-        </div>
-      </div>
-
-      <div class="col-md-3 mb-3">
-        <div class="stat-card stat-info">
-          <div class="stat-icon">
-            <i class="bi bi-currency-exchange"></i>
-          </div>
-          <div class="stat-details">
-            <h3>{{ orderStats.revenue || 0 | number:'1.0-0' }}</h3>
-            <p>FCFA aujourd'hui</p>
+    <!-- ════════════════ ORDERS ════════════════ -->
+    <div class="dash-tab" *ngIf="activeTab==='orders'">
+      <div class="d-card">
+        <div class="dc-head">
+          <span class="dc-title"><i class="bi bi-cart-check-fill"></i> Commandes</span>
+          <div class="radio-pills">
+            <input type="radio" class="rp-inp" id="ord-all"  [(ngModel)]="orderFilter" value=""          (change)="filterOrders()"><label class="rp" for="ord-all">Toutes</label>
+            <input type="radio" class="rp-inp" id="ord-pend" [(ngModel)]="orderFilter" value="pending"   (change)="filterOrders()"><label class="rp" for="ord-pend"><i class="bi bi-clock"></i> Attente</label>
+            <input type="radio" class="rp-inp" id="ord-conf" [(ngModel)]="orderFilter" value="confirmed" (change)="filterOrders()"><label class="rp" for="ord-conf">Confirmées</label>
+            <input type="radio" class="rp-inp" id="ord-ready" [(ngModel)]="orderFilter" value="ready"   (change)="filterOrders()"><label class="rp" for="ord-ready">Prêtes</label>
           </div>
         </div>
-      </div>
-
-      <div class="col-md-3 mb-3">
-        <div class="stat-card" [ngClass]="business?.is_available ? 'stat-success' : 'stat-warning'">
-          <div class="stat-icon">
-            <i class="bi bi-toggle-on"></i>
-          </div>
-          <div class="stat-details">
-            <h3>{{ business?.is_available ? 'Disponible' : 'Indisponible' }}</h3>
-            <p>Statut actuel</p>
-          </div>
-        </div>
-      </div>
-
-      <div class="col-md-3 mb-3">
-        <div class="stat-card stat-secondary">
-          <div class="stat-icon">
-            <i class="bi bi-star"></i>
-          </div>
-          <div class="stat-details">
-            <h3>{{ specialOrders.length }}</h3>
-            <p>Commandes spéciales</p>
-            <!-- ✅ Indicateur de limite -->
-            <div class="mt-2" *ngIf="subscriptionLimits && subscriptionLimits.max_special_orders_per_month !== null">
-              <small class="d-block">
-                {{ subscriptionLimits.current_special_orders }}/{{ subscriptionLimits.max_special_orders_per_month }} ce mois
-              </small>
-              <div class="progress" style="height: 5px;">
-                <div class="progress-bar" 
-                     [ngClass]="(subscriptionLimits.current_special_orders / subscriptionLimits.max_special_orders_per_month * 100) >= 90 ? 'bg-danger' : 'bg-white'"
-                     [style.width.%]="(subscriptionLimits.current_special_orders / subscriptionLimits.max_special_orders_per_month * 100)">
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Tabs Navigation -->
-    <ul class="nav nav-tabs dashboard-tabs" role="tablist">
-      <li class="nav-item">
-        <button 
-          class="nav-link" 
-          [class.active]="activeTab === 'overview'"
-          (click)="activeTab = 'overview'">
-          <i class="bi bi-house"></i>
-          Aperçu
-        </button>
-      </li>
-      <li class="nav-item">
-        <button 
-          class="nav-link" 
-          [class.active]="activeTab === 'profile'"
-          (click)="activeTab = 'profile'">
-          <i class="bi bi-person-circle"></i>
-          Mon Profil
-        </button>
-      </li>
-      <li class="nav-item">
-        <button 
-          class="nav-link" 
-          [class.active]="activeTab === 'notifications'"
-          (click)="activeTab = 'notifications'; loadNotifications()">
-          <i class="bi bi-bell"></i>
-          Notifications
-          <span class="badge bg-danger ms-2" *ngIf="unreadCount > 0">{{ unreadCount }}</span>
-        </button>
-      </li>
-      <li class="nav-item">
-        <button 
-          class="nav-link" 
-          [class.active]="activeTab === 'availability'"
-          (click)="activeTab = 'availability'">
-          <i class="bi bi-toggle-on"></i>
-          Disponibilité
-        </button>
-      </li>
-      <li class="nav-item">
-        <button 
-          class="nav-link" 
-          [class.active]="activeTab === 'hours'"
-          (click)="activeTab = 'hours'">
-          <i class="bi bi-clock"></i>
-          Horaires
-        </button>
-      </li>
-      <li class="nav-item">
-        <button 
-          class="nav-link" 
-          [class.active]="activeTab === 'menus'"
-          (click)="activeTab = 'menus'; loadMenus()">
-          <i class="bi bi-list"></i>
-          Menus
-        </button>
-      </li>
-      <li class="nav-item">
-        <button 
-          class="nav-link" 
-          [class.active]="activeTab === 'orders'"
-          (click)="activeTab = 'orders'; loadOrders()">
-          <i class="bi bi-cart"></i>
-          Commandes
-          <span class="badge bg-danger ms-2" *ngIf="orders.length">{{ orders.length }}</span>
-        </button>
-      </li>
-      <li class="nav-item">
-        <button 
-          class="nav-link" 
-          [class.active]="activeTab === 'special-orders'"
-          (click)="activeTab = 'special-orders'; loadSpecialOrders()">
-          <i class="bi bi-star"></i>
-          Commandes Spéciales
-          <span class="badge bg-warning ms-2" *ngIf="specialOrders.length">{{ specialOrders.length }}</span>
-        </button>
-      </li>
-      <li class="nav-item">
-        <button 
-          class="nav-link" 
-          [class.active]="activeTab === 'subscription'"
-          (click)="activeTab = 'subscription'">
-          <i class="bi bi-credit-card"></i>
-          Abonnement
-        </button>
-      </li>
-      <li class="nav-item">
-        <button 
-          class="nav-link" 
-          [class.active]="activeTab === 'commissions'"
-          (click)="activeTab = 'commissions'">
-          <i class="bi bi-percent"></i>
-          Commissions
-        </button>
-      </li>
-      <li class="nav-item">
-        <button 
-          class="list-group-item list-group-item-action nav-link"
-          [class.active]="activeTab === 'support'"
-          (click)="activeTab = 'support'">
-          <i class="bi bi-headset"></i> Support
-        </button>
-      </li>
-      <li class="nav-item">
-        <button 
-          class="list-group-item list-group-item-action nav-link"
-          [class.active]="activeTab === 'branding'"
-          (click)="activeTab = 'branding'">
-          <i class="bi bi-palette"></i> Branding
-          <span class="badge bg-warning ms-2">Premium</span>
-        </button>
-      </li>
-      <li class="nav-item">
-        <button 
-          class="list-group-item list-group-item-action nav-link"
-          [class.active]="activeTab === 'reviews'"
-          (click)="activeTab = 'reviews'">
-          <i class="bi bi-star"></i> Avis Clients
-          <span class="badge bg-info ms-2" *ngIf="business?.reviews_count">
-            {{ business?.reviews_count }}
-          </span>
-        </button>
-      </li>
-      <li class="nav-item">
-        <button 
-          class="nav-link"
-          [class.active]="activeTab === 'testimonial'"
-          (click)="activeTab = 'testimonial'">
-          <i class="bi bi-chat-quote-fill"></i> Mon Témoignage
-        </button>
-      </li>
-    </ul>
-
-    <!-- Tab Content -->
-    <div class="tab-content">
-      <!-- Overview Tab -->
-      <div *ngIf="activeTab === 'overview'" class="tab-pane-custom">
-        <div class="row">
-          <div class="col-md-6 mb-4">
-            <div class="info-card">
-              <h5>
-                <i class="bi bi-lightning"></i>
-                Actions rapides
-              </h5>
-              <div class="quick-actions">
-                <button 
-                  class="action-btn" 
-                  [ngClass]="business?.is_available ? 'btn-warning' : 'btn-success'"
-                  (click)="toggleAvailability()">
-                  <i class="bi" [ngClass]="business?.is_available ? 'bi-toggle-off' : 'bi-toggle-on'"></i>
-                  {{ business?.is_available ? 'Se rendre indisponible' : 'Se rendre disponible' }}
-                </button>
-                <button class="action-btn btn-primary" (click)="activeTab = 'menus'; loadMenus()">
-                  <i class="bi bi-plus"></i>
-                  Gérer les menus
-                </button>
-                <button class="action-btn btn-info" (click)="activeTab = 'special-orders'; loadSpecialOrders()">
-                  <i class="bi bi-star"></i>
-                  Voir commandes spéciales
-                </button>
-              </div>
-            </div>
-          </div>
-
-          <div class="col-md-6 mb-4">
-            <div class="info-card">
-              <h5>
-                <i class="bi bi-clock"></i>
-                Horaires de disponibilité
-              </h5>
-              <div class="hours-info">
-                <div class="hour-item">
-                  <span class="hour-label">Début:</span>
-                  <span class="hour-value">{{ business?.availability_start || 'Non défini' }}</span>
-                </div>
-                <div class="hour-item">
-                  <span class="hour-label">Fin:</span>
-                  <span class="hour-value">{{ business?.availability_end || 'Non défini' }}</span>
-                </div>
-                <button class="btn btn-sm btn-outline-primary mt-3" (click)="activeTab = 'hours'">
-                  <i class="bi bi-pencil"></i>
-                  Modifier
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- ✅ Statistiques d'utilisation de l'abonnement -->
-        <div class="card" *ngIf="subscriptionLimits">
-          <div class="card-header bg-light">
-            <h5 class="mb-0">
-              <i class="bi bi-graph-up"></i> Utilisation de votre abonnement
-            </h5>
-          </div>
-          <div class="card-body">
-            <div class="row">
-              <!-- Articles de menu -->
-              <div class="col-md-6 mb-3">
-                <div class="d-flex justify-content-between align-items-center mb-2">
-                  <span><i class="bi bi-list"></i> Articles de menu</span>
-                  <span class="fw-bold">
-                    {{ subscriptionLimits.current_menu_items }}
-                    <span *ngIf="subscriptionLimits.max_menu_items !== null">
-                      / {{ subscriptionLimits.max_menu_items }}
-                    </span>
-                    <span *ngIf="subscriptionLimits.max_menu_items === null" class="text-success">
-                      / Illimité
-                    </span>
-                  </span>
-                </div>
-                <div class="progress" *ngIf="subscriptionLimits.max_menu_items !== null">
-                  <div class="progress-bar" 
-                       [ngClass]="(subscriptionLimits.current_menu_items / subscriptionLimits.max_menu_items * 100) >= 90 ? 'bg-danger' : 
-                                  (subscriptionLimits.current_menu_items / subscriptionLimits.max_menu_items * 100) >= 70 ? 'bg-warning' : 'bg-success'"
-                       [style.width.%]="(subscriptionLimits.current_menu_items / subscriptionLimits.max_menu_items * 100) > 100 ? 100 : (subscriptionLimits.current_menu_items / subscriptionLimits.max_menu_items * 100)">
-                  </div>
-                </div>
-              </div>
-
-              <!-- Commandes spéciales mensuelles -->
-              <div class="col-md-6 mb-3">
-                <div class="d-flex justify-content-between align-items-center mb-2">
-                  <span><i class="bi bi-star"></i> Commandes spéciales ce mois</span>
-                  <span class="fw-bold">
-                    {{ subscriptionLimits.current_special_orders }}
-                    <span *ngIf="subscriptionLimits.max_special_orders_per_month !== null">
-                      / {{ subscriptionLimits.max_special_orders_per_month }}
-                    </span>
-                    <span *ngIf="subscriptionLimits.max_special_orders_per_month === null" class="text-success">
-                      / Illimité
-                    </span>
-                  </span>
-                </div>
-                <div class="progress" *ngIf="subscriptionLimits.max_special_orders_per_month !== null">
-                  <div class="progress-bar" 
-                       [ngClass]="(subscriptionLimits.current_special_orders / subscriptionLimits.max_special_orders_per_month * 100) >= 90 ? 'bg-danger' : 
-                                  (subscriptionLimits.current_special_orders / subscriptionLimits.max_special_orders_per_month * 100) >= 70 ? 'bg-warning' : 'bg-success'"
-                       [style.width.%]="(subscriptionLimits.current_special_orders / subscriptionLimits.max_special_orders_per_month * 100) > 100 ? 100 : (subscriptionLimits.current_special_orders / subscriptionLimits.max_special_orders_per_month * 100)">
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div class="text-center mt-3">
-              <button class="btn btn-outline-primary" (click)="navigateToSubscription()">
-                <i class="bi bi-credit-card"></i> Gérer mon abonnement
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Profile Tab -->
-      <div *ngIf="activeTab === 'profile'" class="tab-pane-custom">
-        <h3><i class="bi bi-person-circle"></i> Mon Profil Traiteur</h3>
-        
-        <!-- Informations personnelles -->
-        <div class="card mb-4">
-          <div class="card-header bg-success text-white">
-            <h5 class="mb-0"><i class="bi bi-person"></i> Informations personnelles</h5>
-          </div>
-          <div class="card-body">
-            <form [formGroup]="profileForm" (ngSubmit)="updateProfile()">
-              <div class="row">
-                <div class="col-md-6 mb-3">
-                  <label for="first_name" class="form-label">Prénom *</label>
-                  <input 
-                    type="text" 
-                    class="form-control" 
-                    id="first_name" 
-                    formControlName="first_name"
-                    [class.is-invalid]="profileForm.get('first_name')?.invalid && profileForm.get('first_name')?.touched">
-                  <div class="invalid-feedback">Le prénom est requis</div>
-                </div>
-                <div class="col-md-6 mb-3">
-                  <label for="last_name" class="form-label">Nom *</label>
-                  <input 
-                    type="text" 
-                    class="form-control" 
-                    id="last_name" 
-                    formControlName="last_name"
-                    [class.is-invalid]="profileForm.get('last_name')?.invalid && profileForm.get('last_name')?.touched">
-                  <div class="invalid-feedback">Le nom est requis</div>
-                </div>
-              </div>
-
-              <div class="row">
-                <div class="col-md-6 mb-3">
-                  <label for="email" class="form-label">Email</label>
-                  <input 
-                    type="email" 
-                    class="form-control" 
-                    id="email" 
-                    formControlName="email">
-                  <small class="text-muted">L'email ne peut pas être modifié</small>
-                </div>
-                <div class="col-md-6 mb-3">
-                  <label for="phone" class="form-label">Téléphone</label>
-                  <input 
-                    type="tel" 
-                    class="form-control" 
-                    id="phone" 
-                    formControlName="phone"
-                    placeholder="+228 90 12 34 56">
-                </div>
-              </div>
-
-              <div class="d-flex gap-2">
-                <button 
-                  type="submit" 
-                  class="btn btn-success"
-                  [disabled]="profileLoading || profileForm.invalid">
-                  <span *ngIf="profileLoading" class="spinner-border spinner-border-sm me-2"></span>
-                  <i class="bi bi-save" *ngIf="!profileLoading"></i>
-                  Enregistrer les modifications
-                </button>
-                <button 
-                  type="button" 
-                  class="btn btn-outline-secondary"
-                  (click)="openPasswordModal()">
-                  <i class="bi bi-key"></i>
-                  Changer le mot de passe
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-
-        <!-- Informations du service traiteur -->
-        <div class="card">
-          <div class="card-header bg-primary text-white">
-            <h5 class="mb-0"><i class="bi bi-building"></i> Informations du service traiteur</h5>
-          </div>
-          <div class="card-body">
-            <form [formGroup]="businessForm" (ngSubmit)="updateBusiness()">
-              <div class="mb-3">
-                <label for="business_name" class="form-label">Nom du service traiteur *</label>
-                <input 
-                  type="text" 
-                  class="form-control" 
-                  id="business_name" 
-                  formControlName="name"
-                  [class.is-invalid]="businessForm.get('name')?.invalid && businessForm.get('name')?.touched">
-                <div class="invalid-feedback">Le nom du service est requis</div>
-              </div>
-
-              <div class="mb-3">
-                <label for="business_description" class="form-label">Description</label>
-                <textarea 
-                  class="form-control" 
-                  id="business_description" 
-                  formControlName="description"
-                  rows="4"
-                  placeholder="Décrivez vos services, spécialités, types d'événements..."></textarea>
-                <small class="text-muted">Cette description sera visible par vos clients</small>
-              </div>
-
-              <div class="row">
-                <div class="col-md-6 mb-3">
-                  <label for="business_address" class="form-label">Adresse</label>
-                  <input 
-                    type="text" 
-                    class="form-control" 
-                    id="business_address" 
-                    formControlName="address"
-                    placeholder="123 Rue Exemple, Lomé">
-                </div>
-                <div class="col-md-6 mb-3">
-                  <label for="business_phone" class="form-label">Téléphone du service</label>
-                  <input 
-                    type="tel" 
-                    class="form-control" 
-                    id="business_phone" 
-                    formControlName="phone"
-                    placeholder="+228 22 12 34 56">
-                </div>
-              </div>
-
-              <button 
-                type="submit" 
-                class="btn btn-primary"
-                [disabled]="businessLoading || businessForm.invalid">
-                <span *ngIf="businessLoading" class="spinner-border spinner-border-sm me-2"></span>
-                <i class="bi bi-save" *ngIf="!businessLoading"></i>
-                Enregistrer les modifications
-              </button>
-            </form>
-          </div>
-        </div>
-      </div>
-
-      <!-- Notifications Tab -->
-      <div *ngIf="activeTab === 'notifications'" class="tab-pane-custom">
-        <div class="d-flex justify-content-between align-items-center mb-3">
-          <h3><i class="bi bi-bell"></i> Toutes les notifications</h3>
-          <button class="btn btn-outline-success" (click)="markAllNotificationsAsRead()" *ngIf="unreadCount > 0">
-            <i class="bi bi-check-all"></i> Tout marquer comme lu
-          </button>
-        </div>
-
-        <div class="notifications-container">
-          <div 
-            class="notification-card" 
-            *ngFor="let notification of notifications"
-            [class.unread]="!notification.is_read"
-            (click)="markNotificationAsRead(notification)">
-            <div class="notification-card-icon" [ngClass]="getNotificationClass(notification.type)">
-              <i class="bi" [ngClass]="getNotificationIcon(notification.type)"></i>
-            </div>
-            <div class="notification-card-content">
-              <div class="notification-card-header">
-                <h5>{{ notification.title }}</h5>
-                <span class="notification-card-time">
-                  <i class="bi bi-clock"></i>
-                  {{ notification.created_at | date:'medium' }}
-                </span>
-              </div>
-              <p class="notification-card-message">{{ notification.message }}</p>
-              <div class="notification-card-footer">
-                <span class="badge" [ngClass]="notification.priority === 'high' || notification.priority === 'urgent' ? 'bg-danger' : notification.priority === 'normal' ? 'bg-primary' : 'bg-secondary'">
-                  {{ notification.priority }}
-                </span>
-                <span class="notification-card-type">
-                  <i class="bi bi-tag"></i> {{ notification.type.replace('_', ' ') }}
-                </span>
-              </div>
-            </div>
-            <div class="notification-card-status" *ngIf="!notification.is_read">
-              <span class="unread-indicator"></span>
-            </div>
-          </div>
-
-          <div class="alert alert-info text-center" *ngIf="notifications.length === 0">
-            <i class="bi bi-bell-slash fs-1"></i>
-            <p class="mb-0 mt-2">Aucune notification pour le moment</p>
-          </div>
-        </div>
-      </div>
-
-      <!-- Availability Tab -->
-      <div *ngIf="activeTab === 'availability'" class="tab-pane-custom">
-        <div class="availability-section">
-          <div class="availability-card">
-            <div class="availability-status">
-              <div class="status-icon" [ngClass]="business?.is_available ? 'status-available' : 'status-unavailable'">
-                <i class="bi" [ngClass]="business?.is_available ? 'bi-check-circle' : 'bi-x-circle'"></i>
-              </div>
-              <div class="status-info">
-                <h4>Statut actuel: {{ business?.is_available ? 'Disponible' : 'Indisponible' }}</h4>
-                <p>{{ business?.is_available 
-                    ? 'Votre service est visible sur la plateforme et peut recevoir des commandes.' 
-                    : 'Votre service n\'est pas visible au public et ne peut pas recevoir de commandes.' }}
-                </p>
-              </div>
-            </div>
-            <button 
-              class="btn btn-lg toggle-btn" 
-              [ngClass]="business?.is_available ? 'btn-warning' : 'btn-success'"
-              (click)="toggleAvailability()"
-              [disabled]="availabilityLoading">
-              <span *ngIf="availabilityLoading" class="spinner-border spinner-border-sm me-2"></span>
-              <i class="bi" [ngClass]="business?.is_available ? 'bi-toggle-off' : 'bi-toggle-on'" *ngIf="!availabilityLoading"></i>
-              {{ business?.is_available ? 'Se rendre indisponible' : 'Se rendre disponible' }}
-            </button>
-          </div>
-        </div>
-      </div>
-
-      <!-- Hours Tab -->
-      <div *ngIf="activeTab === 'hours'" class="tab-pane-custom">
-        <div class="hours-section">
-          <h4>Gestion des horaires de disponibilité</h4>
-          <p class="text-muted">Définissez vos créneaux horaires de disponibilité</p>
-
-          <form [formGroup]="hoursForm" (ngSubmit)="updateHours()">
-            <div class="row">
-              <div class="col-md-6 mb-3">
-                <label for="availability_start" class="form-label">
-                  <i class="bi bi-sunrise"></i>
-                  Heure de début
-                </label>
-                <input 
-                  type="time" 
-                  class="form-control" 
-                  id="availability_start" 
-                  formControlName="availability_start">
-              </div>
-              <div class="col-md-6 mb-3">
-                <label for="availability_end" class="form-label">
-                  <i class="bi bi-sunset"></i>
-                  Heure de fin
-                </label>
-                <input 
-                  type="time" 
-                  class="form-control" 
-                  id="availability_end" 
-                  formControlName="availability_end">
-              </div>
-            </div>
-
-            <button 
-              type="submit" 
-              class="btn btn-primary"
-              [disabled]="hoursLoading">
-              <span *ngIf="hoursLoading" class="spinner-border spinner-border-sm me-2"></span>
-              <i class="bi bi-check-circle" *ngIf="!hoursLoading"></i>
-              Mettre à jour les horaires
-            </button>
-          </form>
-        </div>
-      </div>
-
-      <!-- Menus Tab -->
-      <div *ngIf="activeTab === 'menus'" class="tab-pane-custom">
-        <div class="content-header">
-          <h4>Gestion des menus</h4>
-          <button class="btn btn-primary" (click)="showCreateMenuModal()" [disabled]="!canAddMenuItem()">
-            <i class="bi bi-plus"></i>
-            Nouveau menu
-          </button>
-        </div>
-
-        <div class="row" *ngIf="menus.length > 0">
-          <div class="col-md-6 col-lg-4 mb-4" *ngFor="let menu of menus">
-            <div class="menu-card">
-              <div class="menu-header">
-                <h5>{{ menu.name }}</h5>
-                <span class="badge" [ngClass]="menu.is_active ? 'bg-success' : 'bg-secondary'">
-                  {{ menu.is_active ? 'Actif' : 'Inactif' }}
-                </span>
-              </div>
-              <div class="menu-body">
-                <p>{{ menu.description || 'Pas de description' }}</p>
-                <div class="menu-stats">
-                  <span>
-                    <i class="bi bi-list"></i>
-                    {{ menu.items?.length || 0 }} items
-                  </span>
-                </div>
-              </div>
-              <div class="menu-actions">
-                <button class="btn btn-sm btn-outline-secondary" (click)="editMenu(menu)">
-                  <i class="bi bi-pencil"></i>
-                  Modifier
-                </button>
-                <button class="btn btn-sm btn-outline-primary" (click)="manageMenuItems(menu)">
-                  <i class="bi bi-list"></i>
-                  Items
-                </button>
-                <button class="btn btn-sm btn-outline-danger" (click)="deleteMenu(menu.id!)">
-                  <i class="bi bi-trash"></i>
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div *ngIf="menus.length === 0" class="empty-state">
-          <i class="bi bi-inbox"></i>
-          <h4>Aucun menu</h4>
-          <p>Créez votre premier menu pour commencer</p>
-        </div>
-      </div>
-
-      <!-- Orders Tab -->
-      <div *ngIf="activeTab === 'orders'" class="tab-pane-custom">
-        <div class="content-header">
-          <h4>Commandes</h4>
-          <div class="filters">
-            <div class="btn-group" role="group">
-              <input type="radio" class="btn-check" id="all" [(ngModel)]="orderFilter" value="" (change)="filterOrders()">
-              <label class="btn btn-outline-primary" for="all">Toutes</label>
-              
-              <input type="radio" class="btn-check" id="pending" [(ngModel)]="orderFilter" value="pending" (change)="filterOrders()">
-              <label class="btn btn-outline-warning" for="pending">En attente</label>
-              
-              <input type="radio" class="btn-check" id="confirmed" [(ngModel)]="orderFilter" value="confirmed" (change)="filterOrders()">
-              <label class="btn btn-outline-info" for="confirmed">Confirmées</label>
-              
-              <input type="radio" class="btn-check" id="ready" [(ngModel)]="orderFilter" value="ready" (change)="filterOrders()">
-              <label class="btn btn-outline-success" for="ready">Prêtes</label>
-            </div>
-          </div>
-        </div>
-
-        <div class="table-responsive">
-          <table class="table custom-table">
+        <div class="tbl-wrap">
+          <table class="d-tbl">
             <thead>
               <tr>
-                <th>ID</th>
-                <th>Client</th>
-                <th>Téléphone</th>
+                <th class="d-none d-md-table-cell">ID</th>
+                <th class="d-table-cell d-md-none">Client</th>
+                <th class="d-none d-md-table-cell">Client</th>
+                <th class="d-none d-md-table-cell">Téléphone</th>
                 <th>Total</th>
-                <th>Statut commande</th>
-                <th>Statut paiement</th>
-                <th>Date</th>
+                <th>Statut</th>
+                <th class="d-none d-md-table-cell">Paiement</th>
+                <th class="d-none d-md-table-cell">Date</th>
                 <th>Actions</th>
               </tr>
             </thead>
             <tbody>
-              <tr *ngFor="let order of filteredOrders">
-                <td>{{ order.id }}</td>
-                <td>{{ order.client_name }}</td>
-                <td>{{ order.client_phone }}</td>
-                <td class="fw-bold">{{ order.total_amount }} FCFA</td>
-                <td>
-                  <span class="badge" [ngClass]="getOrderStatusClass(order.status)">
-                    {{ getOrderStatusLabel(order.status) }}
-                  </span>
+              <tr class="tr-body" *ngFor="let order of filteredOrders">
+                <td class="t-id d-none d-md-table-cell">{{ order.id }}</td>
+                <!-- Mobile: Client + Tél + Date -->
+                <td class="d-table-cell d-md-none">
+                  <div class="t-name">{{ order.client_name }}</div>
+                  <div class="t-sub"><i class="bi bi-telephone"></i> {{ order.client_phone }}</div>
+                  <div class="t-sub">{{ order.created_at | date:'dd/MM HH:mm' }}</div>
                 </td>
+                <td class="d-none d-md-table-cell"><div class="t-name">{{ order.client_name }}</div></td>
+                <td class="t-sub d-none d-md-table-cell">{{ order.client_phone }}</td>
+                <td class="t-amt">{{ order.total_amount | number:'1.0-0' }} <small style="font-size:.62rem;font-weight:400;color:var(--rt-t3)">FCFA</small></td>
                 <td>
-                  <span class="badge" [ngClass]="getPaymentStatusClass(order.payment_status)">
-                    {{ getPaymentStatusLabel(order.payment_status) }}
-                  </span>
+                  <span class="stag" [ngClass]="{'s-pending': order.status==='pending','s-confirmed': order.status==='confirmed','s-preparing': order.status==='preparing','s-ready': order.status==='ready','s-delivered': order.status==='delivered','r-cancelled': order.status==='cancelled'}">{{ getOrderStatusLabel(order.status) }}</span>
                 </td>
-                <td>{{ order.created_at | date:'short' }}</td>
-                <!-- <td>
-                  <div class="btn-group btn-group-sm">
-                    <button class="btn btn-outline-info">
-                      <i class="bi bi-eye"></i>
+                <td class="d-none d-md-table-cell">
+                  <span class="stag" [ngClass]="{'p-pending': order.payment_status==='pending','p-paid': order.payment_status==='paid','p-failed': order.payment_status==='failed'}">{{ getPaymentStatusLabel(order.payment_status) }}</span>
+                </td>
+                <td class="t-date d-none d-md-table-cell">{{ order.created_at | date:'dd/MM HH:mm' }}</td>
+                <td>
+                  <div class="row-acts">
+                    <button class="ico-btn" title="Détails" (click)="viewOrder(order)"><i class="bi bi-eye-fill"></i></button>
+                    <button class="ico-btn" *ngIf="order.payment_status !== 'paid'" title="Payer" (click)="openPaymentModal(order)">
+                      <i class="bi bi-credit-card-fill"></i>
+                      <span *ngIf="isSandbox" style="font-size:.5rem;background:var(--rt-accent-s);color:var(--rt-accent);padding:1px 4px;border-radius:3px;margin-left:2px;">SB</span>
                     </button>
-                    <button class="btn btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown">
-                      <i class="bi bi-gear"></i>
-                    </button>
-                    <ul class="dropdown-menu">
-                      <li *ngIf="order.status === 'pending'">
-                        <button class="dropdown-item" (click)="updateOrderStatus(order.id!, 'confirmed')">
-                          <i class="bi bi-check-circle text-info"></i> Confirmer
-                        </button>
-                      </li>
-                      <li *ngIf="order.status === 'confirmed'">
-                        <button class="dropdown-item" (click)="updateOrderStatus(order.id!, 'preparing')">
-                          <i class="bi bi-clock text-warning"></i> En préparation
-                        </button>
-                      </li>
-                      <li *ngIf="order.status === 'preparing'">
-                        <button class="dropdown-item" (click)="updateOrderStatus(order.id!, 'ready')">
-                          <i class="bi bi-check-circle text-success"></i> Prête
-                        </button>
-                      </li>
-                      <li *ngIf="order.status === 'ready'">
-                        <button class="dropdown-item" (click)="updateOrderStatus(order.id!, 'delivered')">
-                          <i class="bi bi-truck text-primary"></i> Livrée
-                        </button>
-                      </li>
-                      <li><hr class="dropdown-divider"></li>
-                      <li>
-                        <button class="dropdown-item text-danger" (click)="updateOrderStatus(order.id!, 'cancelled')">
-                          <i class="bi bi-x-circle"></i> Annuler
-                        </button>
-                      </li>
-                    </ul>
+                    <span class="stag p-paid" *ngIf="order.payment_status==='paid'" style="font-size:.62rem;"><i class="bi bi-check"></i> Payé</span>
+                    <div class="dropdown">
+                      <button class="ico-btn" data-bs-toggle="dropdown"><i class="bi bi-gear-fill"></i></button>
+                      <ul class="dropdown-menu">
+                        <li *ngIf="order.status==='pending'"><button class="dropdown-item" (click)="updateOrderStatus(order.id!, 'confirmed')"><i class="bi bi-check-circle" style="color:var(--rt-blue)"></i> Confirmer</button></li>
+                        <li *ngIf="order.status==='confirmed'"><button class="dropdown-item" (click)="updateOrderStatus(order.id!, 'preparing')"><i class="bi bi-clock" style="color:var(--rt-accent)"></i> En préparation</button></li>
+                        <li *ngIf="order.status==='preparing'"><button class="dropdown-item" (click)="updateOrderStatus(order.id!, 'ready')"><i class="bi bi-check-circle" style="color:var(--rt-green)"></i> Prête</button></li>
+                        <li *ngIf="order.status==='ready'"><button class="dropdown-item" (click)="updateOrderStatus(order.id!, 'delivered')"><i class="bi bi-truck" style="color:var(--rt-blue)"></i> Livrée</button></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><button class="dropdown-item text-danger" (click)="updateOrderStatus(order.id!, 'cancelled')"><i class="bi bi-x-circle"></i> Annuler</button></li>
+                      </ul>
+                    </div>
                   </div>
-                </td> -->
-
-                <td>
-  <div class="btn-group btn-group-sm">
-    <button class="btn btn-outline-info" (click)="viewOrder(order)" title="Voir détails">
-      <i class="bi bi-eye"></i>
-    </button>
-    <!-- Bouton payer (sandbox ou live) - visible si non payée -->
-    <button
-      *ngIf="order.payment_status !== 'paid'"
-      class="btn btn-outline-success"
-      (click)="openPaymentModal(order)"
-      title="{{ isSandbox ? 'Payer (sandbox)' : 'Payer via CinetPay' }}">
-      <i class="bi bi-credit-card"></i>
-      <span *ngIf="isSandbox" class="ms-1 badge bg-warning text-dark" style="font-size:9px;">Sandbox</span>
-    </button>
-    <span *ngIf="order.payment_status === 'paid'" class="badge bg-success align-self-center ms-1">
-      <i class="bi bi-check-circle"></i> Payé
-    </span>
-    <div class="dropdown">
-      <button class="btn btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown">
-        <i class="bi bi-gear"></i>
-      </button>
-      <ul class="dropdown-menu">
-        <li *ngIf="order.status === 'pending'">
-          <button class="dropdown-item" (click)="updateOrderStatus(order.id!, 'confirmed')">
-            <i class="bi bi-check-circle text-info"></i> Confirmer
-          </button>
-        </li>
-        <li *ngIf="order.status === 'confirmed'">
-          <button class="dropdown-item" (click)="updateOrderStatus(order.id!, 'preparing')">
-            <i class="bi bi-clock text-warning"></i> En préparation
-          </button>
-        </li>
-        <li *ngIf="order.status === 'preparing'">
-          <button class="dropdown-item" (click)="updateOrderStatus(order.id!, 'ready')">
-            <i class="bi bi-check-circle text-success"></i> Prête
-          </button>
-        </li>
-        <li *ngIf="order.status === 'ready'">
-          <button class="dropdown-item" (click)="updateOrderStatus(order.id!, 'delivered')">
-            <i class="bi bi-truck text-primary"></i> Livrée
-          </button>
-        </li>
-        <li><hr class="dropdown-divider"></li>
-        <li>
-          <button class="dropdown-item text-danger" (click)="updateOrderStatus(order.id!, 'cancelled')">
-            <i class="bi bi-x-circle"></i> Annuler
-          </button>
-        </li>
-      </ul>
-    </div>
-  </div>
-</td>
+                </td>
               </tr>
-              <tr *ngIf="filteredOrders.length === 0">
-                <td colspan="8" class="text-center text-muted">Aucune commande</td>
-              </tr>
+              <tr *ngIf="filteredOrders.length===0"><td colspan="9"><div class="empty-blk"><i class="bi bi-cart"></i><p>Aucune commande</p></div></td></tr>
             </tbody>
           </table>
         </div>
       </div>
+    </div>
 
-      <!-- Special Orders Tab -->
-      <div *ngIf="activeTab === 'special-orders'" class="tab-pane-custom">
-        <div class="content-header">
-          <h4>Commandes Spéciales pour Événements</h4>
-          <div class="filters">
-            <div class="btn-group" role="group">
-              <input type="radio" class="btn-check" id="special-all" [(ngModel)]="specialOrderFilter" value="" (change)="filterSpecialOrders()">
-              <label class="btn btn-outline-primary" for="special-all">Toutes</label>
-              
-              <input type="radio" class="btn-check" id="special-pending" [(ngModel)]="specialOrderFilter" value="pending" (change)="filterSpecialOrders()">
-              <label class="btn btn-outline-warning" for="special-pending">En attente</label>
-              
-              <input type="radio" class="btn-check" id="special-confirmed" [(ngModel)]="specialOrderFilter" value="confirmed" (change)="filterSpecialOrders()">
-              <label class="btn btn-outline-success" for="special-confirmed">Confirmées</label>
-              
-              <input type="radio" class="btn-check" id="special-cancelled" [(ngModel)]="specialOrderFilter" value="cancelled" (change)="filterSpecialOrders()">
-              <label class="btn btn-outline-danger" for="special-cancelled">Annulées</label>
-            </div>
+    <!-- ════════════════ SPECIAL ORDERS ════════ -->
+    <div class="dash-tab" *ngIf="activeTab==='special-orders'">
+      <div class="info-banner warning" *ngIf="!canAcceptSpecialOrder()">
+        <i class="bi bi-exclamation-triangle-fill"></i>
+        <div><strong>Limite atteinte</strong> — Vous avez atteint la limite de commandes spéciales de votre plan.<button class="btn-ghost-d sm" style="margin-left:8px;" (click)="navigateToSubscription()">Voir les plans</button></div>
+      </div>
+      <div class="d-card">
+        <div class="dc-head">
+          <span class="dc-title"><i class="bi bi-stars"></i> Commandes Spéciales</span>
+          <div class="radio-pills">
+            <input type="radio" class="rp-inp" id="sp-all"  [(ngModel)]="specialOrderFilter" value=""          (change)="filterSpecialOrders()"><label class="rp" for="sp-all">Toutes</label>
+            <input type="radio" class="rp-inp" id="sp-pend" [(ngModel)]="specialOrderFilter" value="pending"   (change)="filterSpecialOrders()"><label class="rp" for="sp-pend">Attente</label>
+            <input type="radio" class="rp-inp" id="sp-conf" [(ngModel)]="specialOrderFilter" value="confirmed" (change)="filterSpecialOrders()"><label class="rp" for="sp-conf">Confirmées</label>
+            <input type="radio" class="rp-inp" id="sp-canc" [(ngModel)]="specialOrderFilter" value="cancelled" (change)="filterSpecialOrders()"><label class="rp" for="sp-canc">Annulées</label>
           </div>
         </div>
-
-        <!-- ✅ Message informatif si limite atteinte -->
-        <div class="alert alert-info mb-3" *ngIf="!canAcceptSpecialOrder()">
-          <i class="bi bi-info-circle-fill"></i>
-          <strong>Information :</strong> Vous avez atteint la limite de commandes spéciales mensuelles de votre plan. 
-          Les nouvelles commandes ne pourront pas être confirmées.
-        </div>
-
-        <div class="table-responsive">
-          <table class="table custom-table">
+        <div class="tbl-wrap">
+          <table class="d-tbl">
             <thead>
               <tr>
-                <th>ID</th>
-                <th>Client</th>
-                <th>Contact</th>
-                <th>Type d'événement</th>
-                <th>Date événement</th>
-                <th>Invités</th>
-                <th>Budget estimé</th>
+                <th class="d-none d-md-table-cell">ID</th>
+                <th class="d-table-cell d-md-none">Client</th>
+                <th class="d-none d-md-table-cell">Client</th>
+                <th class="d-none d-md-table-cell">Événement</th>
+                <th class="d-table-cell d-md-none">Événement</th>
+                <th class="d-none d-md-table-cell">Date</th>
+                <th class="d-none d-sm-table-cell">Invités</th>
+                <th class="d-none d-md-table-cell">Budget</th>
                 <th>Statut</th>
                 <th>Actions</th>
               </tr>
             </thead>
             <tbody>
-              <tr *ngFor="let order of filteredSpecialOrders">
-                <td>{{ order.id }}</td>
-                <td>
-                  <strong>{{ order.client_name }}</strong>
+              <tr class="tr-body" *ngFor="let order of filteredSpecialOrders">
+                <td class="t-id d-none d-md-table-cell">{{ order.id }}</td>
+                <!-- Mobile : Client + Tél -->
+                <td class="d-table-cell d-md-none">
+                  <div class="t-name">{{ order.client_name }}</div>
+                  <div class="t-sub"><i class="bi bi-telephone"></i> {{ order.client_phone }}</div>
+                </td>
+                <td class="d-none d-md-table-cell">
+                  <div class="t-name">{{ order.client_name }}</div>
+                  <div class="t-sub"><i class="bi bi-telephone"></i> {{ order.client_phone }}</div>
+                </td>
+                <td class="d-none d-md-table-cell">
+                  <span class="stag s-confirmed" style="font-size:.67rem;">{{ getEventTypeLabel(order.event_type) }}</span>
+                </td>
+                <!-- Mobile : Événement + Date -->
+                <td class="d-table-cell d-md-none">
+                  <span class="stag s-confirmed" style="font-size:.67rem;">{{ getEventTypeLabel(order.event_type) }}</span>
+                  <small class="d-block text-muted">{{ order.event_date | date:'dd/MM/yyyy' }}</small>
+                </td>
+                <td class="d-none d-md-table-cell">
+                  <div class="t-date">{{ order.event_date | date:'dd/MM/yyyy' }}</div>
+                  <div class="t-sub">{{ order.event_time }}</div>
+                </td>
+                <td class="d-none d-sm-table-cell" style="font-family:'Playfair Display',serif;font-weight:700;color:var(--rt-t1)">{{ order.number_of_guests }}<small style="font-size:.68rem;font-weight:400;color:var(--rt-t3)"> pers.</small></td>
+                <td class="d-none d-md-table-cell">
+                  <span *ngIf="order.estimated_budget" class="t-amt">{{ order.estimated_budget | number:'1.0-0' }}</span>
+                  <span *ngIf="!order.estimated_budget" style="color:var(--rt-t4)">—</span>
                 </td>
                 <td>
-                  <div><i class="bi bi-telephone"></i> {{ order.client_phone }}</div>
-                  <div><i class="bi bi-envelope"></i> {{ order.client_email }}</div>
-                </td>
-                <td>
-                  <span class="badge bg-info">{{ getEventTypeLabel(order.event_type) }}</span>
-                </td>
-                <td>
-                  <div><i class="bi bi-calendar"></i> {{ order.event_date | date:'dd/MM/yyyy' }}</div>
-                  <div><i class="bi bi-clock"></i> {{ order.event_time }}</div>
-                </td>
-                <td>
-                  <strong>{{ order.number_of_guests }}</strong> pers.
-                </td>
-                <td>
-                  <span *ngIf="order.estimated_budget" class="fw-bold">
-                    {{ order.estimated_budget | number:'1.0-0' }} FCFA
+                  <span class="stag" [ngClass]="{'s-pending': order.status==='pending','s-confirmed': order.status==='confirmed' || order.status==='quoted','r-cancelled': order.status==='cancelled'}">
+                    {{ order.status === 'quoted' ? 'Devis envoyé' : getSpecialOrderStatusLabel(order.status) }}
                   </span>
-                  <span *ngIf="!order.estimated_budget" class="text-muted">Non précisé</span>
                 </td>
                 <td>
-                  <span class="badge" [ngClass]="getSpecialOrderStatusClass(order.status)">
-                    {{ getSpecialOrderStatusLabel(order.status) }}
-                  </span>
-                </td>
-                <td>
-                  <div class="btn-group btn-group-sm">
-                    <button class="btn btn-outline-info" title="Voir détails">
-                      <i class="bi bi-eye"></i>
-                    </button>
-                    <button class="btn btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown">
-                      <i class="bi bi-gear"></i>
-                    </button>
-                    <ul class="dropdown-menu">
-                      <li *ngIf="order.status === 'pending'">
-                        <button class="dropdown-item" 
-                                (click)="updateSpecialOrderStatus(order.id, 'confirmed')"
-                                [disabled]="!canAcceptSpecialOrder()">
-                          <i class="bi bi-check-circle text-success"></i> Confirmer
-                        </button>
-                      </li>
-                      <li *ngIf="order.status !== 'cancelled'">
-                        <button class="dropdown-item text-danger" (click)="updateSpecialOrderStatus(order.id, 'cancelled')">
-                          <i class="bi bi-x-circle"></i> Annuler
-                        </button>
-                      </li>
-                      <li><hr class="dropdown-divider"></li>
-                      <li>
-                        <a class="dropdown-item" [href]="'tel:' + order.client_phone">
-                          <i class="bi bi-telephone text-primary"></i> Appeler le client
-                        </a>
-                      </li>
-                      <li>
-                        <a class="dropdown-item" [href]="'mailto:' + order.client_email">
-                          <i class="bi bi-envelope text-primary"></i> Envoyer un email
-                        </a>
-                      </li>
-                    </ul>
+                  <div class="row-acts">
+                    <button class="ico-btn" title="Détails" (click)="viewSpecialOrder(order)"><i class="bi bi-eye-fill"></i></button>
+                    <button class="ico-btn" *ngIf="order.status === 'pending' && !order.quoted_amount" title="Envoyer un devis" (click)="openQuoteModal(order)" style="background:var(--rt-green-s);color:var(--rt-green);border-color:rgba(42,157,92,0.3);"><i class="bi bi-send-fill"></i></button>
+                    <span class="stag s-confirmed" *ngIf="order.status === 'quoted'" style="font-size:.62rem;"><i class="bi bi-check-circle-fill"></i> Devis</span>
+                    <div class="dropdown">
+                      <button class="ico-btn" data-bs-toggle="dropdown"><i class="bi bi-gear-fill"></i></button>
+                      <ul class="dropdown-menu">
+                        <li *ngIf="order.status !== 'cancelled'"><button class="dropdown-item" (click)="openQuoteModal(order)"><i class="bi bi-send" style="color:var(--rt-green)"></i> {{ order.quoted_amount ? 'Renvoyer le devis' : 'Envoyer un devis' }}</button></li>
+                        <li *ngIf="order.status !== 'cancelled'"><hr class="dropdown-divider"></li>
+                        <li *ngIf="order.status === 'pending' || order.status === 'quoted'"><button class="dropdown-item" (click)="updateSpecialOrderStatus(order.id, 'confirmed')" [disabled]="!canAcceptSpecialOrder()"><i class="bi bi-check-circle" style="color:var(--rt-green)"></i> Confirmer la commande</button></li>
+                        <li *ngIf="order.status !== 'cancelled'"><button class="dropdown-item text-danger" (click)="updateSpecialOrderStatus(order.id, 'cancelled')"><i class="bi bi-x-circle"></i> Annuler</button></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item" [href]="'tel:' + order.client_phone"><i class="bi bi-telephone" style="color:var(--rt-blue)"></i> Appeler</a></li>
+                      </ul>
+                    </div>
                   </div>
                 </td>
               </tr>
-              <tr *ngIf="filteredSpecialOrders.length === 0">
-                <td colspan="9" class="text-center text-muted py-4">
-                  <i class="bi bi-inbox fs-1"></i>
-                  <p class="mt-2">Aucune commande spéciale</p>
-                </td>
-              </tr>
+              <tr *ngIf="filteredSpecialOrders.length === 0"><td colspan="10"><div class="empty-blk"><i class="bi bi-stars"></i><p>Aucune commande spéciale</p></div></td></tr>
             </tbody>
           </table>
         </div>
       </div>
-
-      <!-- Subscription Tab -->
-      <div *ngIf="activeTab === 'subscription'" class="tab-pane-custom">
-        <app-subscription-management></app-subscription-management>
-      </div>
-
-      <!-- Commissions Tab -->
-      <div *ngIf="activeTab === 'commissions'" class="tab-pane-custom">
-        <app-commissions-view 
-          [pageTitle]="'Mes Commissions Traiteur'" 
-          [businessType]="'traiteur'">
-        </app-commissions-view>
-      </div>
-
-      <div *ngIf="activeTab === 'support'" class="tab-pane-custom">
-        <app-support-ticket></app-support-ticket>
-      </div>
-
-      <div *ngIf="activeTab === 'branding'" class="tab-pane-custom">
-        <app-branding-setting></app-branding-setting>
-      </div>
-
-      <!-- Reviews Tab -->
-      <div *ngIf="activeTab === 'reviews'">
-        <h3><i class="bi bi-star"></i> Avis Clients</h3>
-        
-        <div class="alert alert-info mb-3">
-          <i class="bi bi-info-circle"></i>
-          <strong>Note moyenne :</strong> {{ business?.average_rating || 0 | number:'1.1-1' }}/5 
-          ({{ business?.reviews_count || 0 }} avis)
-        </div>
-
-        <app-business-reviews 
-          *ngIf="business"
-          [businessId]="business.id!">
-        </app-business-reviews>
-      </div>
-
-      <!-- Testimonial Tab -->
-      <div *ngIf="activeTab === 'testimonial'" class="tab-pane-custom">
-        <h3><i class="bi bi-chat-quote-fill"></i> Mon Témoignage sur RestoTraiteur</h3>
-        
-        <div class="alert alert-info mb-3">
-          <i class="bi bi-info-circle"></i>
-          Partagez votre expérience en tant que partenaire traiteur de RestoTraiteur.
-          Votre témoignage aidera d'autres traiteurs à rejoindre notre plateforme !
-        </div>
-
-        <app-submit-testimonial></app-submit-testimonial>
-      </div>
-
     </div>
-  </div>
 
-  <!-- Modal pour créer/éditer un menu -->
-  <div class="modal" [class.show]="showMenuModal" [style.display]="showMenuModal ? 'block' : 'none'">
-    <div class="modal-dialog">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title">
-            <i class="bi bi-list"></i>
-            {{ editingMenu ? 'Modifier le menu' : 'Nouveau menu' }}
-          </h5>
-          <button type="button" class="btn-close" (click)="closeMenuModal()"></button>
+    <!-- ════════════════ MENUS ════════════════ -->
+    <div class="dash-tab" *ngIf="activeTab==='menus'">
+      <div class="d-card">
+        <div class="dc-head"><span class="dc-title"><i class="bi bi-journal-richtext"></i> Gestion des menus</span><button class="btn-d sm" (click)="showCreateMenuModal()" [disabled]="!canAddMenuItem()"><i class="bi bi-plus-lg"></i> Nouveau menu</button></div>
+        <div class="dc-body">
+          <div class="menu-grid">
+            <div class="menu-card" *ngFor="let menu of menus">
+              <div class="mc-head"><h5>{{ menu.name }}</h5><span class="stag" [ngClass]="menu.is_active ? 'b-active' : 'b-inactive'">{{ menu.is_active ? 'Actif' : 'Inactif' }}</span></div>
+              <div class="mc-body"><p>{{ menu.description || 'Pas de description' }}</p><div class="mc-stats"><i class="bi bi-list-ul"></i> {{ menu.items?.length || 0 }} article{{ (menu.items?.length || 0) > 1 ? 's' : '' }}</div></div>
+              <div class="mc-acts">
+                <button class="btn-ghost-d sm" (click)="editMenu(menu)"><i class="bi bi-pencil-fill"></i> Modifier</button>
+                <button class="btn-d sm" (click)="manageMenuItems(menu)"><i class="bi bi-list-ul"></i> Articles</button>
+                <button class="ico-btn danger" (click)="deleteMenu(menu.id!)"><i class="bi bi-trash3-fill"></i></button>
+              </div>
+            </div>
+          </div>
+          <div class="empty-blk" *ngIf="menus.length===0"><i class="bi bi-journal"></i><p>Créez votre premier menu</p></div>
         </div>
-        <form [formGroup]="menuForm" (ngSubmit)="saveMenu()">
-          <div class="modal-body">
-            <div class="mb-3">
-              <label for="menuName" class="form-label">Nom du menu *</label>
-              <input 
-                type="text" 
-                class="form-control" 
-                id="menuName" 
-                formControlName="name"
-                placeholder="Ex: Menu du jour"
-                [class.is-invalid]="menuForm.get('name')?.invalid && menuForm.get('name')?.touched">
-              <div class="invalid-feedback">Le nom du menu est requis</div>
-            </div>
-
-            <div class="mb-3">
-              <label for="menuDescription" class="form-label">Description</label>
-              <textarea 
-                class="form-control" 
-                id="menuDescription" 
-                formControlName="description"
-                rows="3"
-                placeholder="Décrivez votre menu..."></textarea>
-            </div>
-
-            <div class="form-check">
-              <input 
-                class="form-check-input" 
-                type="checkbox" 
-                id="menuActive" 
-                formControlName="is_active">
-              <label class="form-check-label" for="menuActive">
-                Menu actif
-              </label>
-            </div>
-          </div>
-          <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" (click)="closeMenuModal()">
-              Annuler
-            </button>
-            <button 
-              type="submit" 
-              class="btn btn-primary"
-              [disabled]="menuForm.invalid || menuLoading">
-              <span *ngIf="menuLoading" class="spinner-border spinner-border-sm me-2"></span>
-              <i class="bi bi-check" *ngIf="!menuLoading"></i>
-              {{ editingMenu ? 'Mettre à jour' : 'Créer' }}
-            </button>
-          </div>
-        </form>
       </div>
     </div>
-  </div>
-  <div class="modal-backdrop fade" [class.show]="showMenuModal" *ngIf="showMenuModal"></div>
 
-  <!-- Modal pour changer le mot de passe -->
-  <div class="modal" [class.show]="showPasswordModal" [style.display]="showPasswordModal ? 'block' : 'none'">
-    <div class="modal-dialog">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h5 class="modal-title">
-            <i class="bi bi-key"></i>
-            Changer le mot de passe
-          </h5>
-          <button type="button" class="btn-close" (click)="closePasswordModal()"></button>
+    <!-- ════════════════ PROFILE ════════════════ -->
+    <div class="dash-tab" *ngIf="activeTab==='profile'">
+      <div class="row g-3">
+        <div class="col-lg-6">
+          <div class="d-card">
+            <div class="dc-head"><span class="dc-title"><i class="bi bi-person-circle"></i> Informations personnelles</span></div>
+            <div class="dc-body">
+              <form [formGroup]="profileForm" (ngSubmit)="updateProfile()">
+                <div class="f-2col">
+                  <div class="f-grp"><label class="f-lbl"><i class="bi bi-person"></i> Prénom *</label><input type="text" class="f-inp" formControlName="first_name" [class.bad]="profileForm.get('first_name')?.invalid && profileForm.get('first_name')?.touched"><span class="f-err" *ngIf="profileForm.get('first_name')?.invalid && profileForm.get('first_name')?.touched">Requis</span></div>
+                  <div class="f-grp"><label class="f-lbl"><i class="bi bi-person"></i> Nom *</label><input type="text" class="f-inp" formControlName="last_name" [class.bad]="profileForm.get('last_name')?.invalid && profileForm.get('last_name')?.touched"><span class="f-err" *ngIf="profileForm.get('last_name')?.invalid && profileForm.get('last_name')?.touched">Requis</span></div>
+                </div>
+                <div class="f-2col" style="margin-top:14px;">
+                  <div class="f-grp"><label class="f-lbl"><i class="bi bi-envelope"></i> Email</label><input type="email" class="f-inp" formControlName="email" style="opacity:.6;cursor:not-allowed;"><span class="f-hint">Non modifiable</span></div>
+                  <div class="f-grp"><label class="f-lbl"><i class="bi bi-telephone"></i> Téléphone</label><input type="tel" class="f-inp" formControlName="phone" placeholder="+228 90 12 34 56"></div>
+                </div>
+                <div style="display:flex;gap:8px;margin-top:16px;">
+                  <button type="submit" class="btn-d" [disabled]="profileLoading || profileForm.invalid"><span *ngIf="profileLoading" class="spinner-border spinner-border-sm"></span><i class="bi bi-floppy-fill" *ngIf="!profileLoading"></i> {{ profileLoading ? 'Enregistrement...' : 'Enregistrer' }}</button>
+                  <button type="button" class="btn-ghost-d" (click)="openPasswordModal()"><i class="bi bi-key-fill"></i> Mot de passe</button>
+                </div>
+              </form>
+            </div>
+          </div>
         </div>
-        <form [formGroup]="passwordForm" (ngSubmit)="changePassword()">
-          <div class="modal-body">
-            <div class="mb-3">
-              <label for="currentPassword" class="form-label">Mot de passe actuel *</label>
-              <input 
-                type="password" 
-                class="form-control" 
-                id="currentPassword" 
-                formControlName="currentPassword"
-                [class.is-invalid]="passwordForm.get('currentPassword')?.invalid && passwordForm.get('currentPassword')?.touched">
-              <div class="invalid-feedback">Le mot de passe actuel est requis</div>
-            </div>
-
-            <div class="mb-3">
-              <label for="newPassword" class="form-label">Nouveau mot de passe *</label>
-              <input 
-                type="password" 
-                class="form-control" 
-                id="newPassword" 
-                formControlName="newPassword"
-                [class.is-invalid]="passwordForm.get('newPassword')?.invalid && passwordForm.get('newPassword')?.touched">
-              <div class="password-requirements mt-2">
-                <small class="text-muted d-block mb-1">
-                  <i class="bi bi-info-circle"></i>
-                  Le mot de passe doit contenir :
-                </small>
-                <ul class="requirement-list">
-                  <li [class.valid]="hasMinLength()">
-                    <i class="bi" [ngClass]="hasMinLength() ? 'bi-check-circle text-success' : 'bi-circle'"></i>
-                    Au moins 8 caractères
-                  </li>
-                  <li [class.valid]="hasUpperCase()">
-                    <i class="bi" [ngClass]="hasUpperCase() ? 'bi-check-circle text-success' : 'bi-circle'"></i>
-                    Une lettre majuscule
-                  </li>
-                  <li [class.valid]="hasLowerCase()">
-                    <i class="bi" [ngClass]="hasLowerCase() ? 'bi-check-circle text-success' : 'bi-circle'"></i>
-                    Une lettre minuscule
-                  </li>
-                  <li [class.valid]="hasNumber()">
-                    <i class="bi" [ngClass]="hasNumber() ? 'bi-check-circle text-success' : 'bi-circle'"></i>
-                    Un chiffre
-                  </li>
-                  <li [class.valid]="hasSpecialChar()">
-                    <i class="bi" [ngClass]="hasSpecialChar() ? 'bi-check-circle text-success' : 'bi-circle'"></i>
-                    Un caractère spécial
-                  </li>
-                </ul>
-              </div>
-            </div>
-
-            <div class="mb-3">
-              <label for="confirmPassword" class="form-label">Confirmer le nouveau mot de passe *</label>
-              <input 
-                type="password" 
-                class="form-control" 
-                id="confirmPassword" 
-                formControlName="confirmPassword"
-                [class.is-invalid]="passwordForm.get('confirmPassword')?.invalid && passwordForm.get('confirmPassword')?.touched">
-              <div class="invalid-feedback" *ngIf="passwordForm.hasError('mismatch') && passwordForm.get('confirmPassword')?.touched">
-                Les mots de passe ne correspondent pas
-              </div>
-              <div class="valid-feedback d-block" *ngIf="!passwordForm.hasError('mismatch') && passwordForm.get('confirmPassword')?.value && passwordForm.get('confirmPassword')?.touched">
-                <i class="bi bi-check-circle"></i> Les mots de passe correspondent
-              </div>
+        <div class="col-lg-6">
+          <div class="d-card">
+            <div class="dc-head"><span class="dc-title"><i class="bi bi-building"></i> Informations du service traiteur</span></div>
+            <div class="dc-body">
+              <form [formGroup]="businessForm" (ngSubmit)="updateBusiness()">
+                <div class="f-grp"><label class="f-lbl"><i class="bi bi-building"></i> Nom du service *</label><input type="text" class="f-inp" formControlName="name" placeholder="Ex: Traiteur Chez Marie" [class.bad]="businessForm.get('name')?.invalid && businessForm.get('name')?.touched"></div>
+                <div class="f-grp" style="margin-top:12px;"><label class="f-lbl"><i class="bi bi-card-text"></i> Description</label><textarea class="f-inp" formControlName="description" rows="3" placeholder="Décrivez vos services, spécialités..."></textarea></div>
+                <div class="f-2col" style="margin-top:12px;">
+                  <div class="f-grp"><label class="f-lbl"><i class="bi bi-geo-alt"></i> Adresse</label><input type="text" class="f-inp" formControlName="address" placeholder="123 Rue, Lomé"></div>
+                  <div class="f-grp"><label class="f-lbl"><i class="bi bi-telephone"></i> Téléphone</label><input type="tel" class="f-inp" formControlName="phone" placeholder="+228 22 12 34 56"></div>
+                </div>
+                <button type="submit" class="btn-d" style="margin-top:16px;" [disabled]="businessLoading || businessForm.invalid"><span *ngIf="businessLoading" class="spinner-border spinner-border-sm"></span><i class="bi bi-floppy-fill" *ngIf="!businessLoading"></i> {{ businessLoading ? 'Enregistrement...' : 'Enregistrer' }}</button>
+              </form>
             </div>
           </div>
-          <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" (click)="closePasswordModal()">
-              Annuler
-            </button>
-            <button 
-              type="submit" 
-              class="btn btn-primary"
-              [disabled]="passwordForm.invalid || passwordLoading">
-              <span *ngIf="passwordLoading" class="spinner-border spinner-border-sm me-2"></span>
-              <i class="bi bi-check" *ngIf="!passwordLoading"></i>
-              Changer le mot de passe
-            </button>
-          </div>
-        </form>
+        </div>
       </div>
     </div>
-  </div>
-  <div class="modal-backdrop fade" [class.show]="showPasswordModal" *ngIf="showPasswordModal"></div>
 
-  <!-- Modal Items -->
-  <app-menu-items-modal 
-    [menu]="selectedMenuForItems" 
-    [show]="showItemsModal"
-    (closed)="closeItemsModal()">
-  </app-menu-items-modal>
-
-  <!-- Modale Paiement -->
-<div class="modal" [class.show]="showPaymentModal" [style.display]="showPaymentModal ? 'block' : 'none'">
-  <div class="modal-dialog">
-    <div class="modal-content">
-
-      <div class="modal-header">
-        <h5 class="modal-title">
-          <i class="bi bi-credit-card me-2"></i>
-          Paiement — Commande #{{ selectedOrderForPayment?.id }}
-        </h5>
-        <button type="button" class="btn-close" (click)="closePaymentModal()"></button>
-      </div>
-
-      <div class="modal-body" *ngIf="selectedOrderForPayment">
-
-        <!-- Badge Sandbox -->
-        <div class="alert alert-warning d-flex align-items-center gap-2 mb-3" *ngIf="isSandbox">
-          <i class="bi bi-shield-fill-check fs-5"></i>
-          <div>
-            <strong>Mode Sandbox</strong> — Le paiement sera accepté immédiatement sans déduction réelle.
-          </div>
-        </div>
-
-        <!-- Récap commande -->
-        <div class="card mb-3 border-0 bg-light">
-          <div class="card-body">
-            <div class="d-flex justify-content-between align-items-center">
-              <div>
-                <strong>{{ selectedOrderForPayment.client_name }}</strong>
-                <br>
-                <small class="text-muted">{{ selectedOrderForPayment.client_phone }}</small>
-              </div>
-              <div class="text-end">
-                <span class="fs-4 fw-bold text-success">
-                  {{ formatMontant(selectedOrderForPayment.total_amount) }} FCFA
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Choix méthode de paiement -->
-        <label class="form-label fw-bold mb-2">
-          <i class="bi bi-credit-card me-1"></i>
-          Méthode de paiement
-        </label>
-
-        <div class="d-flex flex-column gap-2">
-
-          <!-- Mixx By Yas -->
-          <div class="payment-method-card"
-               [ngClass]="{ 'selected-mixx': paymentMethod === 'Mixx By Yas' }"
-               (click)="paymentMethod = 'Mixx By Yas'">
-            <div class="d-flex align-items-center gap-3">
-              <span class="fs-4">📱</span>
-              <div class="flex-grow-1">
-                <strong>Mixx By Yas</strong>
-                <br>
-                <small class="text-muted">T-Money / Flooz via Mixx By Yas</small>
-              </div>
-              <i class="bi bi-check-circle-fill text-primary fs-5"
-                 *ngIf="paymentMethod === 'Mixx By Yas'"></i>
-              <i class="bi bi-circle text-muted fs-5"
-                 *ngIf="paymentMethod !== 'Mixx By Yas'"></i>
-            </div>
-          </div>
-
-          <!-- Flooz -->
-          <div class="payment-method-card"
-               [ngClass]="{ 'selected-flooz': paymentMethod === 'flooz' }"
-               (click)="paymentMethod = 'flooz'">
-            <div class="d-flex align-items-center gap-3">
-              <span class="fs-4">💚</span>
-              <div class="flex-grow-1">
-                <strong>Flooz</strong>
-                <br>
-                <small class="text-muted">Paiement mobile Flooz</small>
-              </div>
-              <i class="bi bi-check-circle-fill text-success fs-5"
-                 *ngIf="paymentMethod === 'flooz'"></i>
-              <i class="bi bi-circle text-muted fs-5"
-                 *ngIf="paymentMethod !== 'flooz'"></i>
-            </div>
-          </div>
-
-          <!-- Carte bancaire -->
-          <div class="payment-method-card"
-               [ngClass]="{ 'selected-card': paymentMethod === 'card' }"
-               (click)="paymentMethod = 'card'">
-            <div class="d-flex align-items-center gap-3">
-              <span class="fs-4">💳</span>
-              <div class="flex-grow-1">
-                <strong>Carte bancaire</strong>
-                <br>
-                <small class="text-muted">Visa / Mastercard via CinetPay</small>
-              </div>
-              <i class="bi bi-check-circle-fill fs-5"
-                 style="color: #6f42c1;"
-                 *ngIf="paymentMethod === 'card'"></i>
-              <i class="bi bi-circle text-muted fs-5"
-                 *ngIf="paymentMethod !== 'card'"></i>
-            </div>
-          </div>
-
-        </div>
-
-      </div><!-- /modal-body -->
-
-      <div class="modal-footer">
-        <button type="button"
-                class="btn btn-outline-secondary"
-                (click)="closePaymentModal()"
-                [disabled]="paymentLoading">
-          Annuler
-        </button>
-        <button type="button"
-                class="btn btn-success px-4"
-                (click)="payOrder()"
-                [disabled]="paymentLoading || !paymentMethod">
-          <span *ngIf="paymentLoading"
-                class="spinner-border spinner-border-sm me-2"
-                role="status"></span>
-          <i class="bi bi-credit-card me-1" *ngIf="!paymentLoading"></i>
-          {{ paymentLoading ? 'Traitement...' : (isSandbox ? 'Valider (Sandbox)' : 'Payer maintenant') }}
+    <!-- ════════════════ AVAILABILITY ════════════ -->
+    <div class="dash-tab" *ngIf="activeTab==='availability'">
+      <div class="avail-card">
+        <div class="ac-icon" [ngClass]="business?.is_available ? 'avail' : 'unavail'"><i class="bi" [ngClass]="business?.is_available ? 'bi-check-circle-fill' : 'bi-x-circle-fill'"></i></div>
+        <h4>Statut : {{ business?.is_available ? 'Disponible' : 'Indisponible' }}</h4>
+        <p>{{ business?.is_available ? 'Votre service est visible sur la plateforme et peut recevoir des commandes.' : 'Votre service n\'est pas visible au public et ne peut pas recevoir de commandes.' }}</p>
+        <button class="btn-d" style="font-size:1rem;padding:12px 28px;" [ngClass]="business?.is_available ? 'red' : ''" (click)="toggleAvailability()" [disabled]="availabilityLoading">
+          <span *ngIf="availabilityLoading" class="spinner-border spinner-border-sm"></span>
+          <i class="bi" [ngClass]="business?.is_available ? 'bi-toggle-off' : 'bi-toggle-on'" *ngIf="!availabilityLoading"></i>
+          {{ business?.is_available ? 'Se rendre indisponible' : 'Se rendre disponible' }}
         </button>
       </div>
-
     </div>
+
+    <!-- ════════════════ HOURS ════════════════ -->
+    <div class="dash-tab" *ngIf="activeTab==='hours'">
+      <div class="d-card" style="max-width:480px;">
+        <div class="dc-head"><span class="dc-title"><i class="bi bi-clock-fill"></i> Horaires de disponibilité</span></div>
+        <div class="dc-body">
+          <form [formGroup]="hoursForm" (ngSubmit)="updateHours()">
+            <div class="f-2col"><div class="f-grp"><label class="f-lbl"><i class="bi bi-sunrise"></i> Heure de début</label><input type="time" class="f-inp" formControlName="availability_start"></div><div class="f-grp"><label class="f-lbl"><i class="bi bi-sunset"></i> Heure de fin</label><input type="time" class="f-inp" formControlName="availability_end"></div></div>
+            <button type="submit" class="btn-d" style="margin-top:18px;" [disabled]="hoursLoading"><span *ngIf="hoursLoading" class="spinner-border spinner-border-sm"></span><i class="bi bi-check-circle-fill" *ngIf="!hoursLoading"></i> {{ hoursLoading ? 'Mise à jour...' : 'Mettre à jour' }}</button>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- ════════════════ NOTIFICATIONS ════════ -->
+    <div class="dash-tab" *ngIf="activeTab==='notifications'">
+      <div class="d-card">
+        <div class="dc-head"><span class="dc-title"><i class="bi bi-bell-fill"></i> Toutes les notifications</span><button class="btn-d sm" *ngIf="unreadCount > 0" (click)="markAllNotificationsAsRead()"><i class="bi bi-check-all"></i> Tout lire</button></div>
+        <div class="dc-body" style="padding:12px 14px;display:flex;flex-direction:column;gap:8px;">
+          <div class="notif-card" *ngFor="let n of notifications" [class.unread]="!n.is_read" (click)="markNotificationAsRead(n)">
+            <div class="nc-ico" [ngClass]="getNotificationClass(n.type)"><i class="bi" [ngClass]="getNotificationIcon(n.type)"></i></div>
+            <div class="nc-body"><h5>{{ n.title }}</h5><p>{{ n.message }}</p><small><i class="bi bi-clock"></i> {{ n.created_at | date:'medium' }}</small></div>
+            <div class="nc-dot" *ngIf="!n.is_read"></div>
+          </div>
+          <div class="empty-blk" *ngIf="notifications.length===0"><i class="bi bi-bell-slash"></i><p>Aucune notification</p></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ════════════════ DEPOSIT SETTINGS ═══════ -->
+    <div class="dash-tab" *ngIf="activeTab==='deposit-settings'">
+      <div class="info-banner"><i class="bi bi-info-circle-fill"></i><div><strong>Comment fonctionnent les acomptes ?</strong> Pour les commandes spéciales, vous envoyez un <strong>devis</strong> au client. S'il accepte, il paie un <strong>acompte</strong> pour confirmer. Le solde est payé le jour de l'événement.</div></div>
+      <div class="row g-3">
+        <div class="col-lg-5">
+          <div class="d-card">
+            <div class="dc-head"><span class="dc-title"><i class="bi bi-cash-coin"></i> Configuration actuelle</span></div>
+            <div class="dc-body" style="text-align:center;padding:28px 18px;">
+              <div style="font-size:.72rem;color:var(--rt-t3);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">Pourcentage acompte par défaut</div>
+              <div style="font-family:'Playfair Display',serif;font-size:3.5rem;font-weight:700;color:var(--rt-green);line-height:1;">{{ getDepositPercentage() }}<span style="font-size:1.8rem;color:var(--rt-t3)">%</span></div>
+              <button class="btn-d" style="margin-top:18px;" (click)="openDepositSettingsModal()"><i class="bi bi-pencil-fill"></i> Modifier</button>
+            </div>
+          </div>
+          <div class="info-banner success" style="margin-top:12px;"><i class="bi bi-lightbulb-fill"></i><div><strong>Recommandations</strong><br><span style="font-size:.77rem;display:flex;flex-direction:column;gap:2px;margin-top:4px;"><span><strong>30%</strong> — Standard</span><span><strong>40–50%</strong> — Mariages, grandes réceptions</span><span><strong>20%</strong> — Petits événements / clients réguliers</span></span></div></div>
+        </div>
+        <div class="col-lg-7">
+          <div class="d-card">
+            <div class="dc-head"><span class="dc-title"><i class="bi bi-calculator"></i> Simulateur d'acomptes</span></div>
+            <div class="dc-body">
+              <div class="row g-2">
+                <div class="col-md-4" *ngFor="let scenario of [{label:'Petit', amount:50000}, {label:'Moyen', amount:150000}, {label:'Grand', amount:500000}]">
+                  <div style="background:var(--rt-raised);border:1px solid var(--rt-bdr);border-radius:var(--rt-r);padding:14px;text-align:center;">
+                    <div style="font-size:.72rem;color:var(--rt-t3);font-weight:600;text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px;">{{ scenario.label }}</div>
+                    <div style="font-size:.8rem;color:var(--rt-t2);margin-bottom:4px;">Devis : <strong>{{ scenario.amount | number:'1.0-0' }} FCFA</strong></div>
+                    <div style="font-size:.8rem;margin-bottom:4px;">Acompte : <strong style="color:var(--rt-green)">{{ calculateExampleDeposit(scenario.amount) | number:'1.0-0' }} FCFA</strong></div>
+                    <div style="font-size:.8rem;color:var(--rt-t3)">Solde : {{ (scenario.amount - calculateExampleDeposit(scenario.amount)) | number:'1.0-0' }} FCFA</div>
+                  </div>
+                </div>
+              </div>
+              <div class="workflow-steps" style="margin-top:18px;">
+                <div class="ws-item"><div class="ws-num primary">1</div><h6>Client demande</h6><p>Type d'événement, invités, budget</p></div>
+                <div class="ws-item"><div class="ws-num primary">2</div><h6>Vous envoyez un devis</h6><p>Montant + acompte {{ getDepositPercentage() }}%</p></div>
+                <div class="ws-item"><div class="ws-num primary">3</div><h6>Client paie l'acompte</h6><p>T-Money, Flooz, Carte ou COD</p></div>
+                <div class="ws-item"><div class="ws-num success">4</div><h6>Commande confirmée</h6><p>Solde le jour J</p></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ════════════════ PAYMENT ACCOUNT ═══════ -->
+    <div class="dash-tab" *ngIf="activeTab==='payment-account'">
+      <app-payment-account
+        *ngIf="business"
+        [businessId]="business.id!"
+        [businessName]="business.name || ''"
+        (statusChange)="onPaymentAccountStatusChange($event)">
+      </app-payment-account>
+    </div>
+
+    <!-- ════════════════ IMAGE D'ACCUEIL ════════════ -->
+    <div class="dash-tab" *ngIf="activeTab==='cover-image'">
+      <div class="d-card" style="max-width: 640px;">
+        <div class="dc-head">
+          <span class="dc-title">
+            <i class="bi bi-house-heart-fill"></i> Image de la carte d'accueil
+          </span>
+        </div>
+        <div class="dc-body">
+          <div class="info-banner success mb-3">
+            <i class="bi bi-check-circle-fill"></i>
+            <div>
+              <strong>Disponible sur tous les plans</strong> — Personnalisez votre image 
+              sur la page d'accueil, même sans abonnement Premium.
+            </div>
+          </div>
+          <app-cover-image-setting></app-cover-image-setting>
+        </div>
+      </div>
+      <div class="d-card mt-3" style="max-width: 640px;">
+        <div class="dc-head">
+          <span class="dc-title"><i class="bi bi-info-circle"></i> Différence avec la bannière</span>
+        </div>
+        <div class="dc-body">
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+            <div style="background: var(--rt-raised); border: 1px solid var(--rt-bdr); 
+                        border-radius: var(--rt-r); padding: 14px; text-align: center;">
+              <i class="bi bi-house-heart-fill" 
+                style="font-size: 1.8rem; color: var(--rt-green); display: block; margin-bottom: 8px;"></i>
+              <strong style="font-size: .83rem; color: var(--rt-t1);">Image d'accueil</strong>
+              <p style="font-size: .73rem; color: var(--rt-t3); margin: 6px 0 0; line-height: 1.4;">
+                Carte établissement sur la page d'accueil
+              </p>
+              <span class="sb-badge green" style="margin-top: 8px; display: inline-flex;">Gratuit</span>
+            </div>
+            <div style="background: var(--rt-raised); border: 1px solid var(--rt-bdr); 
+                        border-radius: var(--rt-r); padding: 14px; text-align: center;">
+              <i class="bi bi-card-image" 
+                style="font-size: 1.8rem; color: var(--rt-accent); display: block; margin-bottom: 8px;"></i>
+              <strong style="font-size: .83rem; color: var(--rt-t1);">Bannière profil</strong>
+              <p style="font-size: .73rem; color: var(--rt-t3); margin: 6px 0 0; line-height: 1.4;">
+                Grande image en haut de votre page profil
+              </p>
+              <span class="sb-badge premium" style="margin-top: 8px; display: inline-flex;">Premium</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ════════════════ COMPOSANTS DÉLÉGUÉS ════ -->
+    <div class="dash-tab" *ngIf="activeTab==='subscription'"><app-subscription-management></app-subscription-management></div>
+    <div class="dash-tab" *ngIf="activeTab==='commissions'"><app-commissions-view [pageTitle]="'Mes Commissions Traiteur'" [businessType]="'traiteur'"></app-commissions-view></div>
+    <div class="dash-tab" *ngIf="activeTab==='support'"><app-support-ticket></app-support-ticket></div>
+    <div class="dash-tab" *ngIf="activeTab==='branding'"><app-branding-setting></app-branding-setting></div>
+    <div class="dash-tab" *ngIf="activeTab==='testimonial'"><div class="info-banner" style="max-width:600px;"><i class="bi bi-info-circle-fill"></i><div>Partagez votre expérience en tant que partenaire traiteur de RestoTraiteur.</div></div><app-submit-testimonial></app-submit-testimonial></div>
+    <div class="dash-tab" *ngIf="activeTab==='reviews'"><div class="d-card" style="max-width:700px;"><div class="dc-head"><span class="dc-title"><i class="bi bi-star-fill"></i> Avis Clients</span><span style="font-size:.8rem;color:var(--rt-t3);">Note : <strong style="color:var(--rt-accent)">{{ business?.average_rating || 0 | number:'1.1-1' }}/5</strong> ({{ business?.reviews_count || 0 }} avis)</span></div><div class="dc-body" style="padding:16px;"><app-business-reviews *ngIf="business" [businessId]="business.id!"></app-business-reviews></div></div></div>
+    <div class="dash-tab" *ngIf="activeTab==='analytics'">
+      <app-business-analytics *ngIf="analyticsAccess" [businessId]="business!.id!"></app-business-analytics>
+      <div *ngIf="!analyticsAccess" class="text-center py-5">
+        <div style="font-size:4rem;margin-bottom:16px;">📊</div>
+        <h3 style="font-family:'Playfair Display',serif;color:var(--rt-t1);margin-bottom:8px;">Analytics avancés</h3>
+        <p style="color:var(--rt-t3);margin-bottom:28px;">Visualisez vos performances en temps réel : vues de profil, taux de conversion, articles populaires, courbes d'évolution et bien plus encore.</p>
+        <div class="row justify-content-center g-3 mb-4" style="max-width:600px;margin:0 auto 1.5rem;">
+          <div class="col-6 col-md-4"><div class="d-card" style="padding:18px;text-align:center;"><i class="bi bi-graph-up-arrow" style="font-size:1.8rem;color:var(--rt-blue);display:block;margin-bottom:8px;"></i><small style="color:var(--rt-t3)">Courbes d'évolution</small></div></div>
+          <div class="col-6 col-md-4"><div class="d-card" style="padding:18px;text-align:center;"><i class="bi bi-trophy" style="font-size:1.8rem;color:var(--rt-accent);display:block;margin-bottom:8px;"></i><small style="color:var(--rt-t3)">Top articles</small></div></div>
+          <div class="col-6 col-md-4"><div class="d-card" style="padding:18px;text-align:center;"><i class="bi bi-funnel" style="font-size:1.8rem;color:var(--rt-green);display:block;margin-bottom:8px;"></i><small style="color:var(--rt-t3)">Taux de conversion</small></div></div>
+        </div>
+        <button class="btn-d" style="padding:12px 32px;font-size:.95rem;" (click)="navigateToSubscription()"><i class="bi bi-stars"></i> Passer à un plan Premium</button>
+      </div>
+    </div>
+
+    <!-- ════════════════ LOCALISATION ════ -->
+    <div class="dash-tab" *ngIf="activeTab==='location'">
+      <div class="d-card" style="max-width:600px;">
+        <div class="dc-head">
+          <span class="dc-title"><i class="bi bi-geo-alt-fill"></i> Localisation</span>
+        </div>
+        <div class="dc-body">
+          <div class="info-banner">
+            <i class="bi bi-info-circle-fill"></i>
+            <div>Renseignez vos coordonnées pour apparaître dans les résultats de proximité
+              quand un client active la géolocalisation.</div>
+          </div>
+
+          <div class="f-2col mb-3">
+            <div class="f-grp">
+              <label class="f-lbl"><i class="bi bi-geo-alt"></i> Latitude</label>
+              <input class="f-inp" type="number" [(ngModel)]="locationForm.latitude"
+                placeholder="Ex: 6.1375" step="0.000001">
+            </div>
+            <div class="f-grp">
+              <label class="f-lbl"><i class="bi bi-geo-alt"></i> Longitude</label>
+              <input class="f-inp" type="number" [(ngModel)]="locationForm.longitude"
+                placeholder="Ex: 1.2123" step="0.000001">
+            </div>
+          </div>
+
+          <div class="f-grp mb-3">
+            <label class="f-lbl"><i class="bi bi-map"></i> Quartier</label>
+            <select class="f-inp" [(ngModel)]="locationForm.district">
+              <option value="">-- Sélectionner --</option>
+              <option *ngFor="let d of lomeDistricts" [value]="d.value">{{ d.label }}</option>
+            </select>
+          </div>
+
+          <div class="d-flex gap-2 mb-3 flex-wrap">
+            <button class="btn-ghost-d sm" (click)="geocodeMyAddress()" [disabled]="geocodingLoading">
+              <span *ngIf="geocodingLoading" class="spinner-border spinner-border-sm"></span>
+              <i class="bi bi-crosshair" *ngIf="!geocodingLoading"></i>
+              Depuis l'adresse
+            </button>
+            <button class="btn-ghost-d sm" (click)="useMyCurrentPosition()" [disabled]="gettingPosition">
+              <span *ngIf="gettingPosition" class="spinner-border spinner-border-sm"></span>
+              <i class="bi bi-geo-fill" *ngIf="!gettingPosition"></i>
+              Ma position actuelle
+            </button>
+          </div>
+
+          <div class="info-banner success mb-3"
+            *ngIf="locationForm.latitude && locationForm.longitude">
+            <i class="bi bi-check-circle-fill"></i>
+            <div>{{ locationForm.latitude }}, {{ locationForm.longitude }}
+              <span *ngIf="locationForm.district"> · {{ locationForm.district }}</span>
+            </div>
+          </div>
+
+          <div class="info-banner warning mb-3"
+            *ngIf="!locationForm.latitude || !locationForm.longitude">
+            <i class="bi bi-exclamation-triangle"></i>
+            <div>Aucune coordonnée — vous n'apparaissez pas dans les résultats de proximité.</div>
+          </div>
+
+          <button class="btn-d" (click)="saveLocation()" [disabled]="locationLoading">
+            <span *ngIf="locationLoading" class="spinner-border spinner-border-sm"></span>
+            <i class="bi bi-floppy-fill" *ngIf="!locationLoading"></i>
+            Enregistrer
+          </button>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /dash-main -->
+
+  <!-- ══════════════════════════════════════════════════════════
+     BOTTOM NAV BAR MOBILE TRAITEUR
+  ══════════════════════════════════════════════════════════ -->
+  <div class="mobile-more-overlay" [class.open]="mobileMoreOpen" (click)="mobileMoreOpen = false"></div>
+  <div class="mobile-more-drawer" [class.open]="mobileMoreOpen">
+  
+    <!-- ✅ AJOUT : section Activité avec Menus -->
+    <p class="mmd-section-label">Activité</p>
+    <button class="mmd-item" [class.active]="activeTab==='menus'" (click)="activeTab='menus'; loadMenus(); mobileMoreOpen=false">
+      <i class="bi bi-journal-richtext"></i><span>Menus</span>
+    </button>
+  
+    <p class="mmd-section-label">Gestion</p>
+    <button class="mmd-item" [class.active]="activeTab==='profile'" (click)="activeTab='profile'; mobileMoreOpen=false">
+      <i class="bi bi-person-circle"></i><span>Mon Profil</span>
+    </button>
+    <button class="mmd-item" [class.active]="activeTab==='location'"
+      (click)="activeTab='location'; mobileMoreOpen=false">
+      <i class="bi bi-geo-alt-fill"></i>
+      <span>Localisation</span>
+      <span class="mmd-badge green" *ngIf="hasCoordinates">✓</span>
+    </button>
+    <button class="mmd-item" [class.active]="activeTab==='availability'" (click)="activeTab='availability'; mobileMoreOpen=false">
+      <i class="bi bi-toggle-on"></i><span>Disponibilité</span>
+    </button>
+    <button class="mmd-item" [class.active]="activeTab==='hours'" (click)="activeTab='hours'; mobileMoreOpen=false">
+      <i class="bi bi-clock-fill"></i><span>Horaires</span>
+    </button>
+    <button class="mmd-item" [class.active]="activeTab==='deposit-settings'" (click)="activeTab='deposit-settings'; mobileMoreOpen=false">
+      <i class="bi bi-cash-coin"></i><span>Acomptes</span>
+    </button>
+    <button class="mmd-item" [class.active]="activeTab==='cover-image'" 
+            (click)="activeTab='cover-image'; mobileMoreOpen=false">
+      <i class="bi bi-house-heart-fill"></i><span>Image d'accueil</span>
+      <span class="mmd-badge success">Gratuit</span>
+    </button>
+  
+    <p class="mmd-section-label">Financier</p>
+    <button class="mmd-item"
+      [class.active]="activeTab==='payment-account'"
+      (click)="activeTab='payment-account'; mobileMoreOpen=false">
+      <i class="bi bi-bank"></i><span>Compte paiement</span>
+      <span class="mmd-badge success" *ngIf="paymentAccountStatus === 'verified'">✓</span>
+      <span class="mmd-badge warning" *ngIf="paymentAccountStatus === 'pending_verification'">⏳</span>
+      <span class="mmd-badge danger"  *ngIf="paymentAccountStatus === 'rejected'">!</span>
+    </button>
+    <button class="mmd-item" [class.active]="activeTab==='commissions'" (click)="activeTab='commissions'; mobileMoreOpen=false">
+      <i class="bi bi-percent"></i><span>Commissions</span>
+    </button>
+    <button class="mmd-item" [class.active]="activeTab==='subscription'" (click)="activeTab='subscription'; mobileMoreOpen=false">
+      <i class="bi bi-credit-card-2-front-fill"></i><span>Abonnement</span>
+    </button>
+  
+    <p class="mmd-section-label">Communauté</p>
+    <button class="mmd-item" [class.active]="activeTab==='support'" (click)="activeTab='support'; markSupportAsSeen(); mobileMoreOpen=false">
+      <i class="bi bi-headset"></i><span>Support</span>
+      <span class="mmd-badge success" *ngIf="hasNewSupportResponse">!</span>
+    </button>
+    <button class="mmd-item" [class.active]="activeTab==='reviews'" (click)="activeTab='reviews'; markReviewsAsSeen(); mobileMoreOpen=false">
+      <i class="bi bi-star-fill"></i><span>Avis Clients</span>
+      <span class="mmd-badge warning" *ngIf="hasNewReviews">{{ currentReviewsCount }}</span>
+    </button>
+    <button class="mmd-item" [class.active]="activeTab==='testimonial'" (click)="activeTab='testimonial'; mobileMoreOpen=false">
+      <i class="bi bi-chat-quote-fill"></i><span>Témoignage</span>
+    </button>
+    <button class="mmd-item" [class.active]="activeTab==='branding'" (click)="activeTab='branding'; mobileMoreOpen=false">
+      <i class="bi bi-palette-fill"></i><span>Branding</span>
+      <span class="mmd-badge premium">Premium</span>
+    </button>
+    <button class="mmd-item" [class.active]="activeTab==='analytics'" (click)="activeTab='analytics'; mobileMoreOpen=false">
+      <i class="bi bi-bar-chart-line-fill"></i><span>Analytics</span>
+      <span class="mmd-badge premium" *ngIf="!analyticsAccess">Premium</span>
+    </button>
+  
+  </div>
+
+  <nav class="mobile-bottom-nav">
+    <button class="mbn-item" [class.active]="activeTab==='overview'" (click)="activeTab='overview'; mobileMoreOpen=false"><i class="bi bi-speedometer2"></i><span>Aperçu</span></button>
+    <button class="mbn-item" [class.active]="activeTab==='orders'" (click)="activeTab='orders'; loadOrders(); markOrdersAsSeen(); mobileMoreOpen=false"><i class="bi bi-cart-check-fill"></i><span>Commandes</span><span class="mbn-badge" *ngIf="hasNewOrders">{{ orders.length }}</span></button>
+    <button class="mbn-item" [class.active]="activeTab==='special-orders'" (click)="activeTab='special-orders'; loadSpecialOrders(); mobileMoreOpen=false"><i class="bi bi-stars"></i><span>Spéciales</span><span class="mbn-badge" *ngIf="hasNewSpecialOrders">{{ specialOrders.length }}</span></button>
+    <button class="mbn-item" [class.active]="activeTab==='notifications'" (click)="activeTab='notifications'; loadNotifications(); mobileMoreOpen=false"><i class="bi bi-bell-fill"></i><span>Notifs</span><span class="mbn-badge" *ngIf="unreadCount > 0">{{ unreadCount }}</span></button>
+    <button class="mbn-item mbn-more" [class.active]="mobileMoreOpen" (click)="mobileMoreOpen = !mobileMoreOpen"><i class="bi bi-grid-3x3-gap-fill"></i><span>Plus</span></button>
+  </nav>
+
+</div><!-- /dash-layout -->
+
+<!-- ═══════════════════════════════════════════════════════════ MODALS ══ -->
+
+<div class="modal-ov" [class.on]="showDepositSettingsModal" (click)="closeDepositSettingsModal()">
+  <div class="mbox" (click)="$event.stopPropagation()">
+    <div class="mb-head"><h4><i class="bi bi-cash-coin"></i> Configuration Acomptes</h4><button class="ico-btn" (click)="closeDepositSettingsModal()"><i class="bi bi-x-lg"></i></button></div>
+    <form [formGroup]="depositSettingsForm" (ngSubmit)="saveDepositSettings()">
+      <div class="mb-body">
+        <div class="info-banner"><i class="bi bi-lightbulb-fill"></i><div>Un acompte de <strong>30%</strong> est le standard. Pour les mariages, <strong>40–50%</strong> est recommandé.</div></div>
+        <div class="f-grp">
+          <label class="f-lbl"><i class="bi bi-percent"></i> Pourcentage d'acompte par défaut *</label>
+          <div style="display:flex;align-items:center;gap:10px;"><input type="number" class="f-inp" formControlName="default_special_order_deposit_percentage" placeholder="30" min="10" max="100" step="5" style="flex:1;" [class.bad]="depositSettingsForm.get('default_special_order_deposit_percentage')?.invalid && depositSettingsForm.get('default_special_order_deposit_percentage')?.touched"><span style="font-size:1.2rem;font-weight:700;color:var(--rt-t3);">%</span></div>
+          <span class="f-err" *ngIf="depositSettingsForm.get('default_special_order_deposit_percentage')?.invalid && depositSettingsForm.get('default_special_order_deposit_percentage')?.touched">Doit être entre 10% et 100%</span>
+        </div>
+        <div style="background:var(--rt-raised);border:1px solid var(--rt-bdr);border-radius:var(--rt-r);padding:14px;">
+          <div style="font-size:.75rem;font-weight:700;color:var(--rt-t2);margin-bottom:10px;"><i class="bi bi-calculator" style="color:var(--rt-green);"></i> Aperçu</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+            <div><div style="font-size:.7rem;color:var(--rt-t3);">Devis 100 000 FCFA</div><div style="font-weight:700;color:var(--rt-green);font-size:.88rem;">Acompte : {{ calculateExampleDeposit(100000) | number:'1.0-0' }} FCFA</div></div>
+            <div><div style="font-size:.7rem;color:var(--rt-t3);">Devis 250 000 FCFA</div><div style="font-weight:700;color:var(--rt-green);font-size:.88rem;">Acompte : {{ calculateExampleDeposit(250000) | number:'1.0-0' }} FCFA</div></div>
+          </div>
+        </div>
+      </div>
+      <div class="mb-foot"><button type="button" class="btn-ghost-d sm" (click)="closeDepositSettingsModal()">Annuler</button><button type="submit" class="btn-d sm" [disabled]="depositSettingsForm.invalid || depositSettingsLoading"><span *ngIf="depositSettingsLoading" class="spinner-border spinner-border-sm"></span><i class="bi bi-check-circle-fill" *ngIf="!depositSettingsLoading"></i> {{ depositSettingsLoading ? 'Enregistrement...' : 'Enregistrer' }}</button></div>
+    </form>
   </div>
 </div>
-<!-- Backdrop -->
-<div class="modal-backdrop fade show" *ngIf="showPaymentModal"></div>
 
-</div> 
+<div class="modal-ov" [class.on]="showMenuModal" (click)="closeMenuModal()">
+  <div class="mbox" (click)="$event.stopPropagation()">
+    <div class="mb-head"><h4><i class="bi bi-journal-richtext"></i> {{ editingMenu ? 'Modifier le menu' : 'Nouveau menu' }}</h4><button class="ico-btn" (click)="closeMenuModal()"><i class="bi bi-x-lg"></i></button></div>
+    <form [formGroup]="menuForm" (ngSubmit)="saveMenu()">
+      <div class="mb-body">
+        <div class="f-grp"><label class="f-lbl"><i class="bi bi-journal"></i> Nom du menu *</label><input type="text" class="f-inp" formControlName="name" placeholder="Ex: Menu du jour, Menu mariage..." [class.bad]="menuForm.get('name')?.invalid && menuForm.get('name')?.touched"><span class="f-err" *ngIf="menuForm.get('name')?.invalid && menuForm.get('name')?.touched">Requis</span></div>
+        <div class="f-grp"><label class="f-lbl"><i class="bi bi-card-text"></i> Description</label><textarea class="f-inp" formControlName="description" rows="3" placeholder="Décrivez le menu..."></textarea></div>
+        <div class="toggle-row"><div class="tr-label">Menu actif <small>Visible et disponible à la commande</small></div><label class="tr-toggle"><input type="checkbox" formControlName="is_active"><span class="slider"></span></label></div>
+      </div>
+      <div class="mb-foot"><button type="button" class="btn-ghost-d sm" (click)="closeMenuModal()">Annuler</button><button type="submit" class="btn-d sm" [disabled]="menuForm.invalid || menuLoading"><span *ngIf="menuLoading" class="spinner-border spinner-border-sm"></span><i class="bi bi-check-circle-fill" *ngIf="!menuLoading"></i> {{ editingMenu ? 'Mettre à jour' : 'Créer' }}</button></div>
+    </form>
+  </div>
+</div>
+
+<div class="modal-ov" [class.on]="showPasswordModal" (click)="closePasswordModal()">
+  <div class="mbox" (click)="$event.stopPropagation()">
+    <div class="mb-head"><h4><i class="bi bi-key-fill"></i> Changer le mot de passe</h4><button class="ico-btn" (click)="closePasswordModal()"><i class="bi bi-x-lg"></i></button></div>
+    <form [formGroup]="passwordForm" (ngSubmit)="changePassword()">
+      <div class="mb-body">
+        <div class="f-grp"><label class="f-lbl"><i class="bi bi-lock"></i> Mot de passe actuel *</label><input type="password" class="f-inp" formControlName="currentPassword" [class.bad]="passwordForm.get('currentPassword')?.invalid && passwordForm.get('currentPassword')?.touched"></div>
+        <div class="f-grp"><label class="f-lbl"><i class="bi bi-lock-fill"></i> Nouveau mot de passe *</label><input type="password" class="f-inp" formControlName="newPassword" [class.bad]="passwordForm.get('newPassword')?.invalid && passwordForm.get('newPassword')?.touched"><ul class="req-list" style="margin-top:6px;"><li [class.valid]="hasMinLength()"><i class="bi" [ngClass]="hasMinLength() ? 'bi-check-circle-fill' : 'bi-circle'"></i> 8 caractères minimum</li><li [class.valid]="hasUpperCase()"><i class="bi" [ngClass]="hasUpperCase() ? 'bi-check-circle-fill' : 'bi-circle'"></i> Une majuscule</li><li [class.valid]="hasNumber()"><i class="bi" [ngClass]="hasNumber() ? 'bi-check-circle-fill' : 'bi-circle'"></i> Un chiffre</li><li [class.valid]="hasSpecialChar()"><i class="bi" [ngClass]="hasSpecialChar() ? 'bi-check-circle-fill' : 'bi-circle'"></i> Un caractère spécial</li></ul></div>
+        <div class="f-grp"><label class="f-lbl"><i class="bi bi-lock-fill"></i> Confirmer le nouveau mot de passe *</label><input type="password" class="f-inp" formControlName="confirmPassword" [class.bad]="passwordForm.get('confirmPassword')?.invalid && passwordForm.get('confirmPassword')?.touched"><span class="f-err" *ngIf="passwordForm.hasError('mismatch') && passwordForm.get('confirmPassword')?.touched">Les mots de passe ne correspondent pas</span></div>
+      </div>
+      <div class="mb-foot"><button type="button" class="btn-ghost-d sm" (click)="closePasswordModal()">Annuler</button><button type="submit" class="btn-d sm" [disabled]="passwordForm.invalid || passwordLoading"><span *ngIf="passwordLoading" class="spinner-border spinner-border-sm"></span><i class="bi bi-check-circle-fill" *ngIf="!passwordLoading"></i> {{ passwordLoading ? 'Modification...' : 'Changer' }}</button></div>
+    </form>
+  </div>
+</div>
+
+<div class="modal-ov" [class.on]="showPaymentModal" (click)="closePaymentModal()">
+  <div class="mbox" (click)="$event.stopPropagation()">
+    <div class="mb-head"><h4><i class="bi bi-credit-card-fill"></i> Paiement — Commande {{ selectedOrderForPayment?.id }}</h4><button class="ico-btn" (click)="closePaymentModal()"><i class="bi bi-x-lg"></i></button></div>
+    <div class="mb-body" *ngIf="selectedOrderForPayment">
+      <div class="info-banner warning" *ngIf="isSandbox"><i class="bi bi-shield-fill-check"></i><div><strong>Mode Sandbox</strong> — Paiement accepté immédiatement sans déduction réelle.</div></div>
+      <div style="background:var(--rt-raised);border:1px solid var(--rt-bdr);border-radius:var(--rt-r);padding:14px;display:flex;justify-content:space-between;align-items:center;"><div><div style="font-weight:700;color:var(--rt-t1);">{{ selectedOrderForPayment.client_name }}</div><div style="font-size:.77rem;color:var(--rt-t3);">{{ selectedOrderForPayment.client_phone }}</div></div><div style="font-family:'Playfair Display',serif;font-size:1.5rem;font-weight:700;color:var(--rt-green);">{{ formatMontant(selectedOrderForPayment.total_amount) }}<small style="font-size:.8rem;font-weight:400;color:var(--rt-t3)"> FCFA</small></div></div>
+      <div><div class="f-lbl" style="margin-bottom:8px;"><i class="bi bi-credit-card"></i> Méthode de paiement</div><div style="display:flex;flex-direction:column;gap:8px;">
+        <div *ngFor="let method of [{id:'Mixx By Yas',ico:'📱',label:'Mixx By Yas',sub:'T-Money / Flooz'},{id:'flooz',ico:'💚',label:'Flooz',sub:'Paiement mobile Flooz'},{id:'card',ico:'💳',label:'Carte bancaire',sub:'Visa / Mastercard via CinetPay'}]" (click)="paymentMethod=method.id" style="display:flex;align-items:center;gap:12px;padding:12px 14px;background:var(--rt-raised);border:1px solid var(--rt-bdr);border-radius:var(--rt-r);cursor:pointer;transition:var(--rt-tr);" [style.border-color]="paymentMethod===method.id ? 'var(--rt-green)' : ''" [style.background]="paymentMethod===method.id ? 'var(--rt-green-s)' : ''">
+          <span style="font-size:1.4rem;">{{ method.ico }}</span><div style="flex:1;"><strong style="font-size:.88rem;">{{ method.label }}</strong><br><small style="color:var(--rt-t3)">{{ method.sub }}</small></div>
+          <i class="bi" [ngClass]="paymentMethod===method.id ? 'bi-check-circle-fill' : 'bi-circle'" [style.color]="paymentMethod===method.id ? 'var(--rt-green)' : 'var(--rt-t4)'" style="font-size:1.1rem;"></i>
+        </div>
+      </div></div>
+    </div>
+    <div class="mb-foot"><button class="btn-ghost-d sm" (click)="closePaymentModal()" [disabled]="paymentLoading">Annuler</button><button class="btn-d sm" (click)="payOrder()" [disabled]="paymentLoading || !paymentMethod"><span *ngIf="paymentLoading" class="spinner-border spinner-border-sm"></span><i class="bi bi-credit-card-fill" *ngIf="!paymentLoading"></i> {{ paymentLoading ? 'Traitement...' : (isSandbox ? 'Valider (Sandbox)' : 'Payer maintenant') }}</button></div>
+  </div>
+</div>
+
+<!-- Modal Devis -->
+<div class="modal-ov" [class.on]="showQuoteModal" (click)="closeQuoteModal()">
+  <div class="mbox" style="max-width:700px;" (click)="$event.stopPropagation()">
+    <div class="mb-head"><h4><i class="bi bi-send-fill"></i> Envoyer un devis</h4><button class="ico-btn" (click)="closeQuoteModal()"><i class="bi bi-x-lg"></i></button></div>
+    <form [formGroup]="quoteForm" (ngSubmit)="sendQuote()" *ngIf="selectedOrderForQuote">
+      <div class="mb-body">
+        <div style="background:var(--rt-raised);border:1px solid var(--rt-bdr);border-radius:var(--rt-r);padding:14px;margin-bottom:18px;">
+          <div style="display:flex;justify-content:space-between;align-items:start;">
+            <div><div style="font-weight:700;color:var(--rt-t1);margin-bottom:4px;">{{ selectedOrderForQuote.client_name }}</div><div style="font-size:.77rem;color:var(--rt-t3);"><i class="bi bi-telephone"></i> {{ selectedOrderForQuote.client_phone }}<br><i class="bi bi-envelope"></i> {{ selectedOrderForQuote.client_email }}</div></div>
+            <div style="text-align:right;"><div style="font-size:.7rem;color:var(--rt-t3);margin-bottom:2px;">{{ getEventTypeLabel(selectedOrderForQuote.event_type) }}</div><div style="font-weight:700;color:var(--rt-green);">{{ selectedOrderForQuote.event_date | date:'dd/MM/yyyy' }}</div><div style="font-size:.77rem;color:var(--rt-t3);">{{ selectedOrderForQuote.number_of_guests }} invités</div></div>
+          </div>
+        </div>
+        <div class="row g-3">
+          <div class="col-md-6"><div class="f-grp"><label class="f-lbl"><i class="bi bi-currency-exchange"></i> Montant prestation (FCFA) *</label><input type="number" class="f-inp" formControlName="quoted_amount" placeholder="Ex: 150000" min="1000" step="1000" [class.bad]="quoteForm.get('quoted_amount')?.invalid && quoteForm.get('quoted_amount')?.touched"><span class="f-hint">Prix de la prestation traiteur</span><span class="f-err" *ngIf="quoteForm.get('quoted_amount')?.invalid && quoteForm.get('quoted_amount')?.touched">Montant minimum : 1 000 FCFA</span></div></div>
+          <div class="col-md-6"><div class="f-grp"><label class="f-lbl"><i class="bi bi-percent"></i> Acompte (%) *</label><input type="number" class="f-inp" formControlName="deposit_percentage" placeholder="30" min="10" max="100" step="5" [class.bad]="quoteForm.get('deposit_percentage')?.invalid && quoteForm.get('deposit_percentage')?.touched"><span class="f-hint">Généralement 30-50%</span></div></div>
+        </div>
+        <div class="f-grp" style="margin-top:12px;"><label class="f-lbl"><i class="bi bi-truck"></i> Frais de transport (optionnel)</label><input type="number" class="f-inp" formControlName="transport_fee" placeholder="0" min="0" step="1000"><span class="f-hint">Laisser à 0 si inclus</span></div>
+        <div class="f-grp" style="margin-top:12px;"><label class="f-lbl"><i class="bi bi-chat-left-text"></i> Notes (optionnel)</label><textarea class="f-inp" formControlName="quote_notes" rows="3" placeholder="Ex: Menu personnalisé, service inclus, vaisselle fournie..."></textarea></div>
+        <div style="background:linear-gradient(135deg, var(--rt-green-s) 0%, var(--rt-blue-s) 100%);border:1px solid rgba(42,157,92,0.25);border-radius:var(--rt-r);padding:18px;margin-top:18px;">
+          <div style="font-size:.75rem;font-weight:700;color:var(--rt-t2);margin-bottom:12px;text-transform:uppercase;letter-spacing:.8px;"><i class="bi bi-calculator"></i> Récapitulatif</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+            <div><div style="font-size:.7rem;color:var(--rt-t3);margin-bottom:4px;">Prestation</div><div style="font-weight:700;color:var(--rt-t1);font-size:1.1rem;">{{ formatMontant(quoteForm.get('quoted_amount')?.value || 0) }}<small style="font-size:.7rem;font-weight:400;color:var(--rt-t3)"> FCFA</small></div></div>
+            <div><div style="font-size:.7rem;color:var(--rt-t3);margin-bottom:4px;">Transport</div><div style="font-weight:700;color:var(--rt-t1);font-size:1.1rem;">{{ formatMontant(quoteForm.get('transport_fee')?.value || 0) }}<small style="font-size:.7rem;font-weight:400;color:var(--rt-t3)"> FCFA</small></div></div>
+            <div style="grid-column:1/-1;padding-top:12px;border-top:1px solid var(--rt-bdr);"><div style="font-size:.7rem;color:var(--rt-t3);margin-bottom:4px;">TOTAL DEVIS</div><div style="font-family:'Playfair Display',serif;font-weight:700;color:var(--rt-green);font-size:1.8rem;line-height:1;">{{ formatMontant(calculateQuoteTotals().finalAmount) }}<small style="font-size:.9rem;font-weight:400;color:var(--rt-t3)"> FCFA</small></div></div>
+          </div>
+          <div style="border-top:1px solid var(--rt-bdr);margin-top:14px;padding-top:14px;display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+            <div><div style="font-size:.7rem;color:var(--rt-t3);margin-bottom:4px;">Acompte ({{ quoteForm.get('deposit_percentage')?.value }}%)</div><div style="font-weight:700;color:var(--rt-primary);font-size:1.3rem;">{{ formatMontant(calculateQuoteTotals().depositAmount) }}<small style="font-size:.7rem;font-weight:400;color:var(--rt-t3)"> FCFA</small></div></div>
+            <div><div style="font-size:.7rem;color:var(--rt-t3);margin-bottom:4px;">Solde (le jour J)</div><div style="font-weight:700;color:var(--rt-accent);font-size:1.3rem;">{{ formatMontant(calculateQuoteTotals().balance) }}<small style="font-size:.7rem;font-weight:400;color:var(--rt-t3)"> FCFA</small></div></div>
+          </div>
+        </div>
+        <div class="info-banner" style="margin-top:14px;"><i class="bi bi-info-circle-fill"></i><div>Un email sera automatiquement envoyé à <strong>{{ selectedOrderForQuote.client_email }}</strong> avec le détail du devis et un lien de paiement sécurisé pour l'acompte.</div></div>
+      </div>
+      <div class="mb-foot"><button type="button" class="btn-ghost-d sm" (click)="closeQuoteModal()" [disabled]="quoteLoading">Annuler</button><button type="submit" class="btn-d sm" [disabled]="quoteForm.invalid || quoteLoading"><span *ngIf="quoteLoading" class="spinner-border spinner-border-sm"></span><i class="bi bi-send-fill" *ngIf="!quoteLoading"></i> {{ quoteLoading ? 'Envoi...' : 'Envoyer le devis' }}</button></div>
+    </form>
+  </div>
+</div>
+
+<app-menu-items-modal [menu]="selectedMenuForItems" [show]="showItemsModal" (closed)="closeItemsModal()"></app-menu-items-modal>
+<app-order-details-modal [order]="selectedOrder" [show]="showOrderDetailsModal" [loading]="loadingOrderUpdate" (closed)="onOrderModalClosed()" (statusChanged)="onOrderStatusChanged($event)"></app-order-details-modal>
+<app-special-order-details-modal [specialOrder]="selectedSpecialOrder" [show]="showSpecialOrderDetailsModal" (closed)="onSpecialOrderModalClosed()" (statusChanged)="onSpecialOrderStatusChanged($event)"></app-special-order-details-modal>

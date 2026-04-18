@@ -1,0 +1,152 @@
+<div class="pay-deposit-page">
+  
+  <!-- Loading -->
+  <div *ngIf="loading" class="loading-state">
+    <div class="spinner-border text-primary"></div>
+    <p>Chargement du devis...</p>
+  </div>
+
+  <!-- Contenu -->
+  <div *ngIf="!loading && order" class="container py-5">
+    
+    <div class="row justify-content-center">
+      <div class="col-lg-8">
+        
+        <!-- Header -->
+        <div class="card shadow-sm mb-4">
+          <div class="card-body text-center py-4">
+            <h2 class="mb-2">💳 Paiement de l'acompte</h2>
+            <p class="text-muted mb-0">Commande spéciale #{{ orderId }}</p>
+          </div>
+        </div>
+
+        <!-- Détails événement -->
+        <div class="card shadow-sm mb-4">
+          <div class="card-header bg-light">
+            <h5 class="mb-0"><i class="bi bi-calendar-event"></i> Détails de votre événement</h5>
+          </div>
+          <div class="card-body">
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <small class="text-muted d-block">Type</small>
+                <strong>{{ getEventTypeLabel(order.event_type) }}</strong>
+              </div>
+              <div class="col-md-6 mb-3">
+                <small class="text-muted d-block">Date</small>
+                <strong>{{ order.event_date | date:'dd/MM/yyyy' }} à {{ order.event_time }}</strong>
+              </div>
+              <div class="col-md-6">
+                <small class="text-muted d-block">Invités</small>
+                <strong>{{ order.number_of_guests }} personnes</strong>
+              </div>
+              <div class="col-md-6">
+                <small class="text-muted d-block">Traiteur</small>
+                <strong>{{ order.business_name }}</strong>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Récapitulatif montants -->
+        <div class="card shadow-sm mb-4">
+          <div class="card-header bg-light">
+            <h5 class="mb-0"><i class="bi bi-calculator"></i> Récapitulatif financier</h5>
+          </div>
+          <div class="card-body">
+            <div class="d-flex justify-content-between mb-2">
+              <span>Prestation traiteur</span>
+              <strong>{{ formatAmount(order.quoted_amount) }} FCFA</strong>
+            </div>
+            <div class="d-flex justify-content-between mb-2" *ngIf="order.transport_fee > 0">
+              <span>Frais de transport</span>
+              <strong>{{ formatAmount(order.transport_fee) }} FCFA</strong>
+            </div>
+            <hr>
+            <div class="d-flex justify-content-between mb-3">
+              <strong>TOTAL</strong>
+              <strong class="text-success fs-5">{{ formatAmount(order.final_amount) }} FCFA</strong>
+            </div>
+            
+            <!-- Acompte -->
+            <div class="alert alert-warning">
+              <div class="d-flex justify-content-between align-items-center">
+                <div>
+                  <strong>💳 Acompte à payer ({{ order.deposit_percentage }}%)</strong>
+                  <p class="mb-0 small">Pour confirmer votre commande</p>
+                </div>
+                <div class="text-end">
+                  <div class="fs-3 fw-bold text-warning">{{ formatAmount(order.deposit_amount) }} FCFA</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Solde -->
+            <div class="alert alert-info">
+              <strong>📌 Solde restant</strong>
+              <p class="mb-0">{{ formatAmount(order.final_amount - order.deposit_amount) }} FCFA à régler le jour de l'événement</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Notes du traiteur -->
+        <div class="card shadow-sm mb-4" *ngIf="order.quote_notes">
+          <div class="card-header bg-light">
+            <h5 class="mb-0"><i class="bi bi-chat-left-text"></i> Notes du traiteur</h5>
+          </div>
+          <div class="card-body">
+            <p class="mb-0" style="white-space: pre-line;">{{ order.quote_notes }}</p>
+          </div>
+        </div>
+
+        <!-- Méthodes de paiement -->
+        <div class="card shadow-sm mb-4" *ngIf="order.deposit_status !== 'paid'">
+          <div class="card-header bg-primary text-white">
+            <h5 class="mb-0"><i class="bi bi-credit-card"></i> Choisissez votre méthode de paiement</h5>
+          </div>
+          <div class="card-body">
+            
+            <div class="payment-method" 
+              *ngFor="let method of [
+                {id:'Mixx By Yas', icon:'📱', name:'Mixx By Yas', desc:'T-Money'},
+                {id:'flooz', icon:'💚', name:'Flooz', desc:'Mobile Money'},
+                {id:'card', icon:'💳', name:'Carte bancaire', desc:'Visa / Mastercard'},
+                {id:'cod', icon:'💵', name:'Paiement sur place', desc:'Espèces chez le traiteur'}
+              ]"
+              [class.selected]="selectedMethod === method.id"
+              (click)="selectedMethod = method.id">
+              
+              <div class="method-icon">{{ method.icon }}</div>
+              <div class="method-info">
+                <strong>{{ method.name }}</strong>
+                <small>{{ method.desc }}</small>
+              </div>
+              <i class="bi" [class.bi-check-circle-fill]="selectedMethod === method.id" 
+                [class.bi-circle]="selectedMethod !== method.id"></i>
+            </div>
+
+            <button class="btn btn-success btn-lg w-100 mt-4" 
+              (click)="payDeposit()" 
+              [disabled]="paying || !selectedMethod">
+              <span *ngIf="paying" class="spinner-border spinner-border-sm me-2"></span>
+              <i class="bi bi-lock-fill me-2" *ngIf="!paying"></i>
+              {{ paying ? 'Traitement...' : 'Payer l\'acompte maintenant' }}
+            </button>
+
+            <div class="text-center mt-3">
+              <small class="text-muted">
+                <i class="bi bi-shield-check"></i> Paiement sécurisé par CinetPay
+              </small>
+            </div>
+          </div>
+        </div>
+
+        <!-- Déjà payé -->
+        <div class="alert alert-success" *ngIf="order.deposit_status === 'paid'">
+          <h5><i class="bi bi-check-circle-fill"></i> Acompte déjà payé</h5>
+          <p class="mb-0">Votre commande est confirmée. Merci !</p>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>

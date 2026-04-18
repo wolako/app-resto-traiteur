@@ -71,36 +71,78 @@ class Business {
     return result.rows[0];
   }
 
-  // ✅ MÉTHODE CORRIGÉE : Gestion des champs TIME vides
+  // ✅ MÉTHODE CORRIGÉE : Avec allowedFields ET gestion des champs TIME vides
   static async update(id, updates) {
+    console.log('🔍 [DEBUG] Business.update called');
+    console.log('🔍 [DEBUG] id:', id);
+    console.log('🔍 [DEBUG] updates received:', JSON.stringify(updates, null, 2));
+
+    const allowedFields = [
+      'name', 'description', 'address', 'phone',
+      'opening_hour', 'closing_hour',
+      'availability_start', 'availability_end',
+      'is_available', 'photo_url',
+      'requires_reservation_deposit',
+      'default_deposit_amount',
+      'default_special_order_deposit_percentage',
+      'latitude',   // ✅
+      'longitude',  // ✅
+      'district',   // ✅
+    ];
+
     const fields = [];
     const values = [];
     let paramCount = 1;
 
-    // ✅ CORRECTION : Filtrer les valeurs vides pour les champs TIME
     const timeFields = ['opening_hour', 'closing_hour', 'availability_start', 'availability_end'];
 
     Object.keys(updates).forEach(key => {
-      // Si la valeur est undefined, on la saute
-      if (updates[key] === undefined) {
+      console.log(`🔍 [DEBUG] Checking field: ${key}, value: ${updates[key]}, allowed: ${allowedFields.includes(key)}`);
+
+      if (!allowedFields.includes(key)) {
+        console.log(`⚠️  [DEBUG] Field ${key} NOT in allowedFields - SKIPPED`);
         return;
       }
 
-      // ✅ Si c'est un champ TIME et qu'il est vide ou null, on le met à NULL
+      // ✅ Rejeter undefined mais accepter null, 0, false, ''
+      if (updates[key] === undefined) {
+        console.log(`⚠️  [DEBUG] Field ${key} is undefined - SKIPPED`);
+        return;
+      }
+
       if (timeFields.includes(key) && (updates[key] === '' || updates[key] === null)) {
         fields.push(`${key} = $${paramCount}`);
         values.push(null);
         paramCount++;
+        console.log(`✅ [DEBUG] Field ${key} added as NULL`);
         return;
       }
 
-      // Sinon, on ajoute normalement
+      // ✅ Pour latitude/longitude : convertir en float si c'est une string
+      if (key === 'latitude' || key === 'longitude') {
+        const numVal = parseFloat(updates[key]);
+        if (isNaN(numVal)) {
+          console.log(`⚠️  [DEBUG] Field ${key} is NaN - SKIPPED`);
+          return;
+        }
+        fields.push(`${key} = $${paramCount}`);
+        values.push(numVal);
+        paramCount++;
+        console.log(`✅ [DEBUG] Field ${key} added as float: ${numVal}`);
+        return;
+      }
+
       fields.push(`${key} = $${paramCount}`);
       values.push(updates[key]);
       paramCount++;
+      console.log(`✅ [DEBUG] Field ${key} added with value: ${updates[key]}`);
     });
 
+    console.log('🔍 [DEBUG] Final fields array:', fields);
+    console.log('🔍 [DEBUG] Final values array:', values);
+
     if (fields.length === 0) {
+      console.log('❌ [DEBUG] No fields to update - throwing error');
       throw new Error('Aucune donnée à mettre à jour');
     }
 
@@ -108,8 +150,8 @@ class Business {
 
     const result = await pool.query(
       `UPDATE businesses SET ${fields.join(', ')}, updated_at = CURRENT_TIMESTAMP
-       WHERE id = $${paramCount}
-       RETURNING *`,
+      WHERE id = $${paramCount}
+      RETURNING *`,
       values
     );
 
@@ -291,13 +333,16 @@ class Business {
               b.is_active,
               b.created_at,
               b.updated_at,
-              u.first_name, 
-              u.last_name, 
+              b.latitude,    -- ✅ NOUVEAU
+              b.longitude,   -- ✅ NOUVEAU
+              b.district,    -- ✅ NOUVEAU
+              u.first_name,
+              u.last_name,
               u.email as owner_email,
               u.phone as owner_phone
-       FROM businesses b
-       JOIN users u ON b.user_id = u.id
-       ORDER BY b.created_at DESC`
+      FROM businesses b
+      JOIN users u ON b.user_id = u.id
+      ORDER BY b.created_at DESC`
     );
     return result.rows;
   }

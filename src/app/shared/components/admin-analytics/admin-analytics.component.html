@@ -1,0 +1,229 @@
+<div class="admin-analytics-container">
+
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h4 class="mb-0">
+      <i class="bi bi-graph-up-arrow text-primary me-2"></i>Analytics Plateforme
+    </h4>
+    <div class="btn-group" role="group">
+      <input type="radio" class="btn-check" id="ap7"  [(ngModel)]="selectedPeriod" [value]="7"  (change)="onPeriodChange()">
+      <label class="btn btn-outline-primary btn-sm" for="ap7">7 jours</label>
+      <input type="radio" class="btn-check" id="ap30" [(ngModel)]="selectedPeriod" [value]="30" (change)="onPeriodChange()">
+      <label class="btn btn-outline-primary btn-sm" for="ap30">30 jours</label>
+      <input type="radio" class="btn-check" id="ap90" [(ngModel)]="selectedPeriod" [value]="90" (change)="onPeriodChange()">
+      <label class="btn btn-outline-primary btn-sm" for="ap90">90 jours</label>
+    </div>
+  </div>
+
+  <div *ngIf="loading" class="text-center py-5">
+    <div class="spinner-border text-primary" role="status"></div>
+    <p class="mt-2 text-muted">Chargement des statistiques...</p>
+  </div>
+
+  <ng-container *ngIf="!loading && overview">
+
+    <!-- ── KPIs globaux ─────────────────────────────────────── -->
+    <div class="row g-3 mb-4">
+      <div class="col-6 col-lg-3">
+        <div class="card border-0 shadow-sm h-100">
+          <div class="card-body">
+            <div class="d-flex align-items-center gap-2 mb-1">
+              <div class="icon-box bg-primary-subtle text-primary rounded p-2">
+                <i class="bi bi-shop"></i>
+              </div>
+              <small class="text-muted">Établissements actifs</small>
+            </div>
+            <h3 class="mb-0 fw-bold">{{ formatNumber(overview.active_businesses) }}</h3>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-6 col-lg-3">
+        <div class="card border-0 shadow-sm h-100">
+          <div class="card-body">
+            <div class="d-flex align-items-center gap-2 mb-1">
+              <div class="icon-box bg-info-subtle text-info rounded p-2">
+                <i class="bi bi-eye"></i>
+              </div>
+              <small class="text-muted">Vues totales</small>
+            </div>
+            <h3 class="mb-0 fw-bold">{{ formatNumber(overview.total_page_views) }}</h3>
+          </div>
+        </div>
+      </div>
+
+      <!-- ✅ CORRIGÉ : total_orders = orders + special_orders -->
+      <div class="col-6 col-lg-3">
+        <div class="card border-0 shadow-sm h-100">
+          <div class="card-body">
+            <div class="d-flex align-items-center gap-2 mb-1">
+              <div class="icon-box bg-success-subtle text-success rounded p-2">
+                <i class="bi bi-bag-check"></i>
+              </div>
+              <small class="text-muted">Commandes totales</small>
+            </div>
+            <h3 class="mb-0 fw-bold">{{ formatNumber(overview.total_orders) }}</h3>
+            <!-- Détail restaurants / traiteurs -->
+            <div class="mt-1 d-flex gap-2" style="font-size:.72rem; color:#888;">
+              <span title="Commandes restaurants">
+                🏪 {{ formatNumber(overview.total_normal_orders) }}
+              </span>
+              <span title="Commandes spéciales traiteurs">
+                🍽️ {{ formatNumber(overview.total_special_orders) }}
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-6 col-lg-3">
+        <div class="card border-0 shadow-sm h-100">
+          <div class="card-body">
+            <div class="d-flex align-items-center gap-2 mb-1">
+              <div class="icon-box bg-warning-subtle text-warning rounded p-2">
+                <i class="bi bi-people"></i>
+              </div>
+              <small class="text-muted">Sessions totales</small>
+            </div>
+            <h3 class="mb-0 fw-bold">{{ formatNumber(overview.total_sessions) }}</h3>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Réservations séparément ──────────────────────────── -->
+    <div class="row g-3 mb-4">
+      <div class="col-6 col-lg-3">
+        <div class="card border-0 shadow-sm h-100">
+          <div class="card-body">
+            <div class="d-flex align-items-center gap-2 mb-1">
+              <div class="icon-box bg-purple-subtle text-purple rounded p-2"
+                style="background:rgba(139,92,246,.12); color:#8b5cf6;">
+                <i class="bi bi-calendar-check"></i>
+              </div>
+              <small class="text-muted">Réservations</small>
+            </div>
+            <h3 class="mb-0 fw-bold">{{ formatNumber(overview.total_reservations) }}</h3>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Charts ────────────────────────────────────────────── -->
+    <div class="row g-4 mb-4">
+      <div class="col-lg-7">
+        <div class="card border-0 shadow-sm h-100">
+          <div class="card-header bg-transparent border-0 pt-3">
+            <h5 class="mb-0">
+              <i class="bi bi-trophy text-warning me-2"></i>Top établissements
+              <small class="text-muted ms-2" style="font-size:.75rem;">
+                (commandes + commandes spéciales)
+              </small>
+            </h5>
+          </div>
+          <div class="card-body">
+            <div *ngIf="topBusinesses.length === 0" class="text-center py-4 text-muted">
+              <i class="bi bi-bar-chart display-4 d-block mb-2 opacity-25"></i>
+              Aucune donnée pour cette période
+            </div>
+            <div *ngIf="topBusinesses.length > 0" style="height: 280px; position: relative;">
+              <canvas #businessesChart></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-lg-5">
+        <div class="card border-0 shadow-sm h-100">
+          <div class="card-header bg-transparent border-0 pt-3">
+            <h5 class="mb-0">
+              <i class="bi bi-pie-chart text-primary me-2"></i>Répartition des événements
+            </h5>
+          </div>
+          <div class="card-body">
+            <div *ngIf="eventBreakdown.length === 0" class="text-center py-4 text-muted">
+              <i class="bi bi-pie-chart display-4 d-block mb-2 opacity-25"></i>
+              Aucun événement enregistré
+            </div>
+            <div *ngIf="eventBreakdown.length > 0" style="height: 280px; position: relative;">
+              <canvas #eventsChart></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Tableau classement ────────────────────────────────── -->
+    <div class="card border-0 shadow-sm" *ngIf="topBusinesses.length > 0">
+      <div class="card-header bg-transparent border-0 pt-3">
+        <h5 class="mb-0">
+          <i class="bi bi-list-ol text-primary me-2"></i>Classement des établissements
+        </h5>
+      </div>
+      <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+          <thead class="table-light">
+            <tr>
+              <th>#</th>
+              <th>Établissement</th>
+              <th>Type</th>
+              <th class="text-center">Vues</th>
+              <th class="text-center">Cmd normales</th>
+              <th class="text-center">Cmd spéciales</th>
+              <th class="text-center">Réservations</th>
+              <th class="text-end">Total activité</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let b of topBusinesses; let i = index">
+              <td>
+                <span class="badge" [ngClass]="{
+                  'bg-warning text-dark': i === 0,
+                  'bg-secondary':         i === 1,
+                  'bg-danger':            i === 2,
+                  'bg-light text-dark':   i > 2
+                }">{{ i + 1 }}</span>
+              </td>
+              <td class="fw-semibold">{{ b.business_name }}</td>
+              <td>
+                <span class="badge"
+                  [class.bg-primary-subtle]="b.business_type === 'restaurant'"
+                  [class.text-primary]="b.business_type === 'restaurant'"
+                  [class.bg-warning-subtle]="b.business_type === 'traiteur'"
+                  [class.text-warning]="b.business_type === 'traiteur'"
+                  style="text-transform:capitalize;">
+                  {{ b.business_type === 'traiteur' ? '🍽️ Traiteur' : '🏪 Restaurant' }}
+                </span>
+              </td>
+              <td class="text-center">{{ formatNumber(b.page_views) }}</td>
+              <td class="text-center">{{ formatNumber(b.normal_orders_count) }}</td>
+              <td class="text-center text-warning fw-semibold">
+                <!-- Traiteurs seulement -->
+                <span *ngIf="b.business_type === 'traiteur'">
+                  {{ formatNumber(b.special_orders_count) }}
+                </span>
+                <span *ngIf="b.business_type !== 'traiteur'" class="text-muted">—</span>
+              </td>
+              <td class="text-center text-info fw-semibold">
+                <!-- Restaurants seulement -->
+                <span *ngIf="b.business_type === 'restaurant'">
+                  {{ formatNumber(b.reservations_count) }}
+                </span>
+                <span *ngIf="b.business_type !== 'restaurant'" class="text-muted">—</span>
+              </td>
+              <td class="text-end fw-bold text-success">
+                {{ formatNumber(b.orders_completed + (b.reservations_count || 0)) }}
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </ng-container>
+
+  <div *ngIf="!loading && !overview" class="text-center py-5">
+    <i class="bi bi-bar-chart display-1 text-muted d-block mb-3 opacity-25"></i>
+    <h5 class="text-muted">Aucune donnée disponible</h5>
+  </div>
+
+</div>

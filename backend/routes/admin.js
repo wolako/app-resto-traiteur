@@ -63,4 +63,12 @@ router.post('/subscriptions/trigger-reminders', adminController.triggerExpiryRem
 router.get('/subscriptions/reminders-history', adminController.getRemindersHistory);
 router.post('/subscriptions/:subscriptionId/send-reminder', adminController.sendManualReminder);
 
+// =============================================
+// COMPTES DE PAIEMENT (BUSINESS PAYMENT ACCOUNTS)
+// =============================================
+router.get('/payment-accounts',                             adminController.getAllPaymentAccounts);
+router.put('/payment-accounts/:accountId/verify',          adminController.verifyPaymentAccount);
+router.put('/payment-accounts/:accountId/reject',          adminController.rejectPaymentAccount);
+router.put('/payment-accounts/:accountId/suspend',         adminController.suspendPaymentAccount);
+
 module.exports = router;

@@ -1,12 +1,12 @@
-// src/app/shared/components/navbar/navbar.component.ts
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy, HostListener } from '@angular/core';
 import { AuthService } from '../../../core/services/auth/auth.service';
 import { User } from '../../../core/models/user.model';
-import { Router, RouterModule } from '@angular/router';
+import { Router, RouterModule, NavigationEnd } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { ClientService } from '../../../core/services/client/client.service';
 import { ChatService } from '../../../core/services/chat/chat.service';
-import { Subscription } from 'rxjs';
+import { SearchBarService } from '../../../core/services/search-bar/search-bar.service';
+import { Subscription, filter } from 'rxjs';
 
 @Component({
   selector: 'app-navbar',
@@ -19,30 +19,56 @@ export class NavbarComponent implements OnInit, OnDestroy {
   currentUser: User | null = null;
   clientNotificationCount = 0;
   chatUnreadCount = 0;
+  isMinimalRoute = false;
+
+  showSearchBar = false;
+  navSearchTerm = '';
+  navTypeFilter = '';
+  navAvailFilter = '';
+
+  typeDropdownOpen  = false;
+  availDropdownOpen = false;
+
+  // ✅ État du menu mobile custom
+  mobileMenuOpen = false;
+
   private subscriptions: Subscription[] = [];
   private countRefreshInterval: any;
+  private readonly MINIMAL_ROUTES = ['/login', '/register', '/admin/login', '/business/login'];
 
   constructor(
     private authService: AuthService,
     private clientService: ClientService,
     private chatService: ChatService,
+    private searchBarService: SearchBarService,
     private router: Router
   ) {
-    // S'abonner aux changements d'utilisateur
+    this.checkMinimalRoute(this.router.url);
+
+    const routeSub = this.router.events
+      .pipe(filter(event => event instanceof NavigationEnd))
+      .subscribe((event: any) => {
+        this.checkMinimalRoute(event.urlAfterRedirects || event.url);
+        // ✅ Fermer le menu mobile à chaque navigation
+        this.mobileMenuOpen = false;
+        document.body.style.overflow = '';
+
+        const url = event.urlAfterRedirects || event.url;
+        if (url !== '/' && !url.startsWith('/?')) {
+          this.searchBarService.setVisible(false);
+        }
+      });
+    this.subscriptions.push(routeSub);
+
     const userSub = this.authService.currentUser$.subscribe(user => {
       this.currentUser = user;
-      
-      // Gérer le polling selon le rôle
       if (user?.role === 'client') {
         this.clientService.startPolling();
       } else {
         this.clientService.stopPolling();
         this.clientNotificationCount = 0;
       }
-      
-      // ✅ Charger le compteur de chat si utilisateur connecté
-      if (user && (user.role === 'client' || user.role === 'restaurant' || user.role === 'traiteur')) {
-        console.log('👤 Utilisateur connecté, chargement compteur chat');
+      if (user && ['client', 'restaurant', 'traiteur'].includes(user.role)) {
         this.loadChatUnreadCount();
         this.startCountRefresh();
       } else {
@@ -54,81 +80,141 @@ export class NavbarComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
-    // S'abonner au compteur de notifications
-    const countSub = this.clientService.unreadCount$.subscribe(count => {
-      this.clientNotificationCount = count;
-    });
+    const countSub = this.clientService.unreadCount$.subscribe(c => this.clientNotificationCount = c);
     this.subscriptions.push(countSub);
-    
-    // S'abonner au compteur de messages non lus du chat
-    const chatCountSub = this.chatService.unreadCount$.subscribe(count => {
-      console.log('🔔 Compteur chat mis à jour:', count);
-      this.chatUnreadCount = count;
-    });
+
+    const chatCountSub = this.chatService.unreadCount$.subscribe(c => this.chatUnreadCount = c);
     this.subscriptions.push(chatCountSub);
-    
-    // ✅ S'abonner aux suppressions de conversations
-    const conversationDeletedSub = this.chatService.conversationDeleted$.subscribe(conversationId => {
-      if (conversationId !== null) {
-        console.log('🗑️ Conversation supprimée, rafraîchissement du compteur');
-        // Attendre un peu que le backend mette à jour, puis recharger
-        setTimeout(() => {
-          this.loadChatUnreadCount();
-        }, 500);
+
+    const convSub = this.chatService.conversationDeleted$.subscribe(id => {
+      if (id !== null) setTimeout(() => this.loadChatUnreadCount(), 500);
+    });
+    this.subscriptions.push(convSub);
+
+    const searchSub = this.searchBarService.state$.subscribe(state => {
+      this.showSearchBar = state.visible;
+      if (state.visible) {
+        this.navSearchTerm  = state.searchTerm;
+        this.navTypeFilter  = state.typeFilter;
+        this.navAvailFilter = state.availabilityFilter;
       }
     });
-    this.subscriptions.push(conversationDeletedSub);
-    
-    // ✅ Charger le compteur initial si utilisateur déjà connecté
-    if (this.currentUser && 
-        (this.currentUser.role === 'client' || 
-         this.currentUser.role === 'restaurant' || 
-         this.currentUser.role === 'traiteur')) {
+    this.subscriptions.push(searchSub);
+
+    if (this.currentUser && ['client', 'restaurant', 'traiteur'].includes(this.currentUser.role)) {
       this.loadChatUnreadCount();
       this.startCountRefresh();
     }
   }
 
   ngOnDestroy(): void {
-    // Nettoyer les subscriptions
-    this.subscriptions.forEach(sub => sub.unsubscribe());
+    this.subscriptions.forEach(s => s.unsubscribe());
     this.clientService.stopPolling();
     this.stopCountRefresh();
+    document.body.style.overflow = '';
   }
 
-  // ✅ Charger le compteur de messages non lus
-  private loadChatUnreadCount(): void {
-    console.log('🔔 Chargement compteur messages non lus');
-    this.chatService.updateUnreadCount();
-  }
-
-  // ✅ Rafraîchir périodiquement le compteur (toutes les 30 secondes)
-  private startCountRefresh(): void {
-    // Nettoyer l'ancien interval s'il existe
-    this.stopCountRefresh();
-    
-    // Rafraîchir toutes les 30 secondes
-    this.countRefreshInterval = setInterval(() => {
-      this.loadChatUnreadCount();
-    }, 30000); // 30 secondes
-  }
-
-  private stopCountRefresh(): void {
-    if (this.countRefreshInterval) {
-      clearInterval(this.countRefreshInterval);
-      this.countRefreshInterval = null;
+  // ── Ferme dropdowns sur clic hors .nsi-dropdown ───────────
+  @HostListener('document:click', ['$event'])
+  onDocumentClick(event: MouseEvent): void {
+    const target = event.target as HTMLElement;
+    if (!target.closest('.nsi-dropdown')) {
+      this.typeDropdownOpen  = false;
+      this.availDropdownOpen = false;
     }
   }
 
-  // ✅ NOUVEAU: Ouvrir le widget de chat quand on clique sur le badge
-  openChatWidget(): void {
-    console.log('💬 Ouverture du widget de chat depuis la navbar');
-    
-    // Émettre un événement personnalisé pour ouvrir le widget
-    const event = new CustomEvent('toggleChatWidget', {
-      detail: { open: true }
+  @HostListener('document:keydown.escape')
+  onEscape(): void {
+    this.typeDropdownOpen  = false;
+    this.availDropdownOpen = false;
+    this.closeMobileMenu();
+  }
+
+  private checkMinimalRoute(url: string): void {
+    const path = url.split('?')[0];
+    this.isMinimalRoute = this.MINIMAL_ROUTES.some(r => path === r || path.startsWith(r + '/'));
+  }
+
+  // ── Menu mobile ───────────────────────────────────────────
+  toggleMobileMenu(event: MouseEvent): void {
+    event.stopPropagation();
+    this.mobileMenuOpen = !this.mobileMenuOpen;
+    // Bloquer le scroll du body quand le drawer est ouvert
+    document.body.style.overflow = this.mobileMenuOpen ? 'hidden' : '';
+  }
+
+  closeMobileMenu(): void {
+    this.mobileMenuOpen = false;
+    document.body.style.overflow = '';
+  }
+
+  // ── Barre de recherche ───────────────────────────────────
+  onNavSearch(event: Event): void {
+    this.navSearchTerm = (event.target as HTMLInputElement).value;
+    this.pushFilters();
+  }
+
+  clearNavSearch(): void {
+    this.navSearchTerm = '';
+    this.pushFilters();
+  }
+
+  // ── Dropdowns ────────────────────────────────────────────
+  toggleTypeDropdown(event: MouseEvent): void {
+    event.stopPropagation();
+    this.typeDropdownOpen  = !this.typeDropdownOpen;
+    this.availDropdownOpen = false;
+  }
+
+  toggleAvailDropdown(event: MouseEvent): void {
+    event.stopPropagation();
+    this.availDropdownOpen = !this.availDropdownOpen;
+    this.typeDropdownOpen  = false;
+  }
+
+  setNavTypeFilter(value: string, event: MouseEvent): void {
+    event.stopPropagation();
+    this.navTypeFilter    = value;
+    this.typeDropdownOpen = false;
+    this.pushFilters();
+  }
+
+  setNavAvailFilter(value: string, event: MouseEvent): void {
+    event.stopPropagation();
+    this.navAvailFilter    = value;
+    this.availDropdownOpen = false;
+    this.pushFilters();
+  }
+
+  private pushFilters(): void {
+    this.searchBarService.updateFilters({
+      searchTerm:         this.navSearchTerm,
+      typeFilter:         this.navTypeFilter,
+      availabilityFilter: this.navAvailFilter
     });
-    window.dispatchEvent(event);
+    window.dispatchEvent(new CustomEvent('navbarSearchUpdate', {
+      detail: {
+        searchTerm:         this.navSearchTerm,
+        typeFilter:         this.navTypeFilter,
+        availabilityFilter: this.navAvailFilter
+      }
+    }));
+  }
+
+  private loadChatUnreadCount(): void { this.chatService.updateUnreadCount(); }
+
+  private startCountRefresh(): void {
+    this.stopCountRefresh();
+    this.countRefreshInterval = setInterval(() => this.loadChatUnreadCount(), 30000);
+  }
+
+  private stopCountRefresh(): void {
+    if (this.countRefreshInterval) { clearInterval(this.countRefreshInterval); this.countRefreshInterval = null; }
+  }
+
+  openChatWidget(): void {
+    window.dispatchEvent(new CustomEvent('toggleChatWidget', { detail: { open: true } }));
   }
 
   logout(): void {
@@ -141,10 +227,7 @@ export class NavbarComponent implements OnInit, OnDestroy {
 
   getRoleLabel(role: string): string {
     const labels: { [key: string]: string } = {
-      'client': 'Client',
-      'restaurant': 'Restaurant',
-      'traiteur': 'Traiteur',
-      'superadmin': 'Admin'
+      client: 'Client', restaurant: 'Restaurant', traiteur: 'Traiteur', superadmin: 'Admin'
     };
     return role ? (labels[role] || role) : '';
   }

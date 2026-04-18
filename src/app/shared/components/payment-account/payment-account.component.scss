@@ -1,0 +1,777 @@
+// ═══════════════════════════════════════════════════════════
+// payment-account.component.scss
+// Design cohérent avec restaurant-dashboard.component.scss
+// Utilise les variables CSS du design system RestoTraiteur
+// ═══════════════════════════════════════════════════════════
+
+// ─── Variables locales (reprises du design system) ──────────
+// Ces variables sont définies dans styles.scss ou index.html
+// On les référence ici, elles ne nécessitent pas de redéfinition
+
+// ─── Loader ─────────────────────────────────────────────────
+.pa-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  gap: 12px;
+  color: var(--rt-t3);
+  font-size: .85rem;
+
+  .pa-spinner {
+    color: var(--rt-primary);
+    width: 32px;
+    height: 32px;
+  }
+}
+
+// ─── Bannière statut ────────────────────────────────────────
+.pa-status-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 14px 18px;
+  border-radius: var(--rt-rl, 12px);
+  border: 1px solid;
+  margin-bottom: 20px;
+  font-size: .85rem;
+
+  &.pa-banner--default {
+    background: var(--rt-blue-s, rgba(59,130,246,.08));
+    border-color: rgba(59,130,246,.25);
+    color: var(--rt-blue, #3b82f6);
+    .pa-banner-icon { color: var(--rt-blue, #3b82f6); }
+  }
+  &.pa-banner--pending {
+    background: var(--rt-accent-s, rgba(212,168,67,.1));
+    border-color: rgba(212,168,67,.3);
+    color: var(--rt-accent, #d4a843);
+    .pa-banner-icon { color: var(--rt-accent, #d4a843); }
+  }
+  &.pa-banner--verified {
+    background: var(--rt-green-s, rgba(42,157,92,.1));
+    border-color: rgba(42,157,92,.3);
+    color: var(--rt-green, #2a9d5c);
+    .pa-banner-icon { color: var(--rt-green, #2a9d5c); }
+  }
+  &.pa-banner--rejected,
+  &.pa-banner--suspended {
+    background: var(--rt-primary-s, rgba(201,64,64,.08));
+    border-color: rgba(201,64,64,.25);
+    color: var(--rt-primary, #c94040);
+    .pa-banner-icon { color: var(--rt-primary, #c94040); }
+  }
+
+  .pa-banner-icon {
+    font-size: 1.4rem;
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+
+  .pa-banner-title {
+    font-weight: 700;
+    font-size: .9rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    color: var(--rt-t1);
+  }
+
+  .pa-banner-sub {
+    margin-top: 4px;
+    font-size: .8rem;
+    line-height: 1.4;
+    color: var(--rt-t2);
+  }
+}
+
+// ─── Chip statut ────────────────────────────────────────────
+.pa-status-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 10px;
+  border-radius: 20px;
+  font-size: .7rem;
+  font-weight: 700;
+  letter-spacing: .3px;
+
+  &.chip--blue   { background: var(--rt-blue-s);    color: var(--rt-blue);    }
+  &.chip--orange { background: var(--rt-accent-s);  color: var(--rt-accent);  }
+  &.chip--green  { background: var(--rt-green-s);   color: var(--rt-green);   }
+  &.chip--red    { background: var(--rt-primary-s); color: var(--rt-primary); }
+}
+
+// ─── Carte résumé compte vérifié ────────────────────────────
+.pa-verified-card {
+  background: var(--rt-sfc, #fff);
+  border: 1px solid var(--rt-bdr);
+  border-radius: var(--rt-rl, 12px);
+  overflow: hidden;
+  margin-bottom: 16px;
+
+  .pa-vc-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 18px;
+    background: var(--rt-raised, #f8f8f8);
+    border-bottom: 1px solid var(--rt-bdr);
+  }
+
+  .pa-vc-title {
+    font-family: 'Playfair Display', serif;
+    font-size: .92rem;
+    font-weight: 700;
+    color: var(--rt-t1);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+
+    i { color: var(--rt-primary); }
+  }
+
+  .pa-vc-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 1px;
+    background: var(--rt-bdr);
+  }
+}
+
+.pa-btn-edit {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border: 1px solid var(--rt-bdr);
+  border-radius: var(--rt-r, 8px);
+  background: var(--rt-sfc);
+  color: var(--rt-t2);
+  font-size: .78rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--rt-tr, .15s);
+
+  &:hover {
+    border-color: var(--rt-primary);
+    color: var(--rt-primary);
+    background: var(--rt-primary-s, rgba(201,64,64,.06));
+  }
+}
+
+// ─── Bloc infos ─────────────────────────────────────────────
+.pa-info-block {
+  padding: 14px 18px;
+  background: var(--rt-sfc);
+
+  &.pa-info-block--highlight {
+    background: var(--rt-green-s, rgba(42,157,92,.06));
+  }
+
+  .pa-info-label {
+    font-size: .68rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .8px;
+    color: var(--rt-t3);
+    margin-bottom: 4px;
+  }
+
+  .pa-info-val {
+    font-weight: 700;
+    color: var(--rt-t1);
+    font-size: .9rem;
+  }
+
+  .pa-info-sub {
+    font-size: .75rem;
+    color: var(--rt-t3);
+    margin-top: 2px;
+  }
+}
+
+.pa-method-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--rt-green-s);
+  color: var(--rt-green);
+  border: 1px solid rgba(42,157,92,.2);
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: .8rem;
+  font-weight: 700;
+}
+
+// ─── Split info (bannière compacte sous le résumé) ──────────
+.pa-split-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 18px;
+  background: var(--rt-green-s, rgba(42,157,92,.06));
+  border-top: 1px solid rgba(42,157,92,.15);
+  font-size: .8rem;
+  color: var(--rt-green, #2a9d5c);
+
+  i { font-size: 1rem; flex-shrink: 0; }
+}
+
+// ─── Étapes pending ─────────────────────────────────────────
+.pa-pending-info {
+  background: var(--rt-raised);
+  border: 1px solid var(--rt-bdr);
+  border-radius: var(--rt-rl, 12px);
+  padding: 20px;
+  margin-top: 16px;
+}
+
+.pa-pending-steps {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.pa-step {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  flex: 1;
+  min-width: 110px;
+
+  .pa-step-txt {
+    strong { font-size: .82rem; color: var(--rt-t1); display: block; }
+    small  { font-size: .72rem; color: var(--rt-t3); }
+  }
+}
+
+.pa-step-num {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: .8rem;
+  font-weight: 700;
+  flex-shrink: 0;
+
+  &--done   { background: var(--rt-green);   color: #fff; }
+  &--active { background: var(--rt-accent);  color: #fff; animation: pa-pulse 1.4s ease-in-out infinite; }
+  &--waiting{ background: var(--rt-raised);  color: var(--rt-t3); border: 1px dashed var(--rt-bdr); }
+}
+
+@keyframes pa-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(212,168,67,.5); }
+  50%       { box-shadow: 0 0 0 6px rgba(212,168,67,0); }
+}
+
+.pa-step-line {
+  flex: 0 0 20px;
+  height: 2px;
+  background: var(--rt-bdr);
+  margin-top: 15px;
+  @media (max-width: 576px) { display: none; }
+}
+
+// ─── Carte formulaire ────────────────────────────────────────
+.pa-form-card {
+  background: var(--rt-sfc);
+  border: 1px solid var(--rt-bdr);
+  border-radius: var(--rt-rl, 12px);
+  overflow: hidden;
+}
+
+.pa-form-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 18px;
+  background: var(--rt-raised);
+  border-bottom: 1px solid var(--rt-bdr);
+}
+
+.pa-form-title {
+  font-family: 'Playfair Display', serif;
+  font-weight: 700;
+  font-size: .92rem;
+  color: var(--rt-t1);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  i { color: var(--rt-primary); }
+}
+
+.pa-btn-cancel {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  border: 1px solid var(--rt-bdr);
+  border-radius: var(--rt-r);
+  background: transparent;
+  color: var(--rt-t3);
+  font-size: .78rem;
+  cursor: pointer;
+  transition: var(--rt-tr);
+
+  &:hover { color: var(--rt-primary); border-color: var(--rt-primary); }
+}
+
+// ─── Comment ça marche ───────────────────────────────────────
+.pa-how-it-works {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 16px 18px;
+  background: var(--rt-blue-s, rgba(59,130,246,.05));
+  border-bottom: 1px solid var(--rt-bdr);
+  flex-wrap: wrap;
+}
+
+.pa-how-step {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  flex: 1;
+  min-width: 100px;
+
+  > div {
+    strong { font-size: .78rem; color: var(--rt-t1); display: block; }
+    p { font-size: .7rem; color: var(--rt-t3); margin: 0; }
+  }
+}
+
+.pa-how-num {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--rt-primary);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: .72rem;
+  font-weight: 700;
+  flex-shrink: 0;
+
+  &--green { background: var(--rt-green); }
+}
+
+.pa-how-arrow {
+  color: var(--rt-t4);
+  font-size: .9rem;
+  padding-top: 4px;
+  @media (max-width: 576px) { display: none; }
+}
+
+// ─── Champs formulaire ───────────────────────────────────────
+form {
+  padding: 18px;
+}
+
+.pa-section-label {
+  font-size: .73rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .8px;
+  color: var(--rt-t2);
+  margin-bottom: 14px;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+
+  i { color: var(--rt-primary); }
+}
+
+.pa-label {
+  display: block;
+  font-size: .78rem;
+  font-weight: 600;
+  color: var(--rt-t2);
+  margin-bottom: 5px;
+}
+
+.pa-optional {
+  font-size: .7rem;
+  font-weight: 400;
+  color: var(--rt-t3);
+}
+
+.pa-input {
+  width: 100%;
+  padding: 9px 12px;
+  background: var(--rt-raised);
+  border: 1px solid var(--rt-bdr);
+  border-radius: var(--rt-r, 8px);
+  color: var(--rt-t1);
+  font-size: .85rem;
+  font-family: inherit;
+  transition: border-color .15s, box-shadow .15s;
+  outline: none;
+
+  &:focus {
+    border-color: var(--rt-primary);
+    box-shadow: 0 0 0 3px var(--rt-primary-s, rgba(201,64,64,.12));
+  }
+
+  &--error {
+    border-color: var(--rt-primary);
+    background: var(--rt-primary-s);
+  }
+
+  &--short { max-width: 320px; }
+}
+
+.pa-select {
+  cursor: pointer;
+  appearance: auto;
+}
+
+.pa-error {
+  font-size: .73rem;
+  color: var(--rt-primary);
+  margin-top: 3px;
+  display: block;
+}
+
+.pa-field-group {
+  margin-bottom: 20px;
+}
+
+// ─── Grille méthodes paiement ────────────────────────────────
+.pa-payout-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  margin-bottom: 20px;
+
+  @media (max-width: 400px) {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 6px;
+  }
+}
+
+.pa-payout-card {
+  background: var(--rt-raised);
+  border: 2px solid var(--rt-bdr);
+  border-radius: var(--rt-r, 8px);
+  padding: 14px 10px;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color .15s, background .15s, transform .1s;
+  position: relative;
+
+  &:hover {
+    border-color: var(--rt-primary);
+    transform: translateY(-1px);
+  }
+
+  &--active {
+    border-color: var(--rt-green);
+    background: var(--rt-green-s, rgba(42,157,92,.08));
+  }
+
+  .pa-payout-ico  { font-size: 1.6rem; margin-bottom: 5px; }
+  .pa-payout-name { font-weight: 700; font-size: .82rem; color: var(--rt-t1); }
+  .pa-payout-sub  { font-size: .7rem; color: var(--rt-t3); margin-top: 2px; }
+
+  .pa-payout-check {
+    position: absolute;
+    top: 7px;
+    right: 8px;
+    color: var(--rt-green);
+    font-size: .85rem;
+  }
+}
+
+// ─── Bloc CinetPay ───────────────────────────────────────────
+.pa-cinetpay-block {
+  background: var(--rt-raised);
+  border: 1px solid var(--rt-bdr);
+  border-radius: var(--rt-r);
+  padding: 16px;
+  margin-bottom: 20px;
+}
+
+.pa-optional-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 1px 8px;
+  background: var(--rt-blue-s);
+  color: var(--rt-blue);
+  border-radius: 10px;
+  font-size: .68rem;
+  font-weight: 600;
+  text-transform: none;
+  letter-spacing: 0;
+  margin-left: 6px;
+}
+
+// ─── Avertissement modification ──────────────────────────────
+.pa-warn-verified {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  background: var(--rt-accent-s, rgba(212,168,67,.1));
+  border: 1px solid rgba(212,168,67,.3);
+  border-radius: var(--rt-r);
+  color: var(--rt-accent, #d4a843);
+  font-size: .82rem;
+  margin-bottom: 16px;
+
+  i { font-size: 1rem; flex-shrink: 0; }
+}
+
+// ─── Actions formulaire ──────────────────────────────────────
+.pa-form-actions {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 10px;
+  padding-top: 8px;
+  border-top: 1px solid var(--rt-bdr);
+  margin-top: 8px;
+}
+
+.pa-btn-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 9px 22px;
+  background: var(--rt-primary, #c94040);
+  color: #fff;
+  border: none;
+  border-radius: var(--rt-r, 8px);
+  font-size: .85rem;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: opacity .15s, transform .1s;
+
+  &:hover:not(:disabled) { opacity: .88; transform: translateY(-1px); }
+  &:disabled { opacity: .55; cursor: not-allowed; }
+
+  .spinner-border {
+    width: 14px;
+    height: 14px;
+    border-width: 2px;
+  }
+}
+
+.pa-btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 9px 16px;
+  background: var(--rt-raised);
+  color: var(--rt-t2);
+  border: 1px solid var(--rt-bdr);
+  border-radius: var(--rt-r);
+  font-size: .85rem;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: var(--rt-tr);
+
+  &:hover { border-color: var(--rt-t2); color: var(--rt-t1); }
+}
+
+
+// ─── Actions header carte vérifiée ──────────────────────────
+.pa-vc-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+// ─── Bouton "Nouveau compte" ─────────────────────────────────
+.pa-btn-add-new {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border: 1px solid rgba(42,157,92,.35);
+  border-radius: var(--rt-r, 8px);
+  background: var(--rt-green-s, rgba(42,157,92,.08));
+  color: var(--rt-green, #2a9d5c);
+  font-size: .78rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--rt-tr, .15s);
+
+  &:hover {
+    background: rgba(42,157,92,.15);
+    border-color: var(--rt-green, #2a9d5c);
+    transform: translateY(-1px);
+  }
+
+  i { font-size: .85rem; }
+}
+
+// ─── Avertissement remplacement de compte ───────────────────
+.pa-warn-replace {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 14px;
+  background: rgba(59,130,246,.07);
+  border: 1px solid rgba(59,130,246,.25);
+  border-radius: var(--rt-r);
+  color: var(--rt-blue, #3b82f6);
+  font-size: .82rem;
+  margin: 0 18px 16px;
+
+  i { font-size: 1rem; flex-shrink: 0; margin-top: 1px; }
+}
+
+
+// ─── Actions header ──────────────────────────────────────────
+.pa-vc-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+// ─── Bouton "Nouveau compte" ─────────────────────────────────
+.pa-btn-add-new {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border: 1px solid rgba(42,157,92,.35);
+  border-radius: var(--rt-r, 8px);
+  background: var(--rt-green-s, rgba(42,157,92,.08));
+  color: var(--rt-green, #2a9d5c);
+  font-size: .78rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--rt-tr, .15s);
+
+  &:hover {
+    background: rgba(42,157,92,.15);
+    border-color: var(--rt-green, #2a9d5c);
+    transform: translateY(-1px);
+  }
+}
+
+// ─── Avertissement remplacement ──────────────────────────────
+.pa-warn-replace {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 16px;
+  margin: 0 18px 4px;
+  background: rgba(59,130,246,.07);
+  border: 1px solid rgba(59,130,246,.25);
+  border-radius: var(--rt-r);
+  color: var(--rt-blue, #3b82f6);
+  font-size: .82rem;
+  line-height: 1.5;
+
+  i { font-size: 1rem; flex-shrink: 0; margin-top: 1px; }
+}
+
+// ─── Historique des comptes ──────────────────────────────────
+.pa-history {
+  margin-top: 16px;
+  background: var(--rt-sfc);
+  border: 1px solid var(--rt-bdr);
+  border-radius: var(--rt-rl, 12px);
+  overflow: hidden;
+}
+
+.pa-history-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 11px 16px;
+  background: var(--rt-raised);
+  border-bottom: 1px solid var(--rt-bdr);
+  font-size: .8rem;
+  font-weight: 700;
+  color: var(--rt-t2);
+
+  i { color: var(--rt-t3); }
+}
+
+.pa-history-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  background: var(--rt-bdr);
+  border-radius: 50%;
+  font-size: .7rem;
+  color: var(--rt-t3);
+  margin-left: 2px;
+}
+
+.pa-history-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.pa-history-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--rt-bdr);
+  opacity: .75;
+  transition: opacity .15s;
+
+  &:last-child { border-bottom: none; }
+  &:hover { opacity: 1; background: var(--rt-raised); }
+}
+
+.pa-history-method {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.pa-history-icon {
+  font-size: 1.3rem;
+  width: 32px;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.pa-history-label {
+  font-size: .83rem;
+  font-weight: 600;
+  color: var(--rt-t2);
+}
+
+.pa-history-coords {
+  font-size: .75rem;
+  color: var(--rt-t3);
+  margin-top: 1px;
+}
+
+.pa-history-meta {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.pa-history-chip {
+  font-size: .65rem;
+}
+
+.pa-history-date {
+  font-size: .7rem;
+  color: var(--rt-t3);
+}

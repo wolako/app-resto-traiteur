@@ -1,0 +1,22 @@
+.analytics-container {
+  padding: 0.25rem;
+}
+
+.icon-box {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+  flex-shrink: 0;
+}
+
+.card-body h3 {
+  font-size: 1.75rem;
+  letter-spacing: -0.03em;
+}
+
+.text-indigo {
+  color: #6366f1 !important;
+}

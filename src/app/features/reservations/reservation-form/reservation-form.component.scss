@@ -1,126 +1,521 @@
+// ═══════════════════════════════════════════════════════════════════════════
+// RESERVATION FORM — Style gastronomique premium
+// Cohérent avec le design system RT (variables depuis styles.scss)
+// ═══════════════════════════════════════════════════════════════════════════
+
+// ─── Page wrapper ─────────────────────────────────────────────────────────────
 .reservation-container {
   min-height: 100vh;
-  background: linear-gradient(to bottom, #f8f9fa 0%, #ffffff 100%);
-  padding: 40px 0;
+  background: var(--rt-bg);
+  padding: 40px 0 80px;
+  position: relative;
+
+  // Ambiance de fond
+  &::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background:
+      radial-gradient(ellipse 70% 50% at 10% 0%,   rgba(201,64,64,0.06)  0%, transparent 55%),
+      radial-gradient(ellipse 55% 45% at 90% 100%,  rgba(212,168,67,0.05) 0%, transparent 55%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .container { position: relative; z-index: 1; }
 }
 
+// ═══════════════════════════════════════════════════════════════════════════
+// CARTE PRINCIPALE
+// ═══════════════════════════════════════════════════════════════════════════
 .reservation-card {
-  background: white;
-  border-radius: 20px;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+  background: var(--rt-sfc);
+  border: 1px solid var(--rt-bdr);
+  border-radius: 24px;
   overflow: hidden;
-  animation: fadeInUp 0.5s ease-out;
+  box-shadow: 0 12px 50px rgba(92,61,46,0.12);
+  animation: rt-fadeUp 0.45s ease-out both;
 }
 
-@keyframes fadeInUp {
-  from {
-    opacity: 0;
-    transform: translateY(30px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
+// ─── Header de carte ──────────────────────────────────────────────────────────
 .card-header-reservation {
-  background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
-  color: white;
-  padding: 40px 30px;
+  position: relative;
+  padding: 36px 36px 32px;
+  background: var(--g-primary);
   text-align: center;
+  overflow: hidden;
+
+  // Motif décoratif
+  &::before {
+    content: '';
+    position: absolute;
+    top: -40px; right: -40px;
+    width: 160px; height: 160px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.07);
+  }
+
+  &::after {
+    content: '';
+    position: absolute;
+    bottom: -50px; left: -30px;
+    width: 130px; height: 130px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.05);
+  }
 
   i {
-    font-size: 4rem;
-    margin-bottom: 15px;
     display: block;
+    font-size: 2.2rem;
+    color: rgba(255,255,255,0.9);
+    margin-bottom: 10px;
+    position: relative;
+    z-index: 1;
+    filter: drop-shadow(0 2px 8px rgba(0,0,0,0.2));
   }
 
   h2 {
-    margin: 0 0 10px 0;
+    font-family: 'Playfair Display', serif;
+    font-size: 1.7rem;
     font-weight: 700;
-    font-size: 2rem;
+    color: #fff;
+    margin: 0 0 6px;
+    position: relative;
+    z-index: 1;
+    letter-spacing: -0.01em;
   }
 
   .restaurant-name {
-    margin: 0;
-    font-size: 1.3rem;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.9rem;
     font-weight: 500;
-    opacity: 0.95;
+    color: rgba(255,255,255,0.78);
+    margin: 0;
+    position: relative;
+    z-index: 1;
   }
 }
 
+// ─── Body ─────────────────────────────────────────────────────────────────────
 .card-body-reservation {
-  padding: 40px 30px;
+  padding: 32px 36px 36px;
+
+  @media (max-width: 576px) { padding: 24px 20px 28px; }
 }
 
-// Success Message
+// ═══════════════════════════════════════════════════════════════════════════
+// SUCCESS STATE
+// ═══════════════════════════════════════════════════════════════════════════
 .success-message {
   text-align: center;
-  padding: 40px 20px;
+  padding: 20px 0 10px;
+  animation: rt-popIn 0.5s cubic-bezier(0.34,1.56,0.64,1) both;
 
   .success-icon {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background: var(--rt-green-s);
+    border: 3px solid rgba(42,157,92,0.25);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 20px;
+
     i {
-      font-size: 5rem;
-      color: #28a745;
-      animation: scaleIn 0.5s ease-out;
+      font-size: 2.4rem;
+      color: var(--rt-green);
+      animation: rt-popIn 0.4s 0.2s cubic-bezier(0.34,1.56,0.64,1) both;
     }
   }
 
   h3 {
-    color: #28a745;
+    font-family: 'Playfair Display', serif;
+    font-size: 1.5rem;
     font-weight: 700;
-    margin: 20px 0 15px 0;
-    font-size: 2rem;
+    color: var(--rt-t1);
+    margin-bottom: 10px;
   }
 
   p {
-    color: #6c757d;
-    font-size: 1.1rem;
-    margin-bottom: 30px;
+    font-size: 0.88rem;
+    color: var(--rt-t3);
+    margin-bottom: 24px;
     line-height: 1.6;
   }
 
-  .btn {
-    padding: 12px 30px;
-    border-radius: 25px;
-    font-weight: 600;
+  .btn-primary {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--g-primary) !important;
+    border: none !important;
+    border-radius: 12px !important;
+    padding: 12px 26px !important;
+    font-family: 'DM Sans', sans-serif !important;
+    font-weight: 700 !important;
+    font-size: 0.88rem !important;
+    color: #fff !important;
+    box-shadow: 0 6px 20px rgba(201,64,64,0.30) !important;
+    transition: var(--rt-tr) !important;
+    cursor: pointer;
+
+    &:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 28px rgba(201,64,64,0.42) !important;
+    }
   }
 }
 
-@keyframes scaleIn {
-  from {
-    transform: scale(0);
-  }
-  to {
-    transform: scale(1);
-  }
-}
-
-// Form Styles
-.form-label {
-  font-weight: 600;
-  color: #495057;
-  margin-bottom: 8px;
+// ═══════════════════════════════════════════════════════════════════════════
+// FORMULAIRE — sections
+// ═══════════════════════════════════════════════════════════════════════════
+.form-section-title {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 9px;
+  font-family: 'Playfair Display', serif;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--rt-t1);
+  margin: 0 0 18px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--rt-bdr);
 
-  i {
-    color: #28a745;
-    font-size: 1.1rem;
+  i { color: var(--rt-primary); font-size: 1rem; }
+}
+
+// ─── Labels ───────────────────────────────────────────────────────────────────
+.form-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--rt-t2);
+  margin-bottom: 6px;
+  letter-spacing: 0.02em;
+
+  i { color: var(--rt-primary); font-size: 0.8rem; }
+}
+
+// ─── Inputs & Selects ─────────────────────────────────────────────────────────
+.form-control,
+.form-select {
+  background: var(--rt-raised) !important;
+  border: 1.5px solid var(--rt-bdr) !important;
+  border-radius: 11px !important;
+  color: var(--rt-t1) !important;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.86rem !important;
+  padding: 10px 14px !important;
+  transition: var(--rt-tr) !important;
+  box-shadow: none !important;
+
+  &::placeholder { color: var(--rt-t4) !important; }
+
+  &:focus {
+    border-color: var(--rt-primary) !important;
+    box-shadow: 0 0 0 3px rgba(201,64,64,0.10) !important;
+    background: var(--rt-sfc) !important;
+  }
+
+  &.is-invalid {
+    border-color: var(--rt-primary) !important;
+    box-shadow: 0 0 0 3px rgba(201,64,64,0.08) !important;
+  }
+
+  option { background: var(--rt-sfc); color: var(--rt-t1); }
+}
+
+textarea.form-control { resize: vertical; min-height: 90px; }
+
+.invalid-feedback {
+  font-size: 0.73rem;
+  color: var(--rt-primary);
+  margin-top: 4px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+
+  &::before {
+    content: '⚠';
+    font-size: 0.7rem;
   }
 }
 
-.form-control,
-.form-select {
-  border: 2px solid #e9ecef;
-  border-radius: 10px;
-  padding: 12px 15px;
-  font-size: 1rem;
-  transition: all 0.3s ease;
+// ─── Créneaux / loading ───────────────────────────────────────────────────────
+.loading-slots {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  background: var(--rt-raised);
+  border: 1px solid var(--rt-bdr);
+  border-radius: 11px;
+  margin-bottom: 12px;
+  font-size: 0.82rem;
+  color: var(--rt-t3);
 
-  &:focus {
-    border-color: #28a745;
-    box-shadow: 0 0;
+  .spinner-border {
+    width: 16px;
+    height: 16px;
+    border-width: 2px;
+    color: var(--rt-primary) !important;
+  }
+}
+
+// ─── Alertes ──────────────────────────────────────────────────────────────────
+.alert {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  border-radius: 12px !important;
+  font-size: 0.83rem;
+  font-weight: 500;
+  border: 1px solid !important;
+  padding: 12px 16px !important;
+
+  i { font-size: 1rem; flex-shrink: 0; margin-top: 1px; }
+
+  &.alert-warning {
+    background: var(--rt-accent-s) !important;
+    color: #8a6a10 !important;
+    border-color: rgba(212,168,67,0.25) !important;
+  }
+
+  &.alert-info {
+    background: var(--rt-blue-s) !important;
+    color: var(--rt-blue) !important;
+    border-color: rgba(43,127,191,0.20) !important;
+  }
+
+  &.alert-success {
+    background: var(--rt-green-s) !important;
+    color: var(--rt-green) !important;
+    border-color: rgba(42,157,92,0.20) !important;
+  }
+
+  small {
+    display: block;
+    margin-top: 3px;
+    font-size: 0.75rem;
+    opacity: 0.8;
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// SECTION PAIEMENT ACOMPTE
+// ═══════════════════════════════════════════════════════════════════════════
+.payment-section {
+  background: var(--rt-raised);
+  border: 1px solid var(--rt-bdr);
+  border-radius: 16px;
+  padding: 22px;
+  margin-top: 24px;
+  animation: rt-fadeUp 0.3s ease-out both;
+
+  h5 {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    font-family: 'Playfair Display', serif;
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--rt-t1);
+    margin: 0 0 18px;
+
+    i { color: var(--rt-primary); }
+  }
+}
+
+// Grille des méthodes de paiement
+.payment-methods-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+
+  @media (max-width: 480px) { grid-template-columns: 1fr; }
+}
+
+.payment-method-card {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  background: var(--rt-sfc);
+  border: 2px solid var(--rt-bdr);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: var(--rt-tr);
+  user-select: none;
+
+  &:hover {
+    border-color: var(--rt-bdr-hi);
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-sm);
+  }
+
+  &.selected {
+    border-color: var(--rt-primary);
+    background: var(--rt-primary-s);
+    box-shadow: 0 4px 16px rgba(201,64,64,0.12);
+    transform: translateY(-2px);
+  }
+
+  .method-icon {
+    font-size: 1.6rem;
+    line-height: 1;
+    flex-shrink: 0;
+  }
+
+  .method-label {
+    flex: 1;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.83rem;
+    font-weight: 600;
+    color: var(--rt-t1);
+    min-width: 0;
+  }
+
+  .check-icon {
+    flex-shrink: 0;
+    font-size: 1rem;
+    animation: rt-popIn 0.2s cubic-bezier(0.34,1.56,0.64,1) both;
+
+    i { color: var(--rt-green) !important; }
+  }
+}
+
+// ─── Récapitulatif acompte ────────────────────────────────────────────────────
+.deposit-summary {
+  background: var(--rt-sfc) !important;
+  border: 1px solid var(--rt-bdr) !important;
+  border-radius: 12px !important;
+  padding: 16px 18px !important;
+  animation: rt-fadeUp 0.25s ease-out both;
+
+  .d-flex {
+    font-size: 0.83rem;
+    color: var(--rt-t2);
+
+    span:first-child { color: var(--rt-t3); }
+    strong { color: var(--rt-t1); font-weight: 700; }
+    .text-warning { color: var(--rt-accent) !important; font-weight: 600; }
+  }
+
+  hr {
+    border: none;
+    border-top: 1px solid var(--rt-bdr);
+    margin: 10px 0;
+  }
+
+  // Total
+  .d-flex:last-child {
+    strong:first-child { font-size: 0.85rem; color: var(--rt-t1); }
+
+    .text-primary {
+      font-family: 'Playfair Display', serif !important;
+      font-size: 1.2rem !important;
+      font-weight: 700 !important;
+      color: var(--rt-primary) !important;
+    }
+  }
+}
+
+// ─── Erreur paiement ──────────────────────────────────────────────────────────
+.text-danger {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 0.74rem;
+  color: var(--rt-primary) !important;
+  margin-top: 6px;
+
+  i { font-size: 0.8rem; }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// ACTIONS DU FORMULAIRE
+// ═══════════════════════════════════════════════════════════════════════════
+.form-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding-top: 8px;
+
+  @media (max-width: 480px) { flex-direction: column; }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 26px;
+    border-radius: 12px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.87rem;
+    font-weight: 700;
+    border: none;
+    cursor: pointer;
+    transition: var(--rt-tr);
+    white-space: nowrap;
+
+    @media (max-width: 480px) { width: 100%; justify-content: center; }
+
+    &:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none !important;
+      box-shadow: none !important;
+    }
+
+    // Annuler
+    &.btn-secondary {
+      background: var(--rt-raised) !important;
+      color: var(--rt-t2) !important;
+      border: 1.5px solid var(--rt-bdr) !important;
+
+      &:hover:not(:disabled) {
+        background: var(--rt-bg-alt) !important;
+        border-color: var(--rt-bdr-hi) !important;
+        color: var(--rt-t1) !important;
+      }
+    }
+
+    // Confirmer
+    &.btn-success {
+      flex: 1;
+      justify-content: center;
+      background: var(--g-primary) !important;
+      color: #fff !important;
+      box-shadow: 0 6px 22px rgba(201,64,64,0.30) !important;
+
+      &:hover:not(:disabled) {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 30px rgba(201,64,64,0.42) !important;
+      }
+    }
+
+    .spinner-border {
+      width: 16px;
+      height: 16px;
+      border-width: 2px;
+      color: rgba(255,255,255,0.8) !important;
+    }
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// RESPONSIVE
+// ═══════════════════════════════════════════════════════════════════════════
+@media (max-width: 768px) {
+  .reservation-container { padding: 20px 0 60px; }
+
+  .card-header-reservation {
+    padding: 28px 24px 24px;
+
+    h2 { font-size: 1.45rem; }
+    i  { font-size: 1.8rem; }
   }
 }

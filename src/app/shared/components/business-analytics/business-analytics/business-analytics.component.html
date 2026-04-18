@@ -1,0 +1,257 @@
+<div class="analytics-container">
+
+  <!-- Header + period selector -->
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h3 class="mb-0">
+      <i class="bi bi-bar-chart-line-fill text-primary me-2"></i> Analytiques
+      <!-- ✅ Badge type établissement -->
+      <span class="badge bg-primary-subtle text-primary ms-2" style="font-size:.7rem; font-weight:600;">
+        {{ isTraiteur ? '🍽️ Traiteur' : '🏪 Restaurant' }}
+      </span>
+    </h3>
+    <div class="btn-group" role="group">
+      <input type="radio" class="btn-check" id="p7"  [(ngModel)]="selectedPeriod" [value]="7"  (change)="onPeriodChange()">
+      <label class="btn btn-outline-primary btn-sm" for="p7">7 jours</label>
+      <input type="radio" class="btn-check" id="p30" [(ngModel)]="selectedPeriod" [value]="30" (change)="onPeriodChange()">
+      <label class="btn btn-outline-primary btn-sm" for="p30">30 jours</label>
+      <input type="radio" class="btn-check" id="p90" [(ngModel)]="selectedPeriod" [value]="90" (change)="onPeriodChange()">
+      <label class="btn btn-outline-primary btn-sm" for="p90">90 jours</label>
+    </div>
+  </div>
+
+  <div *ngIf="loading" class="text-center py-5">
+    <div class="spinner-border text-primary" role="status"></div>
+    <p class="mt-2 text-muted">Chargement des données...</p>
+  </div>
+
+  <ng-container *ngIf="!loading && overview">
+
+    <!-- KPI Cards principales -->
+    <div class="row g-3 mb-4">
+      <div class="col-6 col-md-3">
+        <div class="card border-0 shadow-sm h-100">
+          <div class="card-body">
+            <div class="d-flex align-items-center gap-2 mb-1">
+              <div class="icon-box bg-primary-subtle text-primary rounded p-2">
+                <i class="bi bi-eye"></i>
+              </div>
+              <small class="text-muted">Vues de profil</small>
+            </div>
+            <h3 class="mb-0 fw-bold">{{ formatNumber(overview.total_page_views) }}</h3>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-6 col-md-3">
+        <div class="card border-0 shadow-sm h-100">
+          <div class="card-body">
+            <div class="d-flex align-items-center gap-2 mb-1">
+              <div class="icon-box bg-success-subtle text-success rounded p-2">
+                <!-- ✅ Icône adaptée au type -->
+                <i [class]="isTraiteur ? 'bi bi-calendar-event' : 'bi bi-bag-check'"></i>
+              </div>
+              <small class="text-muted">{{ ordersLabel }}</small>
+            </div>
+            <h3 class="mb-0 fw-bold">{{ formatNumber(ordersCompleted) }}</h3>
+          </div>
+        </div>
+      </div>
+
+      <!-- Réservations (restaurants uniquement) -->
+      <div class="col-6 col-md-3" *ngIf="!isTraiteur">
+        <div class="card border-0 shadow-sm h-100">
+          <div class="card-body">
+            <div class="d-flex align-items-center gap-2 mb-1">
+              <div class="icon-box bg-warning-subtle text-warning rounded p-2">
+                <i class="bi bi-calendar-check"></i>
+              </div>
+              <small class="text-muted">Réservations</small>
+            </div>
+            <h3 class="mb-0 fw-bold">
+              {{ formatNumber(overview.total_reservations_completed) }}
+            </h3>
+          </div>
+        </div>
+      </div>
+
+      <!-- Commandes normales aussi (traiteurs peuvent en avoir) -->
+      <div class="col-6 col-md-3" *ngIf="isTraiteur">
+        <div class="card border-0 shadow-sm h-100">
+          <div class="card-body">
+            <div class="d-flex align-items-center gap-2 mb-1">
+              <div class="icon-box bg-warning-subtle text-warning rounded p-2">
+                <i class="bi bi-bag-check"></i>
+              </div>
+              <small class="text-muted">Commandes en ligne</small>
+            </div>
+            <h3 class="mb-0 fw-bold">
+              {{ formatNumber(overview.total_orders_completed) }}
+            </h3>
+          </div>
+        </div>
+      </div>
+
+      <div class="col-6 col-md-3">
+        <div class="card border-0 shadow-sm h-100">
+          <div class="card-body">
+            <div class="d-flex align-items-center gap-2 mb-1">
+              <div class="icon-box bg-info-subtle text-info rounded p-2">
+                <i class="bi bi-percent"></i>
+              </div>
+              <small class="text-muted">{{ conversionLabel }}</small>
+            </div>
+            <h3 class="mb-0 fw-bold">
+              {{ formatPercent(overview.order_conversion_rate) }}
+            </h3>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- KPI secondaires -->
+    <div class="row g-3 mb-4">
+      <div class="col-md-4">
+        <div class="card border-0 shadow-sm bg-primary text-white">
+          <div class="card-body">
+            <small class="opacity-75">Sessions totales</small>
+            <h3 class="mb-0 fw-bold">{{ formatNumber(overview.total_sessions) }}</h3>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="card border-0 shadow-sm bg-success text-white">
+          <div class="card-body">
+            <small class="opacity-75">Clics menus</small>
+            <h3 class="mb-0 fw-bold">{{ formatNumber(overview.total_menu_clicks) }}</h3>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="card border-0 shadow-sm bg-info text-white">
+          <div class="card-body">
+            <!-- ✅ Label adapté -->
+            <small class="opacity-75">
+              {{ isTraiteur ? 'Clics sur articles' : 'Taux conv. réservations' }}
+            </small>
+            <h3 class="mb-0 fw-bold">
+              <ng-container *ngIf="isTraiteur">
+                {{ formatNumber(overview.total_item_clicks) }}
+              </ng-container>
+              <ng-container *ngIf="!isTraiteur">
+                {{ formatPercent(overview.reservation_conversion_rate) }}
+              </ng-container>
+            </h3>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Timeline Chart -->
+    <div class="card border-0 shadow-sm mb-4">
+      <div class="card-header bg-transparent border-0 pt-3">
+        <h5 class="mb-0">
+          <i class="bi bi-graph-up text-primary me-2"></i>
+          Évolution sur {{ selectedPeriod }} jours
+        </h5>
+      </div>
+      <div class="card-body">
+        <div style="height: 280px; position: relative;">
+          <canvas #timelineCanvas></canvas>
+        </div>
+      </div>
+    </div>
+
+    <div class="row g-4 mb-4">
+      <!-- Graphe conversion / commandes spéciales par jour -->
+      <div class="col-md-6">
+        <div class="card border-0 shadow-sm h-100">
+          <div class="card-header bg-transparent border-0 pt-3">
+            <h5 class="mb-0">
+              <i class="bi bi-funnel text-indigo me-2"></i>
+              {{ isTraiteur ? 'Commandes spéciales / jour' : 'Taux de conversion' }}
+            </h5>
+          </div>
+          <div class="card-body">
+            <div style="height: 220px; position: relative;">
+              <canvas #conversionCanvas></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Top 5 articles -->
+      <div class="col-md-6">
+        <div class="card border-0 shadow-sm h-100">
+          <div class="card-header bg-transparent border-0 pt-3">
+            <h5 class="mb-0">
+              <i class="bi bi-trophy text-warning me-2"></i>
+              Top 5 articles
+            </h5>
+          </div>
+          <div class="card-body">
+            <div *ngIf="popularItems.length === 0" class="text-center py-4 text-muted">
+              <i class="bi bi-inbox display-4 d-block mb-2 opacity-25"></i>
+              Aucun article avec données sur cette période
+            </div>
+            <div *ngIf="popularItems.length > 0" style="height: 220px; position: relative;">
+              <canvas #popularCanvas></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tableau articles populaires -->
+    <div class="card border-0 shadow-sm" *ngIf="popularItems.length > 0">
+      <div class="card-header bg-transparent border-0 pt-3">
+        <h5 class="mb-0">
+          <i class="bi bi-list-ol text-primary me-2"></i>
+          Articles populaires — détail
+        </h5>
+      </div>
+      <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0">
+          <thead class="table-light">
+            <tr>
+              <th>#</th>
+              <th>Article</th>
+              <th>Menu</th>
+              <th class="text-center">Clics</th>
+              <th class="text-center">Commandes</th>
+              <th class="text-end" *ngIf="!isTraiteur">Taux conv.</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let item of popularItems; let i = index">
+              <td>
+                <span class="badge" [ngClass]="{
+                  'bg-warning text-dark': i === 0,
+                  'bg-secondary':         i === 1,
+                  'bg-danger':            i === 2,
+                  'bg-light text-dark':   i > 2
+                }">{{ i + 1 }}</span>
+              </td>
+              <td class="fw-semibold">{{ item.item_name }}</td>
+              <td>
+                <span class="badge bg-primary-subtle text-primary">{{ item.menu_name }}</span>
+              </td>
+              <td class="text-center">{{ item.total_clicks }}</td>
+              <td class="text-center fw-semibold text-success">{{ item.total_orders }}</td>
+              <td class="text-end fw-semibold text-success" *ngIf="!isTraiteur">
+                {{ formatPercent(item.conversion_rate) }}
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </ng-container>
+
+  <!-- Empty state -->
+  <div *ngIf="!loading && !overview" class="text-center py-5">
+    <i class="bi bi-bar-chart display-1 text-muted"></i>
+    <p class="mt-3 text-muted">Aucune donnée disponible pour cette période.</p>
+  </div>
+
+</div>

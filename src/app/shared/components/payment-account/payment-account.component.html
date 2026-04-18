@@ -1,0 +1,380 @@
+<!-- ── Loader ──────────────────────────────────────────────── -->
+<div class="pa-loading" *ngIf="loading">
+  <div class="spinner-border pa-spinner"></div>
+  <p>Chargement...</p>
+</div>
+
+<ng-container *ngIf="!loading">
+
+  <!-- ── Bannière statut ────────────────────────────────────── -->
+  <div class="pa-status-banner"
+    [class.pa-banner--pending]="paStatus === 'pending_verification'"
+    [class.pa-banner--verified]="paStatus === 'verified'"
+    [class.pa-banner--rejected]="paStatus === 'rejected'"
+    [class.pa-banner--suspended]="paStatus === 'suspended'"
+    [class.pa-banner--default]="paStatus === 'not_configured'">
+    <div class="pa-banner-icon">
+      <i class="bi"
+        [class.bi-question-circle-fill]="paStatus === 'not_configured'"
+        [class.bi-hourglass-split]="paStatus === 'pending_verification'"
+        [class.bi-check-circle-fill]="paStatus === 'verified'"
+        [class.bi-x-circle-fill]="paStatus === 'rejected'"
+        [class.bi-slash-circle-fill]="paStatus === 'suspended'"></i>
+    </div>
+    <div class="pa-banner-body">
+      <div class="pa-banner-title">
+        Compte de paiement
+        <span class="pa-status-chip" [ngClass]="getStatusChipClass(paStatus)">
+          {{ getStatusLabel(paStatus) }}
+        </span>
+      </div>
+      <div class="pa-banner-sub" *ngIf="paStatus === 'not_configured'">
+        Configurez votre compte pour recevoir vos paiements automatiquement via CinetPay.
+      </div>
+      <div class="pa-banner-sub" *ngIf="paStatus === 'pending_verification'">
+        Vérification en cours par notre équipe — délai 24 à 48h ouvrées.
+      </div>
+      <div class="pa-banner-sub" *ngIf="paStatus === 'verified'">
+        <i class="bi bi-lightning-charge-fill"></i>
+        Split automatique actif · Reversement via
+        <strong>{{ getMethodLabel(paymentAccount?.preferred_payout_method) }}</strong>
+      </div>
+      <div class="pa-banner-sub" *ngIf="paStatus === 'rejected'">
+        <strong>Motif :</strong> {{ paymentAccount?.rejection_reason || 'Contactez le support.' }}
+      </div>
+      <div class="pa-banner-sub" *ngIf="paStatus === 'suspended'">
+        Votre compte a été suspendu. Contactez le support pour le réactiver.
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════════════
+       VUE COMPTE ACTIF (verified ou pending)
+  ════════════════════════════════════════════════ -->
+  <ng-container *ngIf="!showForm && paymentAccount">
+
+    <div class="pa-verified-card">
+      <div class="pa-vc-header">
+        <div class="pa-vc-title">
+          <i class="bi bi-bank2"></i> Compte actif
+        </div>
+        <div class="pa-vc-actions">
+          <button class="pa-btn-edit" (click)="startEdit()" title="Modifier ce compte">
+            <i class="bi bi-pencil-fill"></i> Modifier
+          </button>
+          <button class="pa-btn-add-new" (click)="startAddNew()" title="Configurer un nouveau compte">
+            <i class="bi bi-plus-circle-fill"></i> Nouveau compte
+          </button>
+        </div>
+      </div>
+
+      <div class="pa-vc-grid">
+        <div class="pa-info-block pa-info-block--highlight">
+          <div class="pa-info-label">Méthode de reversement</div>
+          <div class="pa-info-val">
+            <span class="pa-method-badge">
+              {{ getMethodIcon(paymentAccount.preferred_payout_method) }}
+              {{ getMethodLabel(paymentAccount.preferred_payout_method) }}
+            </span>
+          </div>
+          <div class="pa-info-sub">{{ getPayoutCoords() }}</div>
+        </div>
+
+        <div class="pa-info-block">
+          <div class="pa-info-label">Nom légal</div>
+          <div class="pa-info-val">{{ paymentAccount.legal_name || '—' }}</div>
+          <div class="pa-info-sub">
+            {{ paymentAccount.business_type === 'company' ? 'Entreprise' : 'Personne physique' }}
+            <span *ngIf="paymentAccount.business_registration_number">
+              · {{ paymentAccount.business_registration_number }}
+            </span>
+          </div>
+        </div>
+
+        <ng-container *ngIf="paymentAccount.preferred_payout_method === 'bank'">
+          <div class="pa-info-block">
+            <div class="pa-info-label">Titulaire</div>
+            <div class="pa-info-val">{{ paymentAccount.bank_account_holder || '—' }}</div>
+            <div class="pa-info-sub" *ngIf="paymentAccount.bank_iban">
+              IBAN : {{ paymentAccount.bank_iban }}
+            </div>
+          </div>
+        </ng-container>
+
+        <div class="pa-info-block" *ngIf="paymentAccount.cinetpay_sub_merchant_id">
+          <div class="pa-info-label">Sous-compte CinetPay</div>
+          <div class="pa-info-val"><code>{{ paymentAccount.cinetpay_sub_merchant_id }}</code></div>
+          <div class="pa-info-sub" style="color:var(--rt-green)">Activé ✓</div>
+        </div>
+
+        <div class="pa-info-block" *ngIf="paymentAccount.verified_at">
+          <div class="pa-info-label">Vérifié le</div>
+          <div class="pa-info-val">
+            {{ paymentAccount.verified_at | date:'dd MMMM yyyy':'':'fr' }}
+          </div>
+        </div>
+      </div>
+
+      <div class="pa-split-info" *ngIf="paStatus === 'verified'">
+        <i class="bi bi-lightning-charge-fill"></i>
+        <span>À chaque paiement client, votre montant net est versé <strong>automatiquement</strong>
+          sur votre {{ getMethodLabel(paymentAccount.preferred_payout_method) }}.</span>
+      </div>
+    </div>
+
+    <!-- Étapes pending -->
+    <div class="pa-pending-info" *ngIf="paStatus === 'pending_verification'">
+      <div class="pa-pending-steps">
+        <div class="pa-step">
+          <div class="pa-step-num pa-step-num--done"><i class="bi bi-check"></i></div>
+          <div class="pa-step-txt">
+            <strong>Dossier soumis</strong><small>Informations enregistrées</small>
+          </div>
+        </div>
+        <div class="pa-step-line"></div>
+        <div class="pa-step">
+          <div class="pa-step-num pa-step-num--active"><i class="bi bi-hourglass-split"></i></div>
+          <div class="pa-step-txt">
+            <strong>Vérification en cours</strong><small>Notre équipe vérifie (24-48h)</small>
+          </div>
+        </div>
+        <div class="pa-step-line"></div>
+        <div class="pa-step">
+          <div class="pa-step-num pa-step-num--waiting"><i class="bi bi-lightning-charge"></i></div>
+          <div class="pa-step-txt">
+            <strong>Split automatique actif</strong><small>Vous recevez vos paiements</small>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Historique des anciens comptes ──────────────────── -->
+    <div class="pa-history" *ngIf="historyAccounts.length > 0">
+      <div class="pa-history-header">
+        <i class="bi bi-clock-history"></i>
+        Historique des comptes précédents
+        <span class="pa-history-count">{{ historyAccounts.length }}</span>
+      </div>
+      <div class="pa-history-list">
+        <div class="pa-history-item" *ngFor="let acc of historyAccounts">
+          <div class="pa-history-method">
+            <span class="pa-history-icon">{{ getMethodIcon(acc.preferred_payout_method) }}</span>
+            <div>
+              <div class="pa-history-label">
+                {{ getMethodLabel(acc.preferred_payout_method) }}
+                <span *ngIf="acc.account_label"> — {{ acc.account_label }}</span>
+              </div>
+              <div class="pa-history-coords">{{ getPayoutCoords(acc) }}</div>
+            </div>
+          </div>
+          <div class="pa-history-meta">
+            <span class="pa-status-chip pa-history-chip" [ngClass]="getStatusChipClass(acc.status)">
+              {{ getStatusLabel(acc.status) }}
+            </span>
+            <div class="pa-history-date" *ngIf="acc.replaced_at">
+              Remplacé le {{ acc.replaced_at | date:'dd/MM/yyyy' }}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </ng-container>
+
+  <!-- ════════════════════════════════════════════════
+       FORMULAIRE
+  ════════════════════════════════════════════════ -->
+  <div class="pa-form-card" *ngIf="showForm">
+
+    <div class="pa-form-header">
+      <div class="pa-form-title">
+        <i class="bi bi-pencil-fill"></i>
+        <ng-container *ngIf="addNewMode">Configurer un nouveau compte</ng-container>
+        <ng-container *ngIf="editMode">Modifier le compte actif</ng-container>
+        <ng-container *ngIf="!addNewMode && !editMode && paStatus === 'rejected'">
+          Corriger le dossier
+        </ng-container>
+        <ng-container *ngIf="!addNewMode && !editMode && paStatus !== 'rejected' && !paymentAccount">
+          Configurer le compte
+        </ng-container>
+      </div>
+      <button class="pa-btn-cancel"
+        *ngIf="(editMode || addNewMode) && paStatus !== 'not_configured'"
+        (click)="cancelForm()">
+        <i class="bi bi-x-lg"></i> Annuler
+      </button>
+    </div>
+
+    <!-- Avertissement remplacement -->
+    <div class="pa-warn-replace" *ngIf="addNewMode && paymentAccount">
+      <i class="bi bi-info-circle-fill"></i>
+      <span>
+        L'ancien compte
+        (<strong>{{ getMethodLabel(paymentAccount.preferred_payout_method) }}</strong>
+        — {{ getPayoutCoords() }})
+        sera conservé dans l'historique et <strong>désactivé</strong>.
+        Le nouveau compte devra être vérifié sous 24-48h.
+      </span>
+    </div>
+
+    <!-- Comment ça marche -->
+    <div class="pa-how-it-works" *ngIf="paStatus === 'not_configured' || addNewMode">
+      <div class="pa-how-step">
+        <div class="pa-how-num">1</div>
+        <div><strong>Vous configurez</strong><p>Mobile Money ou banque</p></div>
+      </div>
+      <div class="pa-how-arrow"><i class="bi bi-arrow-right"></i></div>
+      <div class="pa-how-step">
+        <div class="pa-how-num">2</div>
+        <div><strong>Vérification</strong><p>Notre équipe valide (24-48h)</p></div>
+      </div>
+      <div class="pa-how-arrow"><i class="bi bi-arrow-right"></i></div>
+      <div class="pa-how-step">
+        <div class="pa-how-num">3</div>
+        <div><strong>Client paie</strong><p>Via CinetPay</p></div>
+      </div>
+      <div class="pa-how-arrow"><i class="bi bi-arrow-right"></i></div>
+      <div class="pa-how-step">
+        <div class="pa-how-num pa-how-num--green">4</div>
+        <div><strong>Split auto ⚡</strong><p>Votre part → votre compte</p></div>
+      </div>
+    </div>
+
+    <form [formGroup]="form" (ngSubmit)="save()">
+
+      <!-- Label optionnel pour identifier le compte -->
+      <div class="pa-section-label" style="margin: 16px 0 10px">
+        <i class="bi bi-tag"></i> Libellé du compte
+        <span class="pa-optional-badge">Optionnel</span>
+      </div>
+      <div class="pa-field-group" style="padding: 0 0 4px">
+        <input type="text" class="pa-input pa-input--short" formControlName="account_label"
+          placeholder="Ex: Compte principal, Flooz pro...">
+      </div>
+
+      <!-- Informations légales -->
+      <div class="pa-section-label">
+        <i class="bi bi-building"></i> Informations légales
+      </div>
+      <div class="row g-3 mb-4">
+        <div class="col-md-6">
+          <label class="pa-label">Nom légal de l'établissement *</label>
+          <input type="text" class="pa-input" formControlName="legal_name" placeholder="Nom officiel"
+            [class.pa-input--error]="form.get('legal_name')?.invalid && form.get('legal_name')?.touched">
+          <span class="pa-error"
+            *ngIf="form.get('legal_name')?.invalid && form.get('legal_name')?.touched">
+            Ce champ est requis
+          </span>
+        </div>
+        <div class="col-md-3">
+          <label class="pa-label">Type d'entité *</label>
+          <select class="pa-input pa-select" formControlName="business_type">
+            <option value="individual">Personne physique</option>
+            <option value="company">Entreprise</option>
+          </select>
+        </div>
+        <div class="col-md-3">
+          <label class="pa-label">NIF / RCCM <span class="pa-optional">(optionnel)</span></label>
+          <input type="text" class="pa-input" formControlName="business_registration_number"
+            placeholder="TG-LOM-01-...">
+        </div>
+      </div>
+
+      <!-- Méthode de reversement -->
+      <div class="pa-section-label">
+        <i class="bi bi-phone"></i> Méthode de reversement *
+      </div>
+      <div class="pa-payout-grid">
+        <div *ngFor="let m of payoutMethods"
+          class="pa-payout-card"
+          [class.pa-payout-card--active]="form.get('preferred_payout_method')?.value === m.id"
+          (click)="form.get('preferred_payout_method')?.setValue(m.id)">
+          <div class="pa-payout-ico">{{ m.ico }}</div>
+          <div class="pa-payout-name">{{ m.lbl }}</div>
+          <div class="pa-payout-sub">{{ m.sub }}</div>
+          <i class="bi bi-check-circle-fill pa-payout-check"
+            *ngIf="form.get('preferred_payout_method')?.value === m.id"></i>
+        </div>
+      </div>
+
+      <div [hidden]="form.get('preferred_payout_method')?.value !== 'mixx'" class="pa-field-group">
+        <label class="pa-label"><i class="bi bi-telephone"></i> Numéro Mixx By Yas *</label>
+        <input type="tel" class="pa-input pa-input--short" formControlName="mixx_number"
+          placeholder="90 12 34 56">
+      </div>
+      <div [hidden]="form.get('preferred_payout_method')?.value !== 'flooz'" class="pa-field-group">
+        <label class="pa-label"><i class="bi bi-telephone"></i> Numéro Flooz *</label>
+        <input type="tel" class="pa-input pa-input--short" formControlName="flooz_number"
+          placeholder="93 12 34 56">
+      </div>
+      <div [hidden]="form.get('preferred_payout_method')?.value !== 'bank'" class="pa-field-group">
+        <div class="row g-3">
+          <div class="col-md-6">
+            <label class="pa-label">Nom de la banque *</label>
+            <input type="text" class="pa-input" formControlName="bank_name"
+              placeholder="Ecobank, UTB...">
+          </div>
+          <div class="col-md-6">
+            <label class="pa-label">Titulaire du compte *</label>
+            <input type="text" class="pa-input" formControlName="bank_account_holder"
+              placeholder="Nom exact sur le compte">
+          </div>
+          <div class="col-md-6">
+            <label class="pa-label">Numéro de compte *</label>
+            <input type="text" class="pa-input" formControlName="bank_account_number">
+          </div>
+          <div class="col-md-6">
+            <label class="pa-label">IBAN <span class="pa-optional">(optionnel)</span></label>
+            <input type="text" class="pa-input" formControlName="bank_iban"
+              placeholder="TG53 TG00...">
+          </div>
+        </div>
+      </div>
+
+      <!-- CinetPay -->
+      <div class="pa-cinetpay-block">
+        <div class="pa-section-label" style="margin-bottom: 10px;">
+          <i class="bi bi-key"></i> Compte CinetPay existant
+          <span class="pa-optional-badge">Optionnel</span>
+        </div>
+        <div class="row g-3">
+          <div class="col-md-6">
+            <label class="pa-label">Site ID CinetPay</label>
+            <input type="text" class="pa-input" formControlName="cinetpay_site_id"
+              placeholder="12345678">
+          </div>
+          <div class="col-md-6">
+            <label class="pa-label">API Key CinetPay</label>
+            <input type="text" class="pa-input" formControlName="cinetpay_api_key"
+              placeholder="Votre clé API">
+          </div>
+        </div>
+      </div>
+
+      <!-- Avertissement modification compte vérifié -->
+      <div class="pa-warn-verified" *ngIf="editMode && paStatus === 'verified'">
+        <i class="bi bi-exclamation-triangle-fill"></i>
+        <span>Toute modification annule votre vérification actuelle. Revérification sous 24-48h.</span>
+      </div>
+
+      <!-- Actions -->
+      <div class="pa-form-actions">
+        <button type="button" class="pa-btn-secondary"
+          *ngIf="(editMode || addNewMode) && paStatus !== 'not_configured'"
+          (click)="cancelForm()">
+          Annuler
+        </button>
+        <button type="submit" class="pa-btn-primary" [disabled]="form.invalid || saving">
+          <span *ngIf="saving" class="spinner-border spinner-border-sm"></span>
+          <i class="bi bi-check-circle-fill" *ngIf="!saving"></i>
+          {{ saving          ? 'Enregistrement...'         :
+             addNewMode      ? 'Soumettre le nouveau compte' :
+             paStatus === 'verified' ? 'Mettre à jour'     :
+             paymentAccount  ? 'Soumettre à nouveau'        : 'Enregistrer et soumettre' }}
+        </button>
+      </div>
+
+    </form>
+  </div>
+
+</ng-container>

@@ -52,6 +52,54 @@ const getClientProfile = asyncHandler(async (req, res) => {
 });
 
 /**
+ * Mettre à jour le profil du client (nom, prénom, téléphone)
+ * PUT /api/client/profile
+ */
+const updateClientProfile = asyncHandler(async (req, res) => {
+  const userId = req.user.id;
+  const { first_name, last_name, phone } = req.body;
+ 
+  // Validation minimale
+  if (!first_name || !last_name) {
+    return res.status(HTTP_STATUS.BAD_REQUEST).json({
+      success: false,
+      message: 'Le prénom et le nom sont requis',
+      code: ERROR_CODES.VALIDATION_ERROR
+    });
+  }
+ 
+  // Mise à jour dans la table users
+  const result = await pool.query(
+    `UPDATE users
+     SET first_name = $1,
+         last_name  = $2,
+         phone      = $3,
+         updated_at = NOW()
+     WHERE id = $4
+     RETURNING id, email, first_name, last_name, phone, role, created_at, updated_at`,
+    [first_name.trim(), last_name.trim(), phone?.trim() || null, userId]
+  );
+ 
+  if (result.rows.length === 0) {
+    return res.status(HTTP_STATUS.NOT_FOUND).json({
+      success: false,
+      message: 'Utilisateur introuvable',
+      code: ERROR_CODES.NOT_FOUND
+    });
+  }
+ 
+  const updatedUser = result.rows[0];
+ 
+  logger.info('Profil client mis à jour', { userId, first_name, last_name });
+ 
+  res.json({
+    success: true,
+    message: 'Profil mis à jour avec succès',
+    data: { user: updatedUser }
+  });
+});
+
+/**
  * Obtenir les préférences de notification
  * GET /api/client/notification-preferences
  */
@@ -360,6 +408,7 @@ const downloadSpecialOrderReceipt = asyncHandler(async (req, res) => {
 
 module.exports = {
   getClientProfile,
+  updateClientProfile,
   getNotificationPreferences,
   updateNotificationPreferences,
   getClientOrders,

@@ -1,8 +1,13 @@
+// ═════════════════════════════════════════════════════════════════════════════
+// COMMISSIONS-VIEW.COMPONENT.TS - VERSION CORRIGÉE COMPLÈTE
+// Remplacer le fichier existant par celui-ci
+// ═════════════════════════════════════════════════════════════════════════════
+
 import { Component, OnInit, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
-import { ToastService } from '../../core/services/toast/toast.service';  // ✅ AJOUTER
+import { ToastService } from '../../core/services/toast/toast.service';
 import { AuthService } from '../../core/services/auth/auth.service';
 
 interface Commission {
@@ -14,26 +19,13 @@ interface Commission {
   order_amount: number;
   commission_rate: number;
   commission_amount: number;
+  restaurant_amount?: number;
+  platform_amount?: number;
+  payment_split_completed?: boolean;
   status: 'pending' | 'collected' | 'paid' | 'cancelled';
   created_at: string;
   collected_at?: string;
   paid_at?: string;
-}
-
-interface CommissionTotals {
-  total_count: string;
-  total_amount: string;
-}
-
-interface CommissionStats {
-  total: number;
-  pending: number;
-  collected: number;
-  paid: number;
-  totalAmount: number;
-  pendingAmount: number;
-  collectedAmount: number;
-  paidAmount: number;
 }
 
 @Component({
@@ -47,7 +39,7 @@ export class CommissionsViewComponent implements OnInit {
   @Input() pageTitle = 'Mes Commissions';
   @Input() businessType = 'restaurant';
 
-  commissions: any[] = [];
+  commissions: Commission[] = [];
   stats: any = null;
   loading = false;
   error: string | null = null;
@@ -72,32 +64,43 @@ export class CommissionsViewComponent implements OnInit {
     this.loading = true;
     this.error = null;
 
+    console.log('🔍 [Commissions] Chargement pour business ID:', business.id);
+
     this.http.get<any>(`${environment.apiUrl}/commissions/business/${business.id}`)
       .subscribe({
         next: (res) => {
-          // ✅ Le backend renvoie directement { commissions, totals, stats }
-          this.commissions = res.commissions || [];
-          this.stats = res.stats || this.computeStats();
+          console.log('✅ [Commissions] Réponse API:', res);
+          
+          // Gérer les différents formats de réponse
+          let commissionsData: Commission[] = [];
+          let statsData: any = null;
+
+          // Format 1: { success: true, data: { commissions, stats } }
+          if (res.success && res.data) {
+            commissionsData = res.data.commissions || [];
+            statsData = res.data.stats;
+          }
+          // Format 2: { success: true, commissions, stats }
+          else if (res.success) {
+            commissionsData = res.commissions || [];
+            statsData = res.stats;
+          }
+          // Format 3: { commissions, stats }
+          else {
+            commissionsData = res.commissions || res || [];
+            statsData = res.stats;
+          }
+
+          this.commissions = commissionsData;
+          this.stats = statsData || this.computeStats();
+          
+          console.log(`📊 [Commissions] ${this.commissions.length} commissions chargées`);
+          console.log('📊 [Commissions] Stats:', this.stats);
+          
           this.loading = false;
         },
         error: (err) => {
-          console.error('Erreur chargement commissions:', err);
-          // Fallback : essayer /commissions/my
-          this.loadCommissionsFallback();
-        }
-      });
-  }
-
-  private loadCommissionsFallback(): void {
-    this.http.get<any>(`${environment.apiUrl}/commissions/my`)
-      .subscribe({
-        next: (res) => {
-          const data = res.data ?? res;
-          this.commissions = data.commissions ?? data ?? [];
-          this.stats = data.stats ?? this.computeStats();
-          this.loading = false;
-        },
-        error: () => {
+          console.error('❌ [Commissions] Erreur:', err);
           this.loading = false;
           this.error = 'Impossible de charger les commissions.';
           this.toastService.showError('Erreur', 'Impossible de charger les commissions');
@@ -109,13 +112,19 @@ export class CommissionsViewComponent implements OnInit {
     const pending = this.commissions
       .filter(c => c.status === 'pending')
       .reduce((s, c) => s + Number(c.commission_amount || 0), 0);
+    
     const collected = this.commissions
-      .filter(c => c.status === 'collected' || c.status === 'paid')
+      .filter(c => c.status === 'collected')
       .reduce((s, c) => s + Number(c.commission_amount || 0), 0);
+
+    const paid = this.commissions
+      .filter(c => c.status === 'paid')
+      .reduce((s, c) => s + Number(c.commission_amount || 0), 0);
+    
     return {
-      total_pending:   pending,
-      total_collected: collected,
-      count:           this.commissions.length
+      total_pending: pending,
+      total_collected: collected + paid,
+      count: this.commissions.length
     };
   }
 

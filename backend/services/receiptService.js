@@ -3,14 +3,12 @@
 // Dépendance : npm install pdfkit
 
 const PDFDocument = require('pdfkit');
-const path = require('path');
 const logger = require('../utils/logger');
 
 class ReceiptService {
 
   /**
    * Génère un reçu PDF en mémoire et retourne un Buffer
-   * Compatible commandes normales ET commandes spéciales
    */
   async generateReceiptBuffer(orderData) {
     return new Promise((resolve, reject) => {
@@ -18,7 +16,7 @@ class ReceiptService {
         size: 'A4',
         margin: 50,
         info: {
-          Title: `Reçu #${orderData.id}`,
+          Title: `Reçu ${orderData.id}`,
           Author: 'RestoTraiteur',
           Subject: 'Reçu de commande',
         }
@@ -26,7 +24,7 @@ class ReceiptService {
 
       const chunks = [];
       doc.on('data', chunk => chunks.push(chunk));
-      doc.on('end', () => resolve(Buffer.concat(chunks)));
+      doc.on('end',  () => resolve(Buffer.concat(chunks)));
       doc.on('error', reject);
 
       this._buildReceipt(doc, orderData);
@@ -35,403 +33,322 @@ class ReceiptService {
   }
 
   /**
-   * Construit le contenu du reçu dans le document PDF
+   * Formate un montant sans espace insécable (\u00A0).
+   * PDFKit ne rend pas \u00A0 correctement → on utilise un espace simple.
    */
-  _buildReceipt(doc, order) {
-    const isSpecial = order.is_special === true;
-    const pageWidth = doc.page.width - 100; // marges
-
-    // ─── HEADER ──────────────────────────────────────────
-    // Bande de couleur en haut
-    doc.rect(0, 0, doc.page.width, 8).fill('#667eea');
-
-    // Logo / Nom de la plateforme
-    doc.moveDown(1);
-    doc
-      .font('Helvetica-Bold')
-      .fontSize(26)
-      .fillColor('#667eea')
-      .text('RestoTraiteur', 50, 30, { align: 'left' });
-
-    doc
-      .font('Helvetica')
-      .fontSize(10)
-      .fillColor('#6c757d')
-      .text('Votre plateforme de commande en ligne', 50, 60);
-
-    // Titre REÇU à droite
-    doc
-      .font('Helvetica-Bold')
-      .fontSize(32)
-      .fillColor('#212529')
-      .text('REÇU', 0, 30, { align: 'right' });
-
-    doc
-      .font('Helvetica')
-      .fontSize(11)
-      .fillColor('#6c757d')
-      .text(
-        `N° ${isSpecial ? 'SP-' : ''}${order.id}`,
-        0, 68,
-        { align: 'right' }
-      );
-
-    // Ligne de séparation
-    doc.moveDown(2);
-    doc.moveTo(50, 100).lineTo(doc.page.width - 50, 100).strokeColor('#dee2e6').lineWidth(1).stroke();
-
-    // ─── INFOS COMMANDE & CLIENT ─────────────────────────
-    const startY = 120;
-
-    // Colonne gauche — infos établissement
-    doc
-      .font('Helvetica-Bold')
-      .fontSize(10)
-      .fillColor('#6c757d')
-      .text('ÉTABLISSEMENT', 50, startY);
-
-    doc
-      .font('Helvetica-Bold')
-      .fontSize(13)
-      .fillColor('#212529')
-      .text(order.business_name || 'N/A', 50, startY + 16);
-
-    if (order.business_address) {
-      doc
-        .font('Helvetica')
-        .fontSize(10)
-        .fillColor('#495057')
-        .text(order.business_address, 50, startY + 34);
-    }
-
-    if (order.business_phone) {
-      doc
-        .font('Helvetica')
-        .fontSize(10)
-        .fillColor('#495057')
-        .text(`Tél : ${order.business_phone}`, 50, startY + 48);
-    }
-
-    // Colonne droite — infos client
-    const rightX = doc.page.width / 2 + 20;
-
-    doc
-      .font('Helvetica-Bold')
-      .fontSize(10)
-      .fillColor('#6c757d')
-      .text('CLIENT', rightX, startY);
-
-    doc
-      .font('Helvetica-Bold')
-      .fontSize(13)
-      .fillColor('#212529')
-      .text(order.client_name || 'Invité', rightX, startY + 16);
-
-    if (order.client_email) {
-      doc
-        .font('Helvetica')
-        .fontSize(10)
-        .fillColor('#495057')
-        .text(order.client_email, rightX, startY + 34);
-    }
-
-    if (order.client_phone) {
-      doc
-        .font('Helvetica')
-        .fontSize(10)
-        .fillColor('#495057')
-        .text(`Tél : ${order.client_phone}`, rightX, startY + 48);
-    }
-
-    // ─── INFOS DATE & PAIEMENT ───────────────────────────
-    const infoY = startY + 80;
-    doc.moveTo(50, infoY).lineTo(doc.page.width - 50, infoY).strokeColor('#dee2e6').lineWidth(0.5).stroke();
-
-    const dateStr = new Date(order.created_at || Date.now()).toLocaleDateString('fr-FR', {
-      day: '2-digit', month: 'long', year: 'numeric',
-      hour: '2-digit', minute: '2-digit'
-    });
-
-    const boxY = infoY + 12;
-    const colW = (pageWidth) / 3;
-
-    // Case Date
-    this._infoBox(doc, 50, boxY, colW - 10, 'Date de commande', dateStr);
-
-    // Case méthode de paiement
-    const payMethod = order.payment_method || 'N/A';
-    this._infoBox(doc, 50 + colW, boxY, colW - 10, 'Méthode de paiement', payMethod.toUpperCase());
-
-    // Case statut
-    const statusLabel = this._getStatusLabel(order.status || order.payment_status);
-    this._infoBox(doc, 50 + colW * 2, boxY, colW - 10, 'Statut', statusLabel, '#28a745');
-
-    // ─── TABLEAU DES ARTICLES ─────────────────────────────
-    const tableY = boxY + 75;
-
-    if (!isSpecial && order.items && order.items.length > 0) {
-      this._drawItemsTable(doc, order.items, tableY);
-    } else if (isSpecial) {
-      this._drawSpecialOrderDetails(doc, order, tableY);
-    } else {
-      doc
-        .font('Helvetica')
-        .fontSize(11)
-        .fillColor('#6c757d')
-        .text('Détails des articles non disponibles', 50, tableY + 10);
-    }
-
-    // ─── TOTAL ───────────────────────────────────────────
-    const totalY = doc.y + 20;
-    const totalAmount = parseFloat(order.total_amount || order.estimated_budget || 0);
-
-    // Fond gris clair pour le total
-    doc.rect(doc.page.width - 250, totalY, 200, 45).fill('#f8f9fa');
-
-    doc
-      .font('Helvetica-Bold')
-      .fontSize(12)
-      .fillColor('#212529')
-      .text('TOTAL', doc.page.width - 240, totalY + 8);
-
-    doc
-      .font('Helvetica-Bold')
-      .fontSize(18)
-      .fillColor('#667eea')
-      .text(
-        `${this._formatAmount(totalAmount)} FCFA`,
-        doc.page.width - 240, totalY + 24,
-        { width: 180, align: 'right' }
-      );
-
-    // ─── NOTES ───────────────────────────────────────────
-    if (order.notes) {
-      doc.moveDown(2);
-      doc
-        .font('Helvetica-Bold')
-        .fontSize(10)
-        .fillColor('#495057')
-        .text('Notes :');
-      doc
-        .font('Helvetica')
-        .fontSize(10)
-        .fillColor('#6c757d')
-        .text(order.notes);
-    }
-
-    // ─── FOOTER ──────────────────────────────────────────
-    const footerY = doc.page.height - 80;
-
-    doc.moveTo(50, footerY).lineTo(doc.page.width - 50, footerY).strokeColor('#dee2e6').lineWidth(0.5).stroke();
-
-    doc
-      .font('Helvetica')
-      .fontSize(9)
-      .fillColor('#adb5bd')
-      .text(
-        'Merci pour votre confiance ! Pour toute question : support@restotraiteur.com',
-        50, footerY + 10,
-        { align: 'center', width: pageWidth }
-      );
-
-    doc
-      .font('Helvetica')
-      .fontSize(9)
-      .fillColor('#adb5bd')
-      .text(
-        `Reçu généré le ${new Date().toLocaleDateString('fr-FR')} — RestoTraiteur © ${new Date().getFullYear()}`,
-        50, footerY + 24,
-        { align: 'center', width: pageWidth }
-      );
-
-    // Bande de couleur en bas
-    doc.rect(0, doc.page.height - 8, doc.page.width, 8).fill('#667eea');
+  _fmt(amount) {
+    return Math.round(parseFloat(amount || 0))
+      .toString()
+      .replace(/\B(?=(\d{3})+(?!\d))/g, ' ') + ' FCFA';
   }
 
   /**
-   * Dessine une case d'info (label + valeur)
+   * Construit le contenu du reçu
    */
-  _infoBox(doc, x, y, width, label, value, valueColor = '#212529') {
-    doc.rect(x, y, width, 58).fill('#f8f9fa');
+  _buildReceipt(doc, order) {
+    const isSpecial = order.is_special === true;
+    const pageW     = doc.page.width;   // 595
+    const marginL   = 50;
+    const marginR   = 50;
+    const contentW  = pageW - marginL - marginR;  // 495
+
+    // ── Bande supérieure ─────────────────────────────────
+    doc.rect(0, 0, pageW, 6).fill('#C94040');
+
+    // ── LOGO à gauche ────────────────────────────────────
     doc
-      .font('Helvetica')
-      .fontSize(9)
-      .fillColor('#6c757d')
-      .text(label, x + 8, y + 8, { width: width - 16 });
+      .font('Helvetica-Bold').fontSize(26)
+      .fillColor('#C94040').text('Resto', marginL, 22, { continued: true })
+      .fillColor('#2A9D5C').text('Traiteur');
+
     doc
-      .font('Helvetica-Bold')
-      .fontSize(11)
-      .fillColor(valueColor)
-      .text(value, x + 8, y + 26, { width: width - 16 });
+      .font('Helvetica').fontSize(9.5)
+      .fillColor('#6C757D')
+      .text('Votre plateforme de commande en ligne', marginL, 53);
+
+    // ── REÇU + numéro à droite ────────────────────────────
+    const ref = `N° ${isSpecial ? 'SP-' : ''}${order.id}`;
+    doc
+      .font('Helvetica-Bold').fontSize(28)
+      .fillColor('#1A1A2E')
+      .text('REÇU', 0, 22, { align: 'right', width: pageW - marginR });
+
+    doc
+      .font('Helvetica').fontSize(11)
+      .fillColor('#C94040')
+      .text(ref, 0, 56, { align: 'right', width: pageW - marginR });
+
+    // ── Ligne de séparation ───────────────────────────────
+    const sepY = 78;
+    doc.moveTo(marginL, sepY).lineTo(pageW - marginR, sepY)
+       .strokeColor('#E9ECEF').lineWidth(1).stroke();
+
+    // ════════════════════════════════════════════════════
+    // BLOCS ÉTABLISSEMENT (gauche) + CLIENT (droite)
+    // Deux colonnes côte à côte, chacune avec une bordure
+    // colorée en haut : rouge pour établissement, vert pour client
+    // ════════════════════════════════════════════════════
+    const blockY   = 90;
+    const blockW   = (contentW - 12) / 2;  // largeur de chaque bloc
+    const blockH   = 72;
+    const leftX    = marginL;
+    const rightX   = marginL + blockW + 12;  // ✅ Bloc CLIENT ancré à droite
+
+    // Fond gris clair
+    doc.rect(leftX,  blockY, blockW, blockH).fill('#F8F9FA');
+    doc.rect(rightX, blockY, blockW, blockH).fill('#F8F9FA');
+
+    // Bordure colorée en haut : rouge = établissement, vert = client
+    doc.rect(leftX,  blockY, blockW, 3).fill('#C94040');
+    doc.rect(rightX, blockY, blockW, 3).fill('#2A9D5C');
+
+    // Contenu bloc ÉTABLISSEMENT
+    doc.font('Helvetica-Bold').fontSize(8).fillColor('#9CA3AF')
+       .text('ÉTABLISSEMENT', leftX + 10, blockY + 9, { characterSpacing: 0.5 });
+
+    doc.font('Helvetica-Bold').fontSize(12).fillColor('#1A1A2E')
+       .text(order.business_name || 'N/A', leftX + 10, blockY + 22, { width: blockW - 20 });
+
+    let bizLineY = blockY + 38;
+    if (order.business_address) {
+      doc.font('Helvetica').fontSize(9).fillColor('#495057')
+         .text(order.business_address, leftX + 10, bizLineY, { width: blockW - 20 });
+      bizLineY += 13;
+    }
+    if (order.business_phone) {
+      doc.font('Helvetica').fontSize(9).fillColor('#495057')
+         .text(`Tél : ${order.business_phone}`, leftX + 10, bizLineY, { width: blockW - 20 });
+    }
+
+    // ✅ Contenu bloc CLIENT — positionné à rightX (droite)
+    doc.font('Helvetica-Bold').fontSize(8).fillColor('#9CA3AF')
+       .text('CLIENT', rightX + 10, blockY + 9, {
+          width: blockW - 20,
+          align: 'right',         // ✅ label aligné à droite
+          characterSpacing: 0.5
+        });
+
+    doc.font('Helvetica-Bold').fontSize(12).fillColor('#1A1A2E')
+       .text(order.client_name || 'Invité', rightX + 10, blockY + 22, {
+          width: blockW - 20,
+          align: 'right',         // ✅ nom aligné à droite
+        });
+
+    let clientLineY = blockY + 38;
+    if (order.client_email) {
+      doc.font('Helvetica').fontSize(9).fillColor('#495057')
+         .text(order.client_email, rightX + 10, clientLineY, { width: blockW - 20, align: 'right', });
+      clientLineY += 13;
+    }
+    if (order.client_phone) {
+      doc.font('Helvetica').fontSize(9).fillColor('#495057')
+         .text(`Tél : ${order.client_phone}`, rightX + 10, clientLineY, { width: blockW - 20, align: 'right', });
+    }
+
+    // ── Ligne de séparation après les blocs ──────────────
+    const afterBlockY = blockY + blockH + 10;
+    doc.moveTo(marginL, afterBlockY).lineTo(pageW - marginR, afterBlockY)
+       .strokeColor('#E9ECEF').lineWidth(0.5).stroke();
+
+    // ════════════════════════════════════════════════════
+    // BANDE MÉTA : Date | Paiement | Statut
+    // Trois colonnes avec label en gris clair et valeur en gras
+    // ════════════════════════════════════════════════════
+    const metaY  = afterBlockY + 8;
+    const metaH  = 52;
+    const metaCW = contentW / 3;
+
+    doc.rect(marginL, metaY, contentW, metaH).fill('#F8F9FA');
+    // Séparateurs verticaux
+    doc.moveTo(marginL + metaCW,     metaY + 6).lineTo(marginL + metaCW,     metaY + metaH - 6)
+       .strokeColor('#DEE2E6').lineWidth(0.5).stroke();
+    doc.moveTo(marginL + metaCW * 2, metaY + 6).lineTo(marginL + metaCW * 2, metaY + metaH - 6)
+       .strokeColor('#DEE2E6').lineWidth(0.5).stroke();
+
+    const dateStr = new Date(order.created_at || Date.now())
+      .toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+
+    const statusLabel = this._getStatusLabel(order.status || order.payment_status);
+    const statusColor = { 'En attente': '#D4A843', 'Confirmée': '#2A9D5C', 'Livrée': '#2A9D5C', 'Annulée': '#C94040' }[statusLabel] || '#495057';
+
+    const metaCells = [
+      { label: 'Date de commande',    value: dateStr,    color: '#1A1A2E' },
+      { label: 'Méthode de paiement', value: (order.payment_method || 'N/A').toUpperCase(), color: '#1A1A2E' },
+      { label: 'Statut',              value: statusLabel, color: statusColor },
+    ];
+
+    metaCells.forEach((cell, i) => {
+      const cx = marginL + metaCW * i;
+      doc.font('Helvetica-Bold').fontSize(7.5).fillColor('#9CA3AF')
+         .text(cell.label, cx + 10, metaY + 9, { width: metaCW - 16, characterSpacing: 0.3 });
+      doc.font('Helvetica-Bold').fontSize(10).fillColor(cell.color)
+         .text(cell.value, cx + 10, metaY + 24, { width: metaCW - 16 });
+    });
+
+    // Bordure autour de la bande méta
+    doc.rect(marginL, metaY, contentW, metaH).strokeColor('#E9ECEF').lineWidth(0.5).stroke();
+
+    // ════════════════════════════════════════════════════
+    // TABLEAU DES ARTICLES
+    // ════════════════════════════════════════════════════
+    const tableY = metaY + metaH + 14;
+
+    if (!isSpecial && order.items && order.items.length > 0) {
+      this._drawItemsTable(doc, order.items, tableY, marginL, contentW);
+    } else if (isSpecial) {
+      this._drawSpecialOrderDetails(doc, order, tableY, marginL, contentW);
+    } else {
+      doc.font('Helvetica').fontSize(11).fillColor('#6C757D')
+         .text('Détails des articles non disponibles', marginL, tableY + 10);
+      doc.moveDown(2);
+    }
+
+    // ── Ligne de total ────────────────────────────────────
+    const totalY     = doc.y + 14;
+    const totalBoxW  = 220;
+    const totalBoxX  = pageW - marginR - totalBoxW;
+
+    doc.rect(totalBoxX, totalY, totalBoxW, 44).fill('#C94040');
+    doc.font('Helvetica-Bold').fontSize(12).fillColor('#FFFFFF')
+       .text('TOTAL', totalBoxX + 14, totalY + 8);
+    doc.font('Helvetica-Bold').fontSize(17).fillColor('#FFFFFF')
+       .text(this._fmt(order.total_amount || order.estimated_budget || 0),
+             totalBoxX + 14, totalY + 22, { width: totalBoxW - 28, align: 'right' });
+
+    // ── Notes ─────────────────────────────────────────────
+    if (order.notes) {
+      doc.moveDown(1.5);
+      doc.font('Helvetica-Bold').fontSize(10).fillColor('#495057').text('Notes :');
+      doc.font('Helvetica').fontSize(10).fillColor('#6C757D').text(order.notes);
+    }
+
+    // ════════════════════════════════════════════════════
+    // PIED DE PAGE
+    // ════════════════════════════════════════════════════
+    const footerY = doc.page.height - 60;
+
+    doc.rect(marginL, footerY, contentW, 34).fill('#F8F9FA');
+    doc.font('Helvetica').fontSize(8.5).fillColor('#6C757D')
+       .text('Merci pour votre confiance !  ·  support@restotraiteur.com',
+             marginL, footerY + 7, { align: 'center', width: contentW });
+    doc.font('Helvetica').fontSize(8).fillColor('#ADB5BD')
+       .text(`Reçu généré le ${new Date().toLocaleDateString('fr-FR')}  —  RestoTraiteur © ${new Date().getFullYear()}`,
+             marginL, footerY + 20, { align: 'center', width: contentW });
+
+    // Bande inférieure
+    doc.rect(0, doc.page.height - 6, pageW, 6).fill('#C94040');
   }
 
   /**
    * Dessine le tableau des articles (commande normale)
    */
-  _drawItemsTable(doc, items, startY) {
-    const cols = {
-      name:     { x: 50,  w: 220 },
-      qty:      { x: 280, w: 60  },
-      price:    { x: 350, w: 100 },
-      subtotal: { x: 460, w: 90  },
+  _drawItemsTable(doc, items, startY, marginL, contentW) {
+    const colW = {
+      name:     contentW * 0.47,
+      qty:      contentW * 0.10,
+      price:    contentW * 0.21,
+      subtotal: contentW * 0.22,
     };
+    const x = {
+      name:     marginL,
+      qty:      marginL + colW.name,
+      price:    marginL + colW.name + colW.qty,
+      subtotal: marginL + colW.name + colW.qty + colW.price,
+    };
+    const rowH = 26;
 
-    // En-tête tableau
-    doc.rect(50, startY, doc.page.width - 100, 24).fill('#667eea');
-
-    doc.font('Helvetica-Bold').fontSize(10).fillColor('#ffffff');
-    doc.text('Article',      cols.name.x + 5,     startY + 7);
-    doc.text('Qté',          cols.qty.x,           startY + 7, { width: cols.qty.w, align: 'center' });
-    doc.text('Prix unit.',   cols.price.x,         startY + 7, { width: cols.price.w, align: 'right' });
-    doc.text('Sous-total',   cols.subtotal.x,      startY + 7, { width: cols.subtotal.w, align: 'right' });
+    // En-tête
+    doc.rect(marginL, startY, contentW, 24).fill('#1A1A2E');
+    doc.font('Helvetica-Bold').fontSize(9).fillColor('#FFFFFF');
+    doc.text('ARTICLE',     x.name     + 6, startY + 8);
+    doc.text('QTÉ',         x.qty,      startY + 8, { width: colW.qty,      align: 'center' });
+    doc.text('PRIX UNIT.',  x.price,    startY + 8, { width: colW.price,    align: 'right' });
+    doc.text('SOUS-TOTAL',  x.subtotal, startY + 8, { width: colW.subtotal, align: 'right' });
 
     let rowY = startY + 24;
-
     items.forEach((item, i) => {
-      const bg = i % 2 === 0 ? '#ffffff' : '#f8f9fa';
-      doc.rect(50, rowY, doc.page.width - 100, 28).fill(bg);
-
-      doc.font('Helvetica').fontSize(10).fillColor('#212529');
-      doc.text(item.item_name || item.name || 'Article', cols.name.x + 5, rowY + 9, { width: cols.name.w - 10 });
-      doc.text(String(item.quantity), cols.qty.x, rowY + 9, { width: cols.qty.w, align: 'center' });
-      doc.text(
-        `${this._formatAmount(item.unit_price)} FCFA`,
-        cols.price.x, rowY + 9,
-        { width: cols.price.w, align: 'right' }
-      );
-      doc.text(
-        `${this._formatAmount(item.subtotal)} FCFA`,
-        cols.subtotal.x, rowY + 9,
-        { width: cols.subtotal.w, align: 'right' }
-      );
-
-      rowY += 28;
+      doc.rect(marginL, rowY, contentW, rowH).fill(i % 2 === 0 ? '#FFFFFF' : '#F8F9FA');
+      doc.font('Helvetica').fontSize(9.5).fillColor('#1A1A2E');
+      doc.text(item.item_name || item.name || 'Article', x.name + 6, rowY + 8, { width: colW.name - 10 });
+      doc.text(String(item.quantity), x.qty, rowY + 8, { width: colW.qty, align: 'center' });
+      doc.text(this._fmt(item.unit_price), x.price, rowY + 8, { width: colW.price - 6, align: 'right' });
+      doc.font('Helvetica-Bold')
+         .text(this._fmt(item.subtotal), x.subtotal, rowY + 8, { width: colW.subtotal - 6, align: 'right' });
+      rowY += rowH;
     });
 
     // Bordure du tableau
-    doc.rect(50, startY, doc.page.width - 100, rowY - startY).strokeColor('#dee2e6').lineWidth(0.5).stroke();
-
-    doc.moveDown(0.5);
+    doc.rect(marginL, startY, contentW, rowY - startY).strokeColor('#E9ECEF').lineWidth(0.5).stroke();
+    doc.y = rowY;
   }
 
   /**
-   * Dessine les détails d'une commande spéciale (traiteur)
+   * Dessine les détails d'une commande spéciale
    */
-  _drawSpecialOrderDetails(doc, order, startY) {
-    doc
-      .font('Helvetica-Bold')
-      .fontSize(12)
-      .fillColor('#212529')
-      .text('Détails de la commande spéciale', 50, startY);
+  _drawSpecialOrderDetails(doc, order, startY, marginL, contentW) {
+    doc.font('Helvetica-Bold').fontSize(11).fillColor('#1A1A2E')
+       .text('Détails de la commande spéciale', marginL, startY);
 
     const details = [
-      ['Type d\'événement', order.event_type],
+      ['Type d\'événement',    order.event_type],
       ['Date de l\'événement', order.event_date ? new Date(order.event_date).toLocaleDateString('fr-FR') : 'N/A'],
-      ['Heure', order.event_time || 'N/A'],
-      ['Nombre de convives', order.number_of_guests ? `${order.number_of_guests} personnes` : 'N/A'],
-      ['Adresse de livraison', order.delivery_address || 'N/A'],
-      ['Ville', order.city || 'N/A'],
-      ['Préférences menu', order.menu_preferences || 'N/A'],
+      ['Heure',                order.event_time || 'N/A'],
+      ['Nombre de convives',   order.number_of_guests ? `${order.number_of_guests} personnes` : 'N/A'],
+      ['Adresse',              order.delivery_address || 'N/A'],
+      ['Ville',                order.city || 'N/A'],
+      ['Préférences menu',     order.menu_preferences || 'N/A'],
+      ['Restrictions alim.',   order.dietary_restrictions && order.dietary_restrictions !== 'Non' ? order.dietary_restrictions : 'Non'],
+      ['Demandes spéciales',   order.special_requests && order.special_requests !== 'Non' ? order.special_requests : 'Non'],
     ];
 
-    if (order.dietary_restrictions) {
-      details.push(['Restrictions alimentaires', order.dietary_restrictions]);
-    }
-    if (order.special_requests) {
-      details.push(['Demandes spéciales', order.special_requests]);
-    }
-
-    let y = startY + 20;
+    let y = startY + 18;
     details.forEach(([label, value], i) => {
-      const bg = i % 2 === 0 ? '#f8f9fa' : '#ffffff';
-      doc.rect(50, y, doc.page.width - 100, 22).fill(bg);
-      doc.font('Helvetica-Bold').fontSize(10).fillColor('#495057').text(label + ' :', 60, y + 6);
-      doc.font('Helvetica').fontSize(10).fillColor('#212529').text(value || 'N/A', 230, y + 6, { width: 300 });
+      doc.rect(marginL, y, contentW, 22).fill(i % 2 === 0 ? '#F8F9FA' : '#FFFFFF');
+      doc.font('Helvetica-Bold').fontSize(9).fillColor('#495057').text(label + ' :', marginL + 8, y + 7);
+      doc.font('Helvetica').fontSize(9).fillColor('#1A1A2E').text(value || 'N/A', marginL + 175, y + 7, { width: contentW - 185 });
       y += 22;
     });
-
     doc.y = y;
   }
 
-  /**
-   * Formate un montant avec séparateur de milliers
-   */
-  _formatAmount(amount) {
-    return parseFloat(amount || 0).toLocaleString('fr-FR', {
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0
-    });
-  }
-
-  /**
-   * Retourne le libellé du statut
-   */
   _getStatusLabel(status) {
     const labels = {
-      pending:   'En attente',
-      confirmed: 'Confirmée',
-      preparing: 'En préparation',
-      ready:     'Prête',
-      delivered: 'Livrée',
-      cancelled: 'Annulée',
-      paid:      '✓ Payé',
-      success:   '✓ Payé',
-      failed:    'Échoué',
+      pending: 'En attente', confirmed: 'Confirmée', preparing: 'En préparation',
+      ready: 'Prête', delivered: 'Livrée', cancelled: 'Annulée',
+      paid: 'Payé', success: 'Payé', failed: 'Échoué',
     };
     return labels[status] || status || 'N/A';
   }
 
-  /**
-   * Construit les données complètes d'une commande pour le reçu
-   * (inclut les items depuis la DB)
-   */
   async buildOrderReceiptData(pool, orderId) {
-    // Commande + business
     const orderResult = await pool.query(
       `SELECT o.*, b.name AS business_name, b.address AS business_address, b.phone AS business_phone
-       FROM orders o
-       JOIN businesses b ON o.business_id = b.id
-       WHERE o.id = $1`,
+       FROM orders o JOIN businesses b ON o.business_id = b.id WHERE o.id = $1`,
       [orderId]
     );
-
-    if (orderResult.rows.length === 0) return null;
-
+    if (!orderResult.rows.length) return null;
     const order = orderResult.rows[0];
-
-    // Items
     const itemsResult = await pool.query(
       `SELECT oi.*, mi.name AS item_name, mi.description AS item_description
-       FROM order_items oi
-       JOIN menu_items mi ON oi.menu_item_id = mi.id
-       WHERE oi.order_id = $1
-       ORDER BY oi.id`,
+       FROM order_items oi JOIN menu_items mi ON oi.menu_item_id = mi.id
+       WHERE oi.order_id = $1 ORDER BY oi.id`,
       [orderId]
     );
-
     order.items = itemsResult.rows;
     order.is_special = false;
     return order;
   }
 
-  /**
-   * Construit les données d'une commande spéciale pour le reçu
-   */
   async buildSpecialOrderReceiptData(pool, specialOrderId) {
     const result = await pool.query(
       `SELECT so.*, b.name AS business_name, b.address AS business_address, b.phone AS business_phone
-       FROM special_orders so
-       JOIN businesses b ON so.business_id = b.id
-       WHERE so.id = $1`,
+       FROM special_orders so JOIN businesses b ON so.business_id = b.id WHERE so.id = $1`,
       [specialOrderId]
     );
-
-    if (result.rows.length === 0) return null;
-
+    if (!result.rows.length) return null;
     const order = result.rows[0];
     order.is_special = true;
     order.total_amount = order.estimated_budget;
-    order.status = order.status;
     order.payment_method = 'N/A';
     return order;
   }

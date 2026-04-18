@@ -1,0 +1,439 @@
+<!-- ── Loading ─────────────────────────────────────────────────────────────── -->
+<div *ngIf="loading" class="profile-loading">
+  <div class="spinner-border text-primary" role="status">
+    <span class="visually-hidden">Chargement...</span>
+  </div>
+  <p class="mt-3 text-muted">Chargement du profil...</p>
+</div>
+
+<!-- ── Error ────────────────────────────────────────────────────────────────── -->
+<div *ngIf="!loading && error" class="profile-error text-center py-5">
+  <i class="bi bi-exclamation-circle fs-1 text-muted"></i>
+  <h4 class="mt-3">{{ error }}</h4>
+  <button class="btn btn-primary mt-3" (click)="goBack()">Retour à l'accueil</button>
+</div>
+
+<!-- ── Page principale ──────────────────────────────────────────────────────── -->
+<div *ngIf="!loading && !error && profile" class="profile-page traiteur-profile">
+
+  <!-- Sticky Header -->
+  <header class="profile-sticky-header" [class.visible]="isScrolled">
+    <div class="container-fluid">
+      <div class="d-flex align-items-center gap-3">
+        <button class="btn btn-sm btn-outline-secondary" (click)="goBack()">
+          <i class="bi bi-arrow-left"></i>
+        </button>
+        <img *ngIf="getLogoUrl()" [src]="getLogoUrl()" alt="Logo" class="sticky-logo">
+        <span class="fw-semibold">{{ profile.name }}</span>
+        <span class="badge ms-1" [class.bg-success]="isAvailable()" [class.bg-secondary]="!isAvailable()">
+          {{ isAvailable() ? 'Disponible' : 'Indisponible' }}
+        </span>
+        <div class="ms-auto">
+          <button class="btn btn-primary btn-sm" (click)="goToSpecialOrder()">
+            <i class="bi bi-calendar-event me-1"></i>Demander un devis
+          </button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- ── Hero / Bannière ──────────────────────────────────────────────────── -->
+  <section class="profile-hero">
+    <div class="hero-banner"
+        [class.has-image]="hasBannerImage()"
+        [class.no-banner]="!hasBannerImage()"
+        [style.background-image]="hasBannerImage() ? 'url(' + getBannerImage() + ')' : 'none'"
+        [style.background-color]="!hasBannerImage() ? getBannerFallbackColor() : 'transparent'">
+      <div class="hero-overlay"></div>
+    </div>
+
+    <!-- ✅ Badge Premium discret — uniquement si pas Premium et pas de bannière -->
+    <button *ngIf="!hasBannerImage() && !profile?.is_premium"
+            class="no-banner-badge"
+            (click)="goBack()">
+      <i class="bi bi-image"></i> Ajouter une bannière (Premium)
+    </button>
+
+    <button class="btn-back" (click)="goBack()">
+      <i class="bi bi-arrow-left"></i>
+    </button>
+
+    <div class="hero-identity container">
+      <div class="identity-card">
+
+        <!-- Logo -->
+        <div class="identity-logo-wrap" *ngIf="getLogoUrl()">
+          <img [src]="getLogoUrl()!" alt="Logo {{ profile.name }}" class="identity-logo">
+        </div>
+        <div class="identity-logo-wrap identity-logo-placeholder" *ngIf="!getLogoUrl()">
+          <i class="bi bi-briefcase fs-2"></i>
+        </div>
+
+        <!-- Infos -->
+        <div class="identity-info">
+          <div class="d-flex flex-wrap align-items-center gap-2 mb-1">
+            <span class="badge badge-type">Traiteur</span>
+            <span class="badge" [class.bg-success]="isAvailable()" [class.bg-secondary]="!isAvailable()">
+              <i class="bi" [class.bi-check-circle]="isAvailable()" [class.bi-dash-circle]="!isAvailable()"></i>
+              {{ isAvailable() ? 'Disponible pour vos événements' : 'Actuellement indisponible' }}
+            </span>
+          </div>
+
+          <h1 class="identity-name">{{ profile.name }}</h1>
+
+          <p *ngIf="profile.branding?.tagline" class="identity-tagline">
+            {{ profile.branding!.tagline }}
+          </p>
+
+          <!-- Rating -->
+          <div class="identity-rating" *ngIf="(profile.reviews_count ?? 0) > 0">
+            <div class="stars">
+              <span *ngFor="let s of starsArray" class="star" [class]="'star-' + getStarFill(s)">
+                <i class="bi" [class.bi-star-fill]="getStarFill(s) === 'full'"
+                              [class.bi-star-half]="getStarFill(s) === 'half'"
+                              [class.bi-star]="getStarFill(s) === 'empty'"></i>
+              </span>
+            </div>
+            <span class="rating-value">{{ profile.average_rating | number:'1.1-1' }}</span>
+            <span class="rating-count text-muted">({{ profile.reviews_count }} avis)</span>
+          </div>
+        </div>
+
+        <!-- CTA -->
+        <div class="identity-actions">
+          <button class="btn btn-primary btn-action" (click)="goToSpecialOrder()">
+            <i class="bi bi-calendar-event-fill me-2"></i>Demander un devis
+          </button>
+          <button *ngIf="profile.branding?.whatsapp_number" class="btn btn-success btn-action" (click)="openWhatsApp()">
+            <i class="bi bi-whatsapp me-2"></i>Discuter sur WhatsApp
+          </button>
+          <button *ngIf="activeMenus.length > 0" class="btn btn-outline-light btn-action" (click)="goToMenu()">
+            <i class="bi bi-menu-button-wide me-2"></i>Voir nos menus
+          </button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── Corps principal ──────────────────────────────────────────────────── -->
+  <div class="profile-body container-xl py-4">
+    <div class="row g-4">
+
+      <!-- Colonne principale -->
+      <div class="col-lg-8">
+
+        <!-- ✅ Highlights -->
+        <div class="highlights-strip" *ngIf="highlights.length > 0">
+          <div class="highlight-item" *ngFor="let h of highlights">
+            <i class="bi" [ngClass]="h.icon || 'bi-star'"></i>
+            <span>{{ h.text }}</span>
+          </div>
+        </div>
+
+        <!-- Description -->
+        <div class="profile-card mb-4" *ngIf="profile.description">
+          <h5 class="section-title"><i class="bi bi-info-circle me-2"></i>Notre expertise</h5>
+          <p class="text-muted mb-0">{{ profile.description }}</p>
+        </div>
+
+        <!-- Types d'événements -->
+        <div class="profile-card mb-4">
+          <h5 class="section-title"><i class="bi bi-calendar-heart me-2"></i>Événements couverts</h5>
+          <div class="event-types-grid">
+            <div class="event-type-item" *ngFor="let ev of eventTypes">
+              <i class="bi {{ ev.icon }}"></i>
+              <span>{{ ev.label }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Galerie -->
+        <div class="profile-card mb-4" *ngIf="galleryUrls.length > 0">
+          <h5 class="section-title"><i class="bi bi-images me-2"></i>Nos réalisations</h5>
+          <div class="gallery-grid">
+            <div class="gallery-item" *ngFor="let url of galleryUrls; let i = index" (click)="openGallery(i)">
+              <img [src]="url" [alt]="'Réalisation ' + (i+1)" loading="lazy">
+              <div class="gallery-overlay"><i class="bi bi-zoom-in"></i></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Menus / Prestations -->
+        <div class="profile-card mb-4" *ngIf="activeMenus.length > 0">
+          <h5 class="section-title"><i class="bi bi-menu-button-wide me-2"></i>Nos prestations</h5>
+
+          <div class="menu-tabs" *ngIf="activeMenus.length > 1">
+            <button *ngFor="let menu of activeMenus; trackBy: trackById"
+                    class="menu-tab"
+                    [class.active]="menu.id === activeMenuId"
+                    (click)="setActiveMenu(menu.id)">
+              {{ menu.name }}
+            </button>
+          </div>
+
+          <p *ngIf="activeMenu?.description" class="text-muted small mb-3">
+            <i class="bi bi-info-circle me-1"></i>{{ activeMenu!.description }}
+          </p>
+
+          <div class="category-filters" *ngIf="categories.length > 0">
+            <button class="cat-btn" [class.active]="activeCategory === 'all'" (click)="setActiveCategory('all')">
+              Tout
+            </button>
+            <button *ngFor="let cat of categories"
+                    class="cat-btn"
+                    [class.active]="activeCategory === cat"
+                    (click)="setActiveCategory(cat)">
+              {{ getCategoryLabel(cat) }}
+            </button>
+          </div>
+
+          <div class="menu-items-grid" *ngIf="filteredItems.length > 0">
+            <div class="menu-item-card"
+                *ngFor="let item of filteredItems; trackBy: trackById"
+                (click)="onItemClick(item)"
+                style="cursor:pointer;">
+              <div class="item-image">
+                <img [src]="getItemImage(item)" [alt]="item.name" loading="lazy">
+              </div>
+              <div class="item-body">
+                <div class="item-header">
+                  <span class="item-name">{{ item.name }}</span>
+                  <span class="item-price">{{ formatPrice(item.price ?? 0) }}<small class="text-muted">/pers.</small></span>
+                </div>
+                <p *ngIf="item.description" class="item-description">{{ item.description }}</p>
+                <span *ngIf="item.category" class="badge badge-cat">{{ getCategoryLabel(item.category) }}</span>
+              </div>
+            </div>
+          </div>
+
+          <div *ngIf="filteredItems.length === 0" class="text-center py-4 text-muted">
+            <i class="bi bi-inbox fs-3 d-block mb-2"></i>
+            Aucune prestation dans cette catégorie.
+          </div>
+
+          <div class="text-center mt-4">
+            <button class="btn btn-primary btn-lg" (click)="goToSpecialOrder()">
+              <i class="bi bi-send me-2"></i>Demander un devis personnalisé
+            </button>
+            <p class="text-muted small mt-2">
+              <i class="bi bi-shield-check me-1 text-success"></i>
+              Devis gratuit · Réponse sous 24h · {{ depositLabel }}
+            </p>
+          </div>
+        </div>
+
+        <!-- Avis clients -->
+        <div class="profile-card mb-4" *ngIf="(profile.reviews_count ?? 0) > 0">
+          <h5 class="section-title"><i class="bi bi-chat-square-text me-2"></i>Avis de nos clients</h5>
+
+          <div class="rating-overview">
+            <div class="rating-big">
+              <span class="rating-number">{{ profile.average_rating | number:'1.1-1' }}</span>
+              <div class="rating-stars-big">
+                <span *ngFor="let s of starsArray">
+                  <i class="bi" [class.bi-star-fill]="getStarFill(s) === 'full'"
+                                [class.bi-star-half]="getStarFill(s) === 'half'"
+                                [class.bi-star]="getStarFill(s) === 'empty'"></i>
+                </span>
+              </div>
+              <span class="text-muted small">{{ profile.reviews_count }} avis clients</span>
+            </div>
+            <div class="rating-bars">
+              <div class="rating-bar-row" *ngFor="let s of [5,4,3,2,1]">
+                <span class="bar-label">{{ s }} <i class="bi bi-star-fill text-warning"></i></span>
+                <div class="bar-track">
+                  <div class="bar-fill" [style.width.%]="getRatingPercent(s)"></div>
+                </div>
+                <span class="bar-pct text-muted">{{ getRatingPercent(s) }}%</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="reviews-list mt-3">
+            <div class="review-item" *ngFor="let review of profile.recent_reviews">
+              <div class="review-header">
+                <div class="review-avatar">
+                  {{ (review.is_guest ? review.guest_name : review.user_name)?.charAt(0)?.toUpperCase() || '?' }}
+                </div>
+                <div class="review-meta">
+                  <span class="review-author">
+                    {{ review.is_guest ? review.guest_name : review.user_name }}
+                    <span *ngIf="review.is_guest" class="badge bg-secondary ms-1 small">Invité</span>
+                  </span>
+                  <div class="review-stars">
+                    <i class="bi bi-star-fill text-warning" *ngFor="let s of [].constructor(review.rating)"></i>
+                    <i class="bi bi-star text-warning" *ngFor="let s of [].constructor(5 - review.rating)"></i>
+                  </div>
+                  <span class="review-date text-muted small">{{ formatDate(review.created_at) }}</span>
+                </div>
+              </div>
+              <p class="review-comment" *ngIf="review.comment">{{ review.comment }}</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- CTA bas de page -->
+        <div class="cta-banner">
+          <div class="cta-banner-content">
+            <h4>Prêt à organiser votre événement ?</h4>
+            <p>Contactez-nous pour un devis personnalisé selon vos besoins.</p>
+            <div class="d-flex gap-3 justify-content-center flex-wrap">
+              <button class="btn btn-light btn-lg" (click)="goToSpecialOrder()">
+                <i class="bi bi-calendar-event-fill me-2"></i>Demander un devis
+              </button>
+              <button *ngIf="profile.branding?.whatsapp_number" class="btn btn-success btn-lg" (click)="openWhatsApp()">
+                <i class="bi bi-whatsapp me-2"></i>WhatsApp
+              </button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- ── Sidebar ────────────────────────────────────────────────────── -->
+      <div class="col-lg-4">
+        <div class="sidebar-sticky">
+
+          <!-- CTA card -->
+          <div class="profile-card mb-3 cta-card">
+            <h6 class="section-title-sm text-center mb-3">Organisons votre événement</h6>
+            <button class="btn btn-primary w-100 btn-lg mb-2" (click)="goToSpecialOrder()">
+              <i class="bi bi-calendar-event-fill me-2"></i>Demander un devis gratuit
+            </button>
+            <button *ngIf="profile.branding?.whatsapp_number" class="btn btn-success w-100 mb-2" (click)="openWhatsApp()">
+              <i class="bi bi-whatsapp me-2"></i>Discuter sur WhatsApp
+            </button>
+            <p class="text-center text-muted small mb-0">
+              <i class="bi bi-clock me-1"></i>Réponse sous 24h
+            </p>
+          </div>
+
+          <!-- Informations -->
+          <div class="profile-card mb-3">
+            <h6 class="section-title-sm">Informations</h6>
+            <ul class="info-list">
+              <li *ngIf="profile.address">
+                <i class="bi bi-geo-alt-fill text-primary"></i>
+                <span>{{ profile.address }}</span>
+              </li>
+              <li *ngIf="profile.phone">
+                <i class="bi bi-telephone-fill text-primary"></i>
+                <a [href]="'tel:' + profile.phone">{{ profile.phone }}</a>
+              </li>
+              <li *ngIf="profile.availability_start">
+                <i class="bi bi-clock-fill text-primary"></i>
+                <span>
+                  Disponible {{ formatHour(profile.availability_start) }} – {{ formatHour(profile.availability_end) }}
+                  <span class="badge ms-1" [class.bg-success]="isAvailable()" [class.bg-secondary]="!isAvailable()">
+                    {{ isAvailable() ? 'Disponible' : 'Indisponible' }}
+                  </span>
+                </span>
+              </li>
+              <li>
+                <i class="bi bi-cash-coin text-warning"></i>
+                <span>{{ depositLabel }}</span>
+              </li>
+            </ul>
+          </div>
+
+          <!-- ✅ Infos pratiques branding : horaires texte + paiements + note -->
+          <div class="profile-card mb-3"
+               *ngIf="profile.branding?.opening_hours_text
+                   || (profile.branding?.payment_methods?.length ?? 0) > 0
+                   || profile.branding?.practical_note">
+            <h6 class="section-title-sm">Infos pratiques</h6>
+            <ul class="info-list">
+              <li *ngIf="profile.branding?.opening_hours_text">
+                <i class="bi bi-calendar-week text-primary"></i>
+                <span>{{ profile.branding!.opening_hours_text }}</span>
+              </li>
+              <li *ngIf="(profile.branding?.payment_methods?.length ?? 0) > 0">
+                <i class="bi bi-credit-card-fill text-primary"></i>
+                <div class="payment-badges-list">
+                  <span *ngFor="let p of profile.branding!.payment_methods" class="badge-payment">
+                    {{ getPaymentLabel(p) }}
+                  </span>
+                </div>
+              </li>
+              <li *ngIf="profile.branding?.practical_note">
+                <i class="bi bi-info-circle-fill text-primary"></i>
+                <span>{{ profile.branding!.practical_note }}</span>
+              </li>
+            </ul>
+          </div>
+
+          <!-- Comment ça marche -->
+          <div class="profile-card mb-3 how-it-works">
+            <h6 class="section-title-sm">Comment ça marche ?</h6>
+            <div class="step-list">
+              <div class="step-item">
+                <div class="step-num">1</div>
+                <div>
+                  <strong>Envoyez votre demande</strong>
+                  <p class="text-muted small mb-0">Décrivez votre événement et vos besoins</p>
+                </div>
+              </div>
+              <div class="step-item">
+                <div class="step-num">2</div>
+                <div>
+                  <strong>Recevez un devis</strong>
+                  <p class="text-muted small mb-0">Le traiteur vous envoie une proposition sous 24h</p>
+                </div>
+              </div>
+              <div class="step-item">
+                <div class="step-num">3</div>
+                <div>
+                  <strong>Confirmez avec un acompte</strong>
+                  <p class="text-muted small mb-0">{{ depositLabel }} pour réserver votre date</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Réseaux sociaux -->
+          <div class="profile-card mb-3"
+               *ngIf="profile.branding?.facebook_url || profile.branding?.instagram_url || profile.branding?.tiktok_url || profile.branding?.whatsapp_number">
+            <h6 class="section-title-sm">Suivez-nous</h6>
+            <div class="social-links">
+              <a *ngIf="profile.branding?.facebook_url" [href]="profile.branding!.facebook_url" target="_blank" class="social-link facebook" title="Facebook">
+                <i class="bi bi-facebook"></i>
+              </a>
+              <a *ngIf="profile.branding?.instagram_url" [href]="profile.branding!.instagram_url" target="_blank" class="social-link instagram" title="Instagram">
+                <i class="bi bi-instagram"></i>
+              </a>
+              <a *ngIf="profile.branding?.tiktok_url" [href]="profile.branding!.tiktok_url" target="_blank" class="social-link tiktok" title="TikTok">
+                <i class="bi bi-tiktok"></i>
+              </a>
+              <a *ngIf="profile.branding?.whatsapp_number"
+                 [href]="getWhatsAppUrl(profile.branding!.whatsapp_number)"
+                 target="_blank" class="social-link whatsapp" title="WhatsApp">
+                <i class="bi bi-whatsapp"></i>
+              </a>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ✅ Mention branding discrète — practical_note remplace footer_text -->
+  <div class="brand-mention text-center py-3" *ngIf="profile.branding?.practical_note">
+    <small class="text-muted fst-italic">
+      <i class="bi bi-patch-check-fill me-1 text-primary" style="font-size:0.7rem"></i>
+      {{ profile.branding!.practical_note }}
+    </small>
+  </div>
+
+</div>
+
+<!-- ── Lightbox galerie ─────────────────────────────────────────────────────── -->
+<div class="lightbox-overlay" *ngIf="galleryOpen" (click)="closeGallery()">
+  <button class="lightbox-close" (click)="closeGallery()"><i class="bi bi-x-lg"></i></button>
+  <button class="lightbox-prev" (click)="prevImage(); $event.stopPropagation()"><i class="bi bi-chevron-left"></i></button>
+  <div class="lightbox-content" (click)="$event.stopPropagation()">
+    <img [src]="galleryUrls[galleryIndex]" [alt]="'Réalisation ' + (galleryIndex + 1)">
+    <div class="lightbox-counter">{{ galleryIndex + 1 }} / {{ galleryUrls.length }}</div>
+  </div>
+  <button class="lightbox-next" (click)="nextImage(); $event.stopPropagation()"><i class="bi bi-chevron-right"></i></button>
+</div>

@@ -2,7 +2,7 @@ const Joi = require('joi');
 const { HTTP_STATUS, ERROR_CODES } = require('../config/constants');
 
 // ✅ Méthodes de paiement valides — synchronisées avec constants.js VALID_PAYMENT_METHODS
-const VALID_PAYMENT_METHODS = ['Mixx By Yas', 'flooz', 'card'];
+const VALID_PAYMENT_METHODS = ['Mixx By Yas', 'flooz', 'card', 'cod', 'cash'];
 
 // Schémas de validation
 const schemas = {
@@ -27,9 +27,10 @@ const schemas = {
   }),
 
   login: Joi.object({
-    email: Joi.string().email().required(),
+    email: Joi.string().email().optional(),
+    phone: Joi.string().pattern(/^\+?[0-9]{8,15}$/).optional().allow(''),
     password: Joi.string().required(),
-  }),
+  }).or('email', 'phone'),
 
   updateProfile: Joi.object({
     first_name: Joi.string().min(2).max(50).optional(),
@@ -55,6 +56,12 @@ const schemas = {
     description: Joi.string().max(1000).optional().allow(''),
     address: Joi.string().max(500).optional().allow(''),
     phone: Joi.string().pattern(/^\+?[0-9]{8,15}$/).optional().allow(''),
+    requires_reservation_deposit: Joi.boolean().optional(),
+    default_deposit_amount: Joi.number().min(0).optional().allow(null),
+    default_special_order_deposit_percentage: Joi.number().min(10).max(100).optional(),
+    latitude:  Joi.number().min(-90).max(90).optional().allow(null),
+    longitude: Joi.number().min(-180).max(180).optional().allow(null),
+    district:  Joi.string().max(100).optional().allow('', null),
   }),
 
   updateHours: Joi.object({
@@ -96,7 +103,7 @@ const schemas = {
     image_url: Joi.string().uri().optional().allow(''),
   }),
 
-  // ✅ Order — card ajouté
+  // Order
   createOrder: Joi.object({
     business_id:    Joi.number().integer().positive().required(),
     client_name:    Joi.string().min(2).max(255).required(),
@@ -141,7 +148,7 @@ const schemas = {
     status: Joi.string().valid('pending', 'confirmed', 'cancelled').required(),
   }),
 
-  // Reservation
+  // ✅ CORRIGÉ : Reservation avec deposit_payment_method
   createReservation: Joi.object({
     restaurant_id:    Joi.number().integer().positive().required(),
     client_name:      Joi.string().min(2).max(255).required(),
@@ -151,13 +158,15 @@ const schemas = {
     time_slot:        Joi.string().pattern(/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/).required(),
     number_of_people: Joi.number().integer().min(1).max(20).required(),
     special_requests: Joi.string().max(1000).optional().allow(''),
+    // ✅ AJOUTÉ
+    deposit_payment_method: Joi.string().valid('flooz', 'Mixx By Yas', 'card', 'cod', 'cash').optional().allow(''),
   }),
 
   updateReservationStatus: Joi.object({
     status: Joi.string().valid('pending', 'confirmed', 'cancelled').required(),
   }),
 
-  // ✅ Payment — card ajouté, total_amount optionnel accepté
+  // Payment
   initiatePayment: Joi.object({
     order_id:       Joi.number().integer().positive().required(),
     amount:         Joi.number().min(0).required(),

@@ -1,7 +1,7 @@
 const Commission = require('../models/Commission');
 const Subscription = require('../models/Subscription');
 const AppSetting = require('../models/AppSetting');
-const pool = require('../config/db');
+const { pool } = require('../config/db');
 
 // Créer une commission (appelé automatiquement après une commande)
 exports.createCommission = async (orderId, specialOrderId, businessId, orderAmount) => {

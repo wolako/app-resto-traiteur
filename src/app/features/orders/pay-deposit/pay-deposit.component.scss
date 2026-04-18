@@ -1,0 +1,60 @@
+.pay-deposit-page {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  padding: 2rem 0;
+}
+
+.loading-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 80vh;
+  gap: 1rem;
+}
+
+.payment-method {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem;
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin-bottom: 0.75rem;
+
+  &:hover {
+    border-color: #28a745;
+    background: #f0f9ff;
+  }
+
+  &.selected {
+    border-color: #28a745;
+    background: #e8f5e9;
+    box-shadow: 0 4px 12px rgba(40, 167, 69, 0.2);
+  }
+
+  .method-icon {
+    font-size: 2rem;
+  }
+
+  .method-info {
+    flex: 1;
+    
+    strong {
+      display: block;
+      font-size: 1rem;
+      margin-bottom: 0.25rem;
+    }
+
+    small {
+      color: #666;
+    }
+  }
+
+  i {
+    font-size: 1.5rem;
+    color: #28a745;
+  }
+}

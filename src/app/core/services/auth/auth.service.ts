@@ -3,6 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { BehaviorSubject, Observable, tap } from 'rxjs';
 import { AuthResponse, LoginRequest, RegisterRequest, User } from '../../models/user.model';
 import { environment } from '../../../../environments/environment';
+import { NotificationService } from '../notification/notification.service';
 
 export interface ChangePasswordRequest {
   currentPassword: string;
@@ -16,9 +17,12 @@ export class AuthService {
   private currentUserSubject = new BehaviorSubject<User | null>(null);
   public currentUser$ = this.currentUserSubject.asObservable();
 
-  constructor(private http: HttpClient) {
+  constructor(
+    private http: HttpClient,
+    private notificationService: NotificationService, // ✅ AJOUTÉ
+  ) {
     const token = localStorage.getItem('token');
-    const user = localStorage.getItem('user');
+    const user  = localStorage.getItem('user');
 
     let parsedUser: User | null = null;
     try {
@@ -31,52 +35,56 @@ export class AuthService {
 
     if (token && parsedUser) {
       this.currentUserSubject.next(parsedUser);
+      // ✅ Reprendre le polling si déjà connecté (refresh de page)
+      this.notificationService.startPolling();
     }
   }
 
   login(credentials: LoginRequest): Observable<any> {
-    return this.http.post<any>(`${environment.apiUrl}/auth/login`, credentials)
-      .pipe(
-        tap(response => {
-          const user = response.data?.user || response.user;
-          const token = response.data?.token || response.token;
-          const business = response.data?.business || response.business;
+    return this.http.post<any>(`${environment.apiUrl}/auth/login`, credentials).pipe(
+      tap(response => {
+        const user     = response.data?.user     || response.user;
+        const token    = response.data?.token    || response.token;
+        const business = response.data?.business || response.business;
 
-          if (token && user) {
-            localStorage.setItem('token', token);
-            localStorage.setItem('user', JSON.stringify(user));
-            if (business) {
-              localStorage.setItem('business', JSON.stringify(business));
-            }
-            this.currentUserSubject.next(user);
+        if (token && user) {
+          localStorage.setItem('token', token);
+          localStorage.setItem('user', JSON.stringify(user));
+          if (business) {
+            localStorage.setItem('business', JSON.stringify(business));
           }
-        })
-      );
+          this.currentUserSubject.next(user);
+          // ✅ Démarrer le polling après login
+          this.notificationService.startPolling();
+        }
+      })
+    );
   }
 
   adminLogin(credentials: LoginRequest): Observable<any> {
-    return this.http.post<any>(`${environment.apiUrl}/auth/admin/login`, credentials)
-      .pipe(
-        tap(response => {
-          console.log('Admin login response:', response);
-          
-          const user = response.data?.user || response.user;
-          const token = response.data?.token || response.token;
-          const business = response.data?.business || response.business;
+    return this.http.post<any>(`${environment.apiUrl}/auth/admin/login`, credentials).pipe(
+      tap(response => {
+        console.log('Admin login response:', response);
 
-          if (user && user.role === 'superadmin' && token) {
-            localStorage.setItem('token', token);
-            localStorage.setItem('user', JSON.stringify(user));
-            if (business) {
-              localStorage.setItem('business', JSON.stringify(business));
-            }
-            this.currentUserSubject.next(user);
-            console.log('User set in BehaviorSubject:', user);
-          } else {
-            console.error('Invalid admin login response or user is not superadmin');
+        const user     = response.data?.user     || response.user;
+        const token    = response.data?.token    || response.token;
+        const business = response.data?.business || response.business;
+
+        if (user && user.role === 'superadmin' && token) {
+          localStorage.setItem('token', token);
+          localStorage.setItem('user', JSON.stringify(user));
+          if (business) {
+            localStorage.setItem('business', JSON.stringify(business));
           }
-        })
-      );
+          this.currentUserSubject.next(user);
+          // ✅ Démarrer le polling après login admin
+          this.notificationService.startPolling();
+          console.log('User set in BehaviorSubject:', user);
+        } else {
+          console.error('Invalid admin login response or user is not superadmin');
+        }
+      })
+    );
   }
 
   isAdmin(): boolean {
@@ -84,68 +92,57 @@ export class AuthService {
   }
 
   register(userData: RegisterRequest): Observable<any> {
-    return this.http.post<any>(`${environment.apiUrl}/auth/register`, userData)
-      .pipe(
-        tap(response => {
-          const user = response.data?.user || response.user;
-          const token = response.data?.token || response.token;
-          const business = response.data?.business || response.business;
-          const requiresEmailVerification = response.data?.requiresEmailVerification;
+    return this.http.post<any>(`${environment.apiUrl}/auth/register`, userData).pipe(
+      tap(response => {
+        const user     = response.data?.user || response.user;
+        const business = response.data?.business || response.business;
 
-          // CORRECTION COMPLÈTE : NE JAMAIS CONNECTER L'UTILISATEUR APRÈS L'INSCRIPTION
-          // Stocker UNIQUEMENT les données pour la page de vérification
-          localStorage.setItem('pendingVerification', JSON.stringify({
-            email: user.email,
-            role: user.role,
-            business_name: business?.name
-          }));
-
-          // NE JAMAIS stocker le token, user, ou business dans le localStorage
-          // NE JAMAIS appeler this.currentUserSubject.next(user)
-          // L'utilisateur doit explicitement se connecter après vérification d'email
-        })
-      );
+        localStorage.setItem('pendingVerification', JSON.stringify({
+          email:         user.email,
+          role:          user.role,
+          business_name: business?.name,
+        }));
+        // Pas de startPolling ici — l'utilisateur n'est pas encore connecté
+      })
+    );
   }
-
-  // =============================================
-  // RÉINITIALISATION DE MOT DE PASSE
-  // =============================================
-
-  /**
-   * Demander une réinitialisation de mot de passe
-   */
-  requestPasswordReset(email: string): Observable<any> {
-    return this.http.post<any>(`${environment.apiUrl}/auth/password-reset/request`, { email });
-  }
-
-  /**
-   * Vérifier la validité d'un token de réinitialisation
-   */
-  verifyResetToken(token: string): Observable<any> {
-    return this.http.get<any>(`${environment.apiUrl}/auth/password-reset/verify/${token}`);
-  }
-
-  /**
-   * Réinitialiser le mot de passe avec un token
-   */
-  resetPassword(token: string, newPassword: string): Observable<any> {
-    return this.http.post<any>(`${environment.apiUrl}/auth/password-reset/reset`, { 
-      token, 
-      newPassword 
-    });
-  }
-
-  // =============================================
-  // MÉTHODES EXISTANTES
-  // =============================================
 
   logout(): void {
+    // ✅ Arrêter le polling avant de nettoyer
+    this.notificationService.stopPolling();
+
     localStorage.removeItem('token');
     localStorage.removeItem('user');
     localStorage.removeItem('business');
     localStorage.removeItem('pendingVerification');
     this.currentUserSubject.next(null);
   }
+
+  // =============================================
+  // RÉINITIALISATION DE MOT DE PASSE
+  // =============================================
+
+  requestPasswordReset(email: string): Observable<any> {
+    return this.http.post<any>(
+      `${environment.apiUrl}/auth/password-reset/request`, { email }
+    );
+  }
+
+  verifyResetToken(token: string): Observable<any> {
+    return this.http.get<any>(
+      `${environment.apiUrl}/auth/password-reset/verify/${token}`
+    );
+  }
+
+  resetPassword(token: string, newPassword: string): Observable<any> {
+    return this.http.post<any>(
+      `${environment.apiUrl}/auth/password-reset/reset`, { token, newPassword }
+    );
+  }
+
+  // =============================================
+  // MÉTHODES EXISTANTES
+  // =============================================
 
   getToken(): string | null {
     return localStorage.getItem('token');
@@ -181,45 +178,29 @@ export class AuthService {
   // VÉRIFICATION D'EMAIL
   // =============================================
 
-  /**
-   * Vérifier un email avec un token
-   */
   verifyEmail(token: string): Observable<any> {
     return this.http.get<any>(`${environment.apiUrl}/auth/verify-email/${token}`);
   }
 
-  /**
-   * Renvoyer l'email de vérification
-   */
   resendVerificationEmail(email: string): Observable<any> {
-    return this.http.post<any>(`${environment.apiUrl}/auth/resend-verification`, { email });
+    return this.http.post<any>(
+      `${environment.apiUrl}/auth/resend-verification`, { email }
+    );
   }
 
-  /**
-   * Vérifier s'il y a une inscription en attente de vérification
-   */
   hasPendingVerification(): boolean {
     return !!localStorage.getItem('pendingVerification');
   }
 
-  /**
-   * Obtenir les données d'inscription en attente
-   */
   getPendingVerification(): { email: string; role: string } | null {
     const pending = localStorage.getItem('pendingVerification');
     if (pending) {
-      try {
-        return JSON.parse(pending);
-      } catch (e) {
-        return null;
-      }
+      try { return JSON.parse(pending); }
+      catch (e) { return null; }
     }
     return null;
   }
 
-  /**
-   * Supprimer les données d'inscription en attente
-   */
   clearPendingVerification(): void {
     localStorage.removeItem('pendingVerification');
   }

@@ -1,5 +1,3 @@
-// backend/controllers/testimonialController.js
-
 const testimonialService = require('../services/testimonialService');
 
 /**

@@ -1,134 +1,173 @@
-<div class="modal" [class.show]="show" [style.display]="show ? 'block' : 'none'">
-      <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h5 class="modal-title">
-              <i class="bi bi-calendar-check"></i>
-              Détails de la réservation #{{ reservation?.id }}
-            </h5>
-            <button type="button" class="btn-close" (click)="closeModal()"></button>
-          </div>
-          <div class="modal-body" *ngIf="reservation">
-            <!-- Statut -->
-            <div class="alert" [ngClass]="{
-              'alert-warning': reservation.status === 'pending',
-              'alert-success': reservation.status === 'confirmed',
-              'alert-danger': reservation.status === 'cancelled'
-            }">
-              <i class="bi" [ngClass]="{
-                'bi-clock': reservation.status === 'pending',
-                'bi-check-circle': reservation.status === 'confirmed',
-                'bi-x-circle': reservation.status === 'cancelled'
-              }"></i>
-              <strong>Statut :</strong> {{ getReservationStatusLabel(reservation.status) }}
-            </div>
+<div class="rt-modal-overlay" [class.visible]="show" *ngIf="show">
+  <div class="rt-modal rt-modal--lg">
 
-            <!-- Informations du client -->
-            <div class="card mb-3">
-              <div class="card-header bg-primary text-white">
-                <i class="bi bi-person"></i> Informations du client
-              </div>
-              <div class="card-body">
-                <div class="row">
-                  <div class="col-md-6 mb-3">
-                    <label class="text-muted small">NOM COMPLET</label>
-                    <div class="fw-bold">
-                      <i class="bi bi-person-fill text-primary me-2"></i>
-                      {{ reservation.client_name }}
-                    </div>
-                  </div>
-                  <div class="col-md-6 mb-3">
-                    <label class="text-muted small">TÉLÉPHONE</label>
-                    <div class="fw-bold">
-                      <i class="bi bi-telephone-fill text-success me-2"></i>
-                      {{ reservation.client_phone }}
-                    </div>
-                  </div>
-                  <div class="col-12 mb-3" *ngIf="reservation.client_email">
-                    <label class="text-muted small">EMAIL</label>
-                    <div class="fw-bold">
-                      <i class="bi bi-envelope-fill text-info me-2"></i>
-                      {{ reservation.client_email }}
-                    </div>
-                  </div>
-                  <div class="col-12" *ngIf="!reservation.client_email">
-                    <div class="alert alert-info mb-0">
-                      <i class="bi bi-info-circle"></i>
-                      Aucune adresse email fournie
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
+    <!-- Header -->
+    <div class="rt-modal-header">
+      <div class="rt-modal-title">
+        <div class="rt-modal-icon green">
+          <i class="bi bi-calendar-check-fill"></i>
+        </div>
+        <div>
+          <h5>Réservation <span class="rt-modal-id">{{ reservation?.id }}</span></h5>
+          <p *ngIf="reservation">{{ reservation.created_at | date:'dd/MM/yyyy à HH:mm' }}</p>
+        </div>
+      </div>
+      <button class="rt-modal-close" (click)="closeModal()">
+        <i class="bi bi-x-lg"></i>
+      </button>
+    </div>
 
-            <!-- Détails de la réservation -->
-            <div class="card mb-3">
-              <div class="card-header bg-success text-white">
-                <i class="bi bi-calendar2"></i> Détails de la réservation
-              </div>
-              <div class="card-body">
-                <div class="row">
-                  <div class="col-md-6 mb-3">
-                    <label class="text-muted small">DATE DE RÉSERVATION</label>
-                    <div class="fw-bold">
-                      <i class="bi bi-calendar3 text-danger me-2"></i>
-                      {{ reservation.reservation_date | date:'fullDate':'':'fr-FR' }}
-                    </div>
-                  </div>
-                  <div class="col-md-6 mb-3">
-                    <label class="text-muted small">HEURE</label>
-                    <div class="fw-bold">
-                      <i class="bi bi-clock-fill text-warning me-2"></i>
-                      {{ reservation.time_slot }}
-                    </div>
-                  </div>
-                  <div class="col-md-6 mb-3">
-                    <label class="text-muted small">NOMBRE DE PERSONNES</label>
-                    <div class="fw-bold">
-                      <i class="bi bi-people-fill text-primary me-2"></i>
-                      {{ reservation.number_of_people }} personne{{ reservation.number_of_people > 1 ? 's' : '' }}
-                    </div>
-                  </div>
-                  <div class="col-md-6 mb-3">
-                    <label class="text-muted small">DATE DE CRÉATION</label>
-                    <div class="fw-bold">
-                      <i class="bi bi-calendar-plus text-secondary me-2"></i>
-                      {{ reservation.created_at | date:'short':'':'fr-FR' }}
-                    </div>
-                  </div>
-                  <div class="col-12" *ngIf="reservation.updated_at && reservation.updated_at !== reservation.created_at">
-                    <label class="text-muted small">DERNIÈRE MODIFICATION</label>
-                    <div class="fw-bold">
-                      <i class="bi bi-arrow-clockwise text-secondary me-2"></i>
-                      {{ reservation.updated_at | date:'short':'':'fr-FR' }}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
+    <!-- Body -->
+    <div class="rt-modal-body" *ngIf="reservation">
 
-            <!-- Demandes spéciales -->
-            <div class="card" *ngIf="reservation.special_requests">
-              <div class="card-header bg-info text-white">
-                <i class="bi bi-chat-left-text"></i> Demandes spéciales
-              </div>
-              <div class="card-body">
-                <p class="mb-0" style="white-space: pre-wrap;">{{ reservation.special_requests }}</p>
-              </div>
-            </div>
+      <!-- Statut banner -->
+      <div class="rt-status-banner" [ngClass]="{
+        'warning': reservation.status === 'pending',
+        'success': reservation.status === 'confirmed',
+        'danger':  reservation.status === 'cancelled'
+      }">
+        <i class="bi" [ngClass]="{
+          'bi-clock-fill':        reservation.status === 'pending',
+          'bi-check-circle-fill': reservation.status === 'confirmed',
+          'bi-x-circle-fill':     reservation.status === 'cancelled'
+        }"></i>
+        <strong>{{ getReservationStatusLabel(reservation.status) }}</strong>
+      </div>
 
-            <!-- Aucune demande spéciale -->
-            <div class="alert alert-secondary" *ngIf="!reservation.special_requests">
-              <i class="bi bi-info-circle"></i>
-              Aucune demande spéciale
+      <!-- Client -->
+      <div class="rt-info-card">
+        <div class="rt-info-card-header">
+          <i class="bi bi-person-fill"></i> Informations du client
+        </div>
+        <div class="rt-info-card-body grid-2">
+          <div class="rt-info-row">
+            <i class="bi bi-person-circle"></i>
+            <div>
+              <small>Nom complet</small>
+              <strong>{{ reservation.client_name }}</strong>
             </div>
           </div>
-          <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" (click)="closeModal()">
-              <i class="bi bi-x"></i> Fermer
-            </button>
+          <div class="rt-info-row">
+            <i class="bi bi-telephone-fill"></i>
+            <div>
+              <small>Téléphone</small>
+              <strong>{{ reservation.client_phone }}</strong>
+            </div>
+          </div>
+          <div class="rt-info-row" *ngIf="reservation.client_email">
+            <i class="bi bi-envelope-fill"></i>
+            <div>
+              <small>Email</small>
+              <strong>{{ reservation.client_email }}</strong>
+            </div>
+          </div>
+          <div class="rt-info-row muted" *ngIf="!reservation.client_email">
+            <i class="bi bi-envelope"></i>
+            <div>
+              <small>Email</small>
+              <em>Non renseigné</em>
+            </div>
           </div>
         </div>
+      </div>
+
+      <!-- Détails réservation -->
+      <div class="rt-info-card">
+        <div class="rt-info-card-header green">
+          <i class="bi bi-calendar2-fill"></i> Détails de la réservation
+        </div>
+        <div class="rt-info-card-body grid-2">
+          <div class="rt-info-row">
+            <i class="bi bi-calendar3"></i>
+            <div>
+              <small>Date</small>
+              <strong>{{ reservation.reservation_date | date:'fullDate':'':'fr-FR' }}</strong>
+            </div>
+          </div>
+          <div class="rt-info-row">
+            <i class="bi bi-clock-fill"></i>
+            <div>
+              <small>Heure</small>
+              <strong>{{ reservation.time_slot }}</strong>
+            </div>
+          </div>
+          <div class="rt-info-row">
+            <i class="bi bi-people-fill"></i>
+            <div>
+              <small>Nombre de personnes</small>
+              <strong>{{ reservation.number_of_people }} personne{{ reservation.number_of_people > 1 ? 's' : '' }}</strong>
+            </div>
+          </div>
+          <div class="rt-info-row">
+            <i class="bi bi-shop-fill"></i>
+            <div>
+              <small>Restaurant</small>
+              <strong>{{ reservation.restaurant_name || '—' }}</strong>
+            </div>
+          </div>
+          <div class="rt-info-row">
+            <i class="bi bi-calendar-plus"></i>
+            <div>
+              <small>Créée le</small>
+              <strong>{{ reservation.created_at | date:'dd/MM/yyyy à HH:mm' }}</strong>
+            </div>
+          </div>
+          <div class="rt-info-row"
+            *ngIf="reservation.updated_at && reservation.updated_at !== reservation.created_at">
+            <i class="bi bi-arrow-clockwise"></i>
+            <div>
+              <small>Dernière modification</small>
+              <strong>{{ reservation.updated_at | date:'dd/MM/yyyy à HH:mm' }}</strong>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Demandes spéciales -->
+      <div class="rt-section" *ngIf="reservation.special_requests">
+        <div class="rt-section-title">
+          <i class="bi bi-chat-left-text-fill"></i> Demandes spéciales
+        </div>
+        <div class="rt-note-box">{{ reservation.special_requests }}</div>
+      </div>
+
+      <div class="rt-empty-note" *ngIf="!reservation.special_requests">
+        <i class="bi bi-info-circle"></i>
+        Aucune demande spéciale
+      </div>
+
+    </div><!-- /body -->
+
+    <!-- Footer -->
+    <div class="rt-modal-footer">
+      <button class="rt-btn ghost" (click)="closeModal()">
+        <i class="bi bi-x-lg"></i> Fermer
+      </button>
+
+      <ng-container *ngIf="reservation && reservation.status === 'pending'">
+        <button class="rt-btn success"
+          (click)="changeStatus('confirmed')" [disabled]="loading">
+          <span *ngIf="loading" class="spinner-border spinner-border-sm"></span>
+          <i class="bi bi-check-circle-fill" *ngIf="!loading"></i>
+          Confirmer
+        </button>
+        <button class="rt-btn danger"
+          (click)="changeStatus('cancelled')" [disabled]="loading">
+          <span *ngIf="loading" class="spinner-border spinner-border-sm"></span>
+          <i class="bi bi-x-circle-fill" *ngIf="!loading"></i>
+          Annuler
+        </button>
+      </ng-container>
+
+      <ng-container *ngIf="reservation && reservation.status === 'confirmed'">
+        <button class="rt-btn warning"
+          (click)="changeStatus('cancelled')" [disabled]="loading">
+          <span *ngIf="loading" class="spinner-border spinner-border-sm"></span>
+          <i class="bi bi-x-circle-fill" *ngIf="!loading"></i>
+          Annuler la réservation
+        </button>
+      </ng-container>
     </div>
+
+  </div>
 </div>
-<div class="modal-backdrop fade" [class.show]="show" *ngIf="show"></div>

@@ -1,0 +1,192 @@
+<div class="rt-modal-overlay" [class.visible]="show" *ngIf="show">
+  <div class="rt-modal rt-modal--lg">
+
+    <!-- Header -->
+    <div class="rt-modal-header">
+      <div class="rt-modal-title">
+        <div class="rt-modal-icon blue">
+          <i class="bi bi-cart-check-fill"></i>
+        </div>
+        <div>
+          <h5>Commande <span class="rt-modal-id">{{ order?.id }}</span></h5>
+          <p *ngIf="order">{{ order.created_at | date:'dd/MM/yyyy à HH:mm' }}</p>
+        </div>
+      </div>
+      <button class="rt-modal-close" (click)="closeModal()">
+        <i class="bi bi-x-lg"></i>
+      </button>
+    </div>
+
+    <!-- Body -->
+    <div class="rt-modal-body" *ngIf="order">
+
+      <!-- Statut banner -->
+      <div class="rt-status-banner" [ngClass]="{
+        'warning':  order.status === 'pending',
+        'info':     order.status === 'confirmed',
+        'purple':   order.status === 'preparing',
+        'success':  order.status === 'ready' || order.status === 'delivered',
+        'danger':   order.status === 'cancelled'
+      }">
+        <i class="bi" [ngClass]="{
+          'bi-clock-fill':       order.status === 'pending',
+          'bi-check-circle-fill':order.status === 'confirmed',
+          'bi-hourglass-split':  order.status === 'preparing',
+          'bi-check2-circle':    order.status === 'ready',
+          'bi-truck':            order.status === 'delivered',
+          'bi-x-circle-fill':    order.status === 'cancelled'
+        }"></i>
+        <span>
+          <strong>{{ getOrderStatusLabel(order.status) }}</strong>
+          &nbsp;·&nbsp;
+          Paiement :
+          <span class="rt-payment-badge" [ngClass]="getPaymentStatusClass(order.payment_status)">
+            {{ getPaymentStatusLabel(order.payment_status) }}
+          </span>
+        </span>
+      </div>
+
+      <!-- Client + Établissement -->
+      <div class="rt-modal-grid-2">
+
+        <div class="rt-info-card">
+          <div class="rt-info-card-header">
+            <i class="bi bi-person-fill"></i> Client
+          </div>
+          <div class="rt-info-card-body">
+            <div class="rt-info-row">
+              <i class="bi bi-person-circle"></i>
+              <strong>{{ order.client_name }}</strong>
+            </div>
+            <div class="rt-info-row">
+              <i class="bi bi-telephone-fill"></i>
+              <span>{{ order.client_phone }}</span>
+            </div>
+            <div class="rt-info-row" *ngIf="order.client_email">
+              <i class="bi bi-envelope-fill"></i>
+              <span>{{ order.client_email }}</span>
+            </div>
+            <div class="rt-info-row muted" *ngIf="!order.client_email">
+              <i class="bi bi-envelope"></i>
+              <em>Aucun email renseigné</em>
+            </div>
+          </div>
+        </div>
+
+        <div class="rt-info-card">
+          <div class="rt-info-card-header green">
+            <i class="bi bi-shop-fill"></i> Établissement
+          </div>
+          <div class="rt-info-card-body">
+            <div class="rt-info-row">
+              <i class="bi bi-shop"></i>
+              <strong>{{ order.business_name }}</strong>
+            </div>
+            <div class="rt-info-row" *ngIf="order.business_address">
+              <i class="bi bi-geo-alt-fill"></i>
+              <span>{{ order.business_address }}</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Articles -->
+      <div class="rt-section">
+        <div class="rt-section-title">
+          <i class="bi bi-list-ul"></i> Articles commandés
+        </div>
+        <div class="rt-table-wrap">
+          <table class="rt-table">
+            <thead>
+              <tr>
+                <th>Article</th>
+                <th class="center">Qté</th>
+                <th class="right">Prix unitaire</th>
+                <th class="right">Sous-total</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let item of order.items">
+                <td>
+                  <strong class="item-name">{{ item.item_name }}</strong>
+                  <small *ngIf="item.item_description">{{ item.item_description }}</small>
+                </td>
+                <td class="center">
+                  <span class="rt-qty-badge">{{ item.quantity }}</span>
+                </td>
+                <td class="right muted">{{ item.unit_price | number:'1.0-0' }} FCFA</td>
+                <td class="right bold">{{ item.subtotal | number:'1.0-0' }} FCFA</td>
+              </tr>
+              <tr *ngIf="!order.items || order.items.length === 0">
+                <td colspan="4" class="empty-row">
+                  <i class="bi bi-inbox me-2"></i>Aucun article
+                </td>
+              </tr>
+            </tbody>
+            <tfoot>
+              <tr>
+                <td colspan="3" class="right bold">Total</td>
+                <td class="right total-amount">{{ order.total_amount | number:'1.0-0' }} FCFA</td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      </div>
+
+      <!-- Notes -->
+      <div class="rt-section" *ngIf="order.notes">
+        <div class="rt-section-title">
+          <i class="bi bi-sticky-fill"></i> Notes
+        </div>
+        <div class="rt-note-box">{{ order.notes }}</div>
+      </div>
+
+    </div><!-- /body -->
+
+    <!-- Footer -->
+    <div class="rt-modal-footer">
+      <button class="rt-btn ghost" (click)="closeModal()">
+        <i class="bi bi-x-lg"></i> Fermer
+      </button>
+
+      <ng-container *ngIf="order && order.status !== 'cancelled' && order.status !== 'delivered'">
+        <button class="rt-btn success"
+          *ngIf="order.status === 'pending'"
+          (click)="changeStatus('confirmed')" [disabled]="loading">
+          <span *ngIf="loading" class="spinner-border spinner-border-sm"></span>
+          <i class="bi bi-check-circle-fill" *ngIf="!loading"></i>
+          Confirmer
+        </button>
+        <button class="rt-btn primary"
+          *ngIf="order.status === 'confirmed'"
+          (click)="changeStatus('preparing')" [disabled]="loading">
+          <span *ngIf="loading" class="spinner-border spinner-border-sm"></span>
+          <i class="bi bi-hourglass-split" *ngIf="!loading"></i>
+          En préparation
+        </button>
+        <button class="rt-btn info"
+          *ngIf="order.status === 'preparing'"
+          (click)="changeStatus('ready')" [disabled]="loading">
+          <span *ngIf="loading" class="spinner-border spinner-border-sm"></span>
+          <i class="bi bi-check2-circle" *ngIf="!loading"></i>
+          Prête
+        </button>
+        <button class="rt-btn dark"
+          *ngIf="order.status === 'ready'"
+          (click)="changeStatus('delivered')" [disabled]="loading">
+          <span *ngIf="loading" class="spinner-border spinner-border-sm"></span>
+          <i class="bi bi-truck" *ngIf="!loading"></i>
+          Livrée
+        </button>
+        <button class="rt-btn danger"
+          (click)="changeStatus('cancelled')" [disabled]="loading">
+          <span *ngIf="loading" class="spinner-border spinner-border-sm"></span>
+          <i class="bi bi-x-circle-fill" *ngIf="!loading"></i>
+          Annuler
+        </button>
+      </ng-container>
+    </div>
+
+  </div>
+</div>

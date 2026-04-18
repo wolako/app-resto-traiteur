@@ -196,10 +196,44 @@ const requireBusinessOwnership = async (req, res, next) => {
   }
 };
 
+// Middleware pour vérifier l'accès analytics (plan payant)
+const requireAnalyticsAccess = async (req, res, next) => {
+  try {
+    const businessId = req.params.businessId || req.params.id;
+
+    const result = await pool.query(`
+      SELECT sp.analytics_access
+      FROM businesses b
+      JOIN business_subscriptions bs ON bs.business_id = b.id AND bs.status = 'active'
+      JOIN subscription_plans sp ON sp.id = bs.plan_id
+      WHERE b.id = $1
+    `, [businessId]);
+
+    if (result.rows.length === 0 || !result.rows[0].analytics_access) {
+      return res.status(HTTP_STATUS.FORBIDDEN).json({
+        success: false,
+        message: 'Fonctionnalité réservée aux plans payants',
+        code: ERROR_CODES.FORBIDDEN,
+        upgrade_required: true
+      });
+    }
+
+    next();
+  } catch (error) {
+    console.error('Erreur middleware requireAnalyticsAccess:', error);
+    return res.status(HTTP_STATUS.INTERNAL_SERVER_ERROR).json({
+      success: false,
+      message: 'Erreur de vérification des permissions',
+      code: ERROR_CODES.INTERNAL_ERROR,
+    });
+  }
+};
+
 module.exports = {
   authenticateToken,
   authenticateTokenOptional,
   requireRole,
   attachBusiness,
   requireBusinessOwnership,
+  requireAnalyticsAccess,
 };

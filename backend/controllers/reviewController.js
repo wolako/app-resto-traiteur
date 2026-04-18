@@ -1,5 +1,3 @@
-// controllers/reviewController.js - VERSION GUEST SUPPORT
-
 const { pool } = require('../config/db');
 
 /**

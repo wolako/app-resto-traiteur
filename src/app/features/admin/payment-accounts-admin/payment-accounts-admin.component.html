@@ -1,0 +1,394 @@
+<div class="pa-admin-container">
+ 
+      <!-- Header -->
+      <div class="content-header">
+        <h4><i class="bi bi-bank2 text-primary me-2"></i>Comptes de paiement</h4>
+        <div class="filters">
+          <select class="form-select" [(ngModel)]="statusFilter" (change)="load()">
+            <option value="">Tous les statuts</option>
+            <option value="pending_verification">En attente</option>
+            <option value="verified">Vérifiés</option>
+            <option value="rejected">Rejetés</option>
+            <option value="not_configured">Non configurés</option>
+            <option value="suspended">Suspendus</option>
+          </select>
+          <button class="btn btn-sm btn-outline-primary" (click)="load()">
+            <i class="bi bi-arrow-clockwise"></i>
+          </button>
+        </div>
+      </div>
+ 
+      <!-- KPIs -->
+      <div class="row g-3 mb-4" *ngIf="summary">
+        <div class="col-6 col-md-2">
+          <div class="stat-card" style="cursor:pointer" (click)="statusFilter='pending_verification';load()">
+            <div class="stat-icon" style="background:var(--rt-accent-s);color:var(--rt-accent)">
+              <i class="bi bi-hourglass-split"></i>
+            </div>
+            <div class="stat-details">
+              <h3>{{ summary.pending_verification }}</h3>
+              <p>En attente</p>
+            </div>
+          </div>
+        </div>
+        <div class="col-6 col-md-2">
+          <div class="stat-card" style="cursor:pointer" (click)="statusFilter='verified';load()">
+            <div class="stat-icon" style="background:var(--rt-green-s);color:var(--rt-green)">
+              <i class="bi bi-check-circle-fill"></i>
+            </div>
+            <div class="stat-details">
+              <h3>{{ summary.verified }}</h3>
+              <p>Vérifiés</p>
+            </div>
+          </div>
+        </div>
+        <div class="col-6 col-md-2">
+          <div class="stat-card" style="cursor:pointer" (click)="statusFilter='rejected';load()">
+            <div class="stat-icon" style="background:var(--rt-primary-s);color:var(--rt-primary)">
+              <i class="bi bi-x-circle-fill"></i>
+            </div>
+            <div class="stat-details">
+              <h3>{{ summary.rejected }}</h3>
+              <p>Rejetés</p>
+            </div>
+          </div>
+        </div>
+        <div class="col-6 col-md-2">
+          <div class="stat-card">
+            <div class="stat-icon" style="background:var(--rt-blue-s);color:var(--rt-blue)">
+              <i class="bi bi-question-circle"></i>
+            </div>
+            <div class="stat-details">
+              <h3>{{ summary.not_configured }}</h3>
+              <p>Non config.</p>
+            </div>
+          </div>
+        </div>
+        <div class="col-6 col-md-2">
+          <div class="stat-card">
+            <div class="stat-icon" style="background:var(--rt-secondary-s);color:var(--rt-secondary)">
+              <i class="bi bi-slash-circle"></i>
+            </div>
+            <div class="stat-details">
+              <h3>{{ summary.suspended }}</h3>
+              <p>Suspendus</p>
+            </div>
+          </div>
+        </div>
+        <div class="col-6 col-md-2">
+          <div class="stat-card">
+            <div class="stat-icon" style="background:var(--rt-raised);color:var(--rt-t2)">
+              <i class="bi bi-grid-3x3-gap"></i>
+            </div>
+            <div class="stat-details">
+              <h3>{{ summary.total }}</h3>
+              <p>Total</p>
+            </div>
+          </div>
+        </div>
+      </div>
+ 
+      <!-- Alerte comptes en attente -->
+      <div class="alert alert-warning d-flex align-items-center gap-2 mb-4"
+        *ngIf="summary && summary.pending_verification > 0 && !statusFilter">
+        <i class="bi bi-exclamation-triangle-fill fs-5"></i>
+        <strong>{{ summary.pending_verification }} compte(s)</strong> en attente de vérification.
+      </div>
+ 
+      <!-- Loader -->
+      <div class="text-center py-4" *ngIf="loading">
+        <div class="spinner-border text-primary"></div>
+        <p class="mt-2 text-muted">Chargement...</p>
+      </div>
+ 
+      <!-- Table -->
+      <div class="table-responsive" *ngIf="!loading">
+        <table class="table custom-table">
+          <thead>
+            <tr>
+              <th class="d-table-cell d-md-none">Établissement</th>
+              <th class="d-none d-md-table-cell">Établissement</th>
+              <th class="d-none d-md-table-cell">Propriétaire</th>
+              <th class="d-none d-md-table-cell">Méthode</th>
+              <th class="d-none d-lg-table-cell">Coordonnées</th>
+              <th class="d-none d-md-table-cell">Nom légal</th>
+              <th>Statut</th>
+              <th class="d-none d-md-table-cell">Soumis le</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let acc of accounts"
+              [class.row-warning]="acc.status === 'pending_verification'"
+              [class.row-danger]="acc.status === 'rejected'">
+ 
+              <!-- Mobile -->
+              <td class="d-table-cell d-md-none">
+                <strong>{{ acc.business_name }}</strong>
+                <span class="stag ms-1" style="font-size:.6rem;"
+                  [ngClass]="acc.business_type === 'restaurant' ? 'role-restaurant' : 'role-traiteur'">
+                  {{ acc.business_type }}
+                </span>
+                <small class="d-block text-muted">{{ acc.owner_email }}</small>
+                <small class="d-block text-muted">{{ getMethodLabel(acc.preferred_payout_method) }}</small>
+              </td>
+ 
+              <!-- Desktop -->
+              <td class="d-none d-md-table-cell">
+                <strong>{{ acc.business_name }}</strong><br>
+                <span class="stag" style="font-size:.65rem;"
+                  [ngClass]="acc.business_type === 'restaurant' ? 'role-restaurant' : 'role-traiteur'">
+                  {{ acc.business_type }}
+                </span>
+              </td>
+              <td class="d-none d-md-table-cell">
+                <div>{{ acc.owner_first_name }} {{ acc.owner_last_name }}</div>
+                <small class="text-muted">{{ acc.owner_email }}</small>
+              </td>
+              <td class="d-none d-md-table-cell">
+                <span class="stag s-confirmed" style="font-size:.7rem;">
+                  {{ getMethodLabel(acc.preferred_payout_method) }}
+                </span>
+              </td>
+              <td class="d-none d-lg-table-cell">
+                <small>
+                  <span *ngIf="acc.preferred_payout_method === 'mixx' && acc.mixx_number">
+                    📱 {{ acc.mixx_number }}
+                  </span>
+                  <span *ngIf="acc.preferred_payout_method === 'flooz' && acc.flooz_number">
+                    💚 {{ acc.flooz_number }}
+                  </span>
+                  <span *ngIf="acc.preferred_payout_method === 'bank' && acc.bank_name">
+                    🏦 {{ acc.bank_name }}<br>{{ acc.bank_account_number }}
+                  </span>
+                </small>
+              </td>
+              <td class="d-none d-md-table-cell">
+                <div style="font-size:.82rem;">{{ acc.legal_name || '—' }}</div>
+                <small class="text-muted" *ngIf="acc.business_registration_number">
+                  {{ acc.business_registration_number }}
+                </small>
+              </td>
+ 
+              <!-- Statut -->
+              <td>
+                <span class="stag" [ngClass]="getStatusClass(acc.status)">
+                  {{ getStatusLabel(acc.status) }}
+                </span>
+                <div *ngIf="acc.rejection_reason" style="font-size:.65rem;color:var(--rt-primary);margin-top:3px;">
+                  {{ acc.rejection_reason | slice:0:40 }}…
+                </div>
+                <div *ngIf="acc.verified_at" style="font-size:.65rem;color:var(--rt-green);margin-top:3px;">
+                  Vérifié le {{ acc.verified_at | date:'dd/MM/yy' }}
+                </div>
+              </td>
+              <td class="d-none d-md-table-cell">
+                <small class="text-muted">{{ acc.updated_at | date:'dd/MM/yy HH:mm' }}</small>
+              </td>
+ 
+              <!-- Actions -->
+              <td>
+                <div class="d-flex flex-column gap-1">
+                  <!-- Voir le détail -->
+                  <button class="btn btn-sm btn-outline-info" (click)="openDetail(acc)">
+                    <i class="bi bi-eye"></i>
+                  </button>
+                  <!-- Vérifier -->
+                  <button class="btn btn-sm btn-success"
+                    *ngIf="acc.status === 'pending_verification'"
+                    (click)="verify(acc)">
+                    <i class="bi bi-check-circle-fill"></i>
+                    <span class="d-none d-sm-inline ms-1">Vérifier</span>
+                  </button>
+                  <!-- Rejeter -->
+                  <button class="btn btn-sm btn-warning"
+                    *ngIf="acc.status === 'pending_verification' || acc.status === 'verified'"
+                    (click)="reject(acc)">
+                    <i class="bi bi-x-circle-fill"></i>
+                    <span class="d-none d-sm-inline ms-1">Rejeter</span>
+                  </button>
+                  <!-- Suspendre -->
+                  <button class="btn btn-sm btn-outline-danger"
+                    *ngIf="acc.status === 'verified'"
+                    (click)="suspend(acc)">
+                    <i class="bi bi-slash-circle"></i>
+                  </button>
+                  <!-- Réactiver -->
+                  <button class="btn btn-sm btn-outline-success"
+                    *ngIf="acc.status === 'suspended' || acc.status === 'rejected'"
+                    (click)="verify(acc)">
+                    <i class="bi bi-arrow-repeat"></i>
+                    <span class="d-none d-sm-inline ms-1">Réactiver</span>
+                  </button>
+                </div>
+              </td>
+            </tr>
+            <tr *ngIf="accounts.length === 0">
+              <td colspan="9" class="text-center py-5 text-muted">
+                <i class="bi bi-bank2 fs-1 d-block mb-2 opacity-25"></i>
+                Aucun compte de paiement
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+ 
+      <!-- ── MODAL DÉTAIL ─────────────────────────────────────── -->
+      <div class="modal" [class.show]="showDetail" [style.display]="showDetail ? 'block' : 'none'"
+        (click)="showDetail=false">
+        <div class="modal-dialog modal-lg modal-dialog-scrollable" (click)="$event.stopPropagation()">
+          <div class="modal-content" *ngIf="selectedAccount">
+            <div class="modal-header">
+              <h5 class="modal-title">
+                <i class="bi bi-bank2"></i> Compte — {{ selectedAccount.business_name }}
+              </h5>
+              <button type="button" class="btn-close" (click)="showDetail=false"></button>
+            </div>
+            <div class="modal-body">
+              <!-- Infos établissement -->
+              <div class="row g-3 mb-3">
+                <div class="col-md-6">
+                  <div class="detail-block">
+                    <div class="db-label">Établissement</div>
+                    <div class="db-val">{{ selectedAccount.business_name }}</div>
+                    <small class="text-muted">{{ selectedAccount.business_type }}</small>
+                  </div>
+                </div>
+                <div class="col-md-6">
+                  <div class="detail-block">
+                    <div class="db-label">Propriétaire</div>
+                    <div class="db-val">{{ selectedAccount.owner_first_name }} {{ selectedAccount.owner_last_name }}</div>
+                    <small class="text-muted">{{ selectedAccount.owner_email }}</small><br>
+                    <small class="text-muted">{{ selectedAccount.owner_phone }}</small>
+                  </div>
+                </div>
+              </div>
+              <!-- Infos légales -->
+              <div class="row g-3 mb-3">
+                <div class="col-md-6">
+                  <div class="detail-block">
+                    <div class="db-label">Nom légal</div>
+                    <div class="db-val">{{ selectedAccount.legal_name }}</div>
+                    <small class="text-muted" *ngIf="selectedAccount.business_registration_number">
+                      RCCM : {{ selectedAccount.business_registration_number }}
+                    </small>
+                  </div>
+                </div>
+                <div class="col-md-6">
+                  <div class="detail-block">
+                    <div class="db-label">Type d'entité</div>
+                    <div class="db-val">{{ selectedAccount.business_type_legal === 'individual' ? 'Personne physique' : 'Entreprise' }}</div>
+                  </div>
+                </div>
+              </div>
+              <!-- Coordonnées bancaires -->
+              <div class="detail-block mb-3">
+                <div class="db-label">Méthode de reversement</div>
+                <div class="db-val">{{ getMethodLabel(selectedAccount.preferred_payout_method) }}</div>
+                <div *ngIf="selectedAccount.preferred_payout_method === 'mixx'" class="mt-1">
+                  📱 <strong>{{ selectedAccount.mixx_number }}</strong>
+                </div>
+                <div *ngIf="selectedAccount.preferred_payout_method === 'flooz'" class="mt-1">
+                  💚 <strong>{{ selectedAccount.flooz_number }}</strong>
+                </div>
+                <div *ngIf="selectedAccount.preferred_payout_method === 'bank'" class="mt-1">
+                  🏦 {{ selectedAccount.bank_name }} — <strong>{{ selectedAccount.bank_account_number }}</strong>
+                  <div *ngIf="selectedAccount.bank_account_holder"><small>Titulaire : {{ selectedAccount.bank_account_holder }}</small></div>
+                  <div *ngIf="selectedAccount.bank_iban"><small>IBAN : {{ selectedAccount.bank_iban }}</small></div>
+                </div>
+              </div>
+              <!-- CinetPay -->
+              <div class="detail-block mb-3" *ngIf="selectedAccount.cinetpay_site_id">
+                <div class="db-label">Compte CinetPay existant</div>
+                <small>Site ID : <code>{{ selectedAccount.cinetpay_site_id }}</code></small><br>
+                <small *ngIf="selectedAccount.cinetpay_sub_merchant_id">
+                  Sub-merchant : <code>{{ selectedAccount.cinetpay_sub_merchant_id }}</code>
+                </small>
+              </div>
+              <!-- Statut & notes -->
+              <div class="detail-block mb-3">
+                <div class="db-label">Statut actuel</div>
+                <span class="stag" [ngClass]="getStatusClass(selectedAccount.status)">
+                  {{ getStatusLabel(selectedAccount.status) }}
+                </span>
+                <div *ngIf="selectedAccount.rejection_reason" class="mt-2 text-danger" style="font-size:.82rem;">
+                  Raison rejet : {{ selectedAccount.rejection_reason }}
+                </div>
+                <div *ngIf="selectedAccount.admin_notes" class="mt-2 text-muted" style="font-size:.82rem;">
+                  Notes admin : {{ selectedAccount.admin_notes }}
+                </div>
+                <div *ngIf="selectedAccount.verified_at" class="mt-2 text-success" style="font-size:.82rem;">
+                  Vérifié le {{ selectedAccount.verified_at | date:'dd/MM/yyyy HH:mm' }}
+                  <span *ngIf="selectedAccount.verified_by_email">par {{ selectedAccount.verified_by_email }}</span>
+                </div>
+              </div>
+              <!-- Notes admin -->
+              <div class="mb-3">
+                <label class="form-label fw-semibold">Notes administrateur (optionnel)</label>
+                <textarea class="form-control" rows="3" [(ngModel)]="adminNotes"
+                  placeholder="Commentaire visible dans le email envoyé au propriétaire..."></textarea>
+              </div>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" (click)="showDetail=false">Fermer</button>
+              <button class="btn btn-warning"
+                *ngIf="selectedAccount.status === 'pending_verification' || selectedAccount.status === 'verified'"
+                (click)="reject(selectedAccount); showDetail=false">
+                <i class="bi bi-x-circle-fill"></i> Rejeter
+              </button>
+              <button class="btn btn-success"
+                *ngIf="selectedAccount.status !== 'verified' && selectedAccount.status !== 'suspended'"
+                (click)="verifyWithNotes(selectedAccount, adminNotes); showDetail=false">
+                <i class="bi bi-check-circle-fill"></i> Vérifier et approuver
+              </button>
+              <button class="btn btn-outline-success"
+                *ngIf="selectedAccount.status === 'suspended' || selectedAccount.status === 'rejected'"
+                (click)="verifyWithNotes(selectedAccount, adminNotes); showDetail=false">
+                <i class="bi bi-arrow-repeat"></i> Réactiver
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-backdrop fade show" *ngIf="showDetail"></div>
+ 
+      <!-- MODAL REJET -->
+      <div class="modal" [class.show]="showRejectModal" [style.display]="showRejectModal ? 'block' : 'none'">
+        <div class="modal-dialog" (click)="$event.stopPropagation()">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h5 class="modal-title"><i class="bi bi-x-circle-fill text-danger"></i> Rejeter le compte</h5>
+              <button type="button" class="btn-close" (click)="showRejectModal=false"></button>
+            </div>
+            <div class="modal-body">
+              <div class="alert alert-warning">
+                <i class="bi bi-exclamation-triangle"></i>
+                Un email sera envoyé à <strong>{{ rejectTarget?.owner_email }}</strong> avec la raison du rejet.
+              </div>
+              <div class="mb-3">
+                <label class="form-label fw-semibold">Raison du rejet *</label>
+                <textarea class="form-control" rows="4" [(ngModel)]="rejectReason"
+                  placeholder="Ex: Les informations bancaires ne correspondent pas au nom légal fourni...">
+                </textarea>
+              </div>
+              <div class="mb-3">
+                <label class="form-label fw-semibold">Notes complémentaires</label>
+                <textarea class="form-control" rows="2" [(ngModel)]="adminNotes"
+                  placeholder="Optionnel..."></textarea>
+              </div>
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" (click)="showRejectModal=false">Annuler</button>
+              <button class="btn btn-danger" [disabled]="!rejectReason.trim() || actionLoading"
+                (click)="confirmReject()">
+                <span *ngIf="actionLoading" class="spinner-border spinner-border-sm me-1"></span>
+                <i class="bi bi-x-circle-fill" *ngIf="!actionLoading"></i>
+                Confirmer le rejet
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-backdrop fade show" *ngIf="showRejectModal"></div>
+ 
+</div>

@@ -1,6 +1,5 @@
 import { CommonModule } from '@angular/common';
 import { Component, EventEmitter, Input, Output } from '@angular/core';
-import { Reservation } from '../../../core/models/reservation.model';
 
 @Component({
   selector: 'app-reservation-details-modal',
@@ -10,19 +9,27 @@ import { Reservation } from '../../../core/models/reservation.model';
   styleUrl: './reservation-details-modal.component.scss'
 })
 export class ReservationDetailsModalComponent {
-  @Input() reservation: Reservation | null = null;
+  @Input() reservation: any | null = null;
   @Input() show = false;
+  @Input() loading = false;
   @Output() closed = new EventEmitter<void>();
+  @Output() statusChanged = new EventEmitter<{ reservationId: number; status: string }>();
 
   closeModal(): void {
     this.closed.emit();
   }
 
+  changeStatus(status: string): void {
+    if (this.reservation?.id) {
+      this.statusChanged.emit({ reservationId: this.reservation.id, status });
+    }
+  }
+
   getReservationStatusLabel(status: string): string {
     const labels: { [key: string]: string } = {
-      'pending': 'En attente',
-      'confirmed': 'Confirmée',
-      'cancelled': 'Annulée'
+      pending:   'En attente',
+      confirmed: 'Confirmée',
+      cancelled: 'Annulée'
     };
     return labels[status] || status;
   }

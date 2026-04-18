@@ -10,6 +10,15 @@ class User {
     return result.rows[0];
   }
 
+  static async findByPhone(phone) {
+    const normalized = phone.replace(/\s/g, '');
+    const result = await pool.query(
+      `SELECT * FROM users WHERE REPLACE(phone, ' ', '') = $1`,
+      [normalized]
+    );
+    return result.rows[0];
+  }
+
   static async findById(id) {
     const result = await pool.query(
       'SELECT id, email, role, first_name, last_name, phone, is_active, created_at FROM users WHERE id = $1',

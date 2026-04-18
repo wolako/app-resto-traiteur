@@ -14,7 +14,7 @@ const router = express.Router();
 router.post('/',
   generalLimiter,
   authenticateTokenOptional,
-  checkReservationsAllowed, // ✅ NOUVEAU: Vérifier si réservations autorisées
+  checkReservationsAllowed,
   validate('createReservation'),
   reservationController.createReservation
 );
@@ -23,6 +23,14 @@ router.post('/',
 router.get('/restaurants/:restaurantId/available-slots',
   validateNumericParam('restaurantId'),
   reservationController.getAvailableTimeSlots
+);
+
+// ✅ NOUVEAU : Confirmer acompte COD
+router.post('/:reservationId/confirm-deposit-cod',
+  authenticateToken,
+  requireRole(USER_ROLES.RESTAURANT, USER_ROLES.SUPER_ADMIN),
+  validateNumericParam('reservationId'),
+  reservationController.confirmDepositCOD
 );
 
 // Routes publiques pour consultation

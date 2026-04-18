@@ -6,6 +6,7 @@ import { OrderService } from '../../core/services/orders/order.service';
 import { BusinessService } from '../../core/services/business/business.service';
 import { AuthService } from '../../core/services/auth/auth.service';
 import { ToastService } from '../../core/services/toast/toast.service';
+import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-special-order',
@@ -23,6 +24,17 @@ export class SpecialOrderComponent implements OnInit {
   isLoggedIn = false;
   currentUser: any = null;
 
+  // ✅ NOUVEAU : États workflow
+  step: 'form' | 'waiting_quote' | 'quote_received' | 'payment' | 'confirmed' = 'form';
+  specialOrderId: number | null = null;
+  quote: any = null;
+
+  // ✅ NOUVEAU : Paiement acompte
+  selectedPaymentMethod = '';
+  depositFee = 0;
+  totalDeposit = 0;
+  isSandbox = environment.paymentMode === 'sandbox';
+
   @ViewChild('successSection') successSection!: ElementRef;
 
   eventTypes = [
@@ -32,6 +44,14 @@ export class SpecialOrderComponent implements OnInit {
     { value: 'entreprise', label: 'Événement d\'entreprise' },
     { value: 'reception', label: 'Réception' },
     { value: 'autre', label: 'Autre' }
+  ];
+
+  paymentMethods = [
+    { value: 'tmoney', label: 'T-Money', icon: '📱' },
+    { value: 'flooz', label: 'Flooz', icon: '💚' },
+    { value: 'Mixx By Yas', label: 'Mixx By Yas', icon: '📲' },
+    { value: 'card', label: 'Carte bancaire', icon: '💳' },
+    { value: 'cod', label: 'Payer chez le traiteur', icon: '💵' }
   ];
 
   constructor(
@@ -63,7 +83,6 @@ export class SpecialOrderComponent implements OnInit {
   }
 
   private initializeForm(): void {
-    // Valeurs par défaut pour éviter les champs vides
     const defaultName = this.currentUser 
       ? `${this.currentUser.first_name || ''} ${this.currentUser.last_name || ''}`.trim()
       : '';
@@ -71,27 +90,18 @@ export class SpecialOrderComponent implements OnInit {
     const defaultPhone = this.currentUser?.phone || '';
 
     this.orderForm = this.fb.group({
-      // Informations client
       client_name: [defaultName, [Validators.required, Validators.minLength(2)]],
       client_email: [defaultEmail, [Validators.required, Validators.email]],
       client_phone: [defaultPhone, [Validators.required, Validators.pattern(/^[0-9]{8,15}$/)]],
-      
-      // Détails de la commande spéciale
       event_type: ['', Validators.required],
       event_date: ['', Validators.required],
       event_time: ['', Validators.required],
       number_of_guests: ['', [Validators.required, Validators.min(1)]],
-      
-      // Adresse de livraison
       delivery_address: ['', [Validators.required, Validators.minLength(5)]],
       city: ['', [Validators.required, Validators.minLength(2)]],
-      
-      // Détails du repas souhaité
       menu_preferences: ['', [Validators.required, Validators.minLength(10)]],
       dietary_restrictions: [''],
       special_requests: [''],
-      
-      // Budget estimé (optionnel)
       estimated_budget: ['', Validators.min(0)]
     });
   }
@@ -123,145 +133,179 @@ export class SpecialOrderComponent implements OnInit {
     }
   }
 
+  /**
+   * ✅ ÉTAPE 1 : Envoyer demande initiale
+   */
   onSubmit(): void {
-    // Marquer tous les champs comme touchés pour afficher les erreurs
     if (this.orderForm.invalid) {
       Object.keys(this.orderForm.controls).forEach(key => {
-        const control = this.orderForm.get(key);
-        control?.markAsTouched();
-        if (control?.invalid) {
-          console.log(`Champ invalide: ${key}`, control.errors);
-        }
+        this.orderForm.get(key)?.markAsTouched();
       });
       
       this.toastService.showWarning(
         'Formulaire incomplet',
-        'Veuillez remplir tous les champs requis correctement'
+        'Veuillez remplir tous les champs requis'
       );
-      window.scrollTo({ top: 0, behavior: 'smooth' });
       return;
     }
 
     this.loading = true;
-    this.success = false;
 
-    // Préparer les données avec conversion des types
-    const formValue = this.orderForm.value;
     const orderData = {
       business_id: this.traiteur?.id,
-      client_name: formValue.client_name?.trim(),
-      client_email: formValue.client_email?.trim(),
-      client_phone: formValue.client_phone?.trim(),
-      event_type: formValue.event_type,
-      event_date: formValue.event_date,
-      event_time: formValue.event_time,
-      number_of_guests: parseInt(formValue.number_of_guests, 10),
-      delivery_address: formValue.delivery_address?.trim(),
-      city: formValue.city?.trim(),
-      menu_preferences: formValue.menu_preferences?.trim(),
-      dietary_restrictions: formValue.dietary_restrictions?.trim() || null,
-      special_requests: formValue.special_requests?.trim() || null,
-      estimated_budget: formValue.estimated_budget ? parseFloat(formValue.estimated_budget) : null
+      ...this.orderForm.value,
+      number_of_guests: parseInt(this.orderForm.value.number_of_guests, 10),
+      estimated_budget: this.orderForm.value.estimated_budget ? 
+        parseFloat(this.orderForm.value.estimated_budget) : null
     };
 
-    // Validation supplémentaire
-    if (!orderData.business_id) {
-      this.loading = false;
-      this.toastService.showError(
-        'Erreur',
-        'Traiteur non trouvé'
-      );
-      return;
-    }
-
-    console.log('📤 Envoi de la commande spéciale:', orderData);
-
     this.orderService.createSpecialOrder(orderData).subscribe({
-      next: (response) => {
-        console.log('✅ Commande créée avec succès:', response);
+      next: (response: any) => {
         this.loading = false;
-        this.success = true;
+        this.specialOrderId = response.data?.id || response.id;
+        this.step = 'waiting_quote';
         
         this.toastService.showSuccess(
           'Demande envoyée !',
-          `Votre demande de commande pour ${orderData.number_of_guests} personnes a été envoyée à ${this.traiteur.name}. Vous serez contacté sous 24-48h.`
+          'Le traiteur vous enverra un devis sous 24-48h'
         );
-        
-        // Scroll vers la section de succès
-        setTimeout(() => {
-          if (this.successSection) {
-            this.successSection.nativeElement.scrollIntoView({ 
-              behavior: 'smooth', 
-              block: 'center' 
-            });
-          }
-        }, 100);
       },
       error: (error) => {
-        console.error('❌ Erreur création commande:', error);
         this.loading = false;
-        
-        // Message d'erreur détaillé avec gestion des erreurs Joi
-        if (error.error?.errors && Array.isArray(error.error.errors)) {
-          // Erreurs de validation Joi
-          const errorMessages = error.error.errors.map((e: any) => e.message).join(', ');
-          this.toastService.showError(
-            'Erreurs de validation',
-            errorMessages
-          );
-        } else if (error.error?.message) {
-          let errorMsg = error.error.message;
-          if (error.error.missingFields) {
-            errorMsg += ` (Champs manquants: ${error.error.missingFields.join(', ')})`;
-          }
-          this.toastService.showError(
-            'Erreur de validation',
-            errorMsg
-          );
-        } else if (error.status === 400) {
-          this.toastService.showError(
-            'Données invalides',
-            'Veuillez vérifier tous les champs du formulaire'
-          );
-        } else if (error.status === 404) {
-          this.toastService.showError(
-            'Traiteur introuvable',
-            'Le traiteur sélectionné n\'existe plus'
-          );
-        } else {
-          this.toastService.showError(
-            'Erreur d\'envoi',
-            'Impossible d\'envoyer votre demande. Veuillez réessayer.'
-          );
-        }
-      
-        // Scroll vers le haut en cas d'erreur
-        window.scrollTo({ top: 0, behavior: 'smooth' });
+        this.toastService.showError(
+          'Erreur d\'envoi',
+          error.error?.message || 'Impossible d\'envoyer la demande'
+        );
       }
     });
   }
 
+  /**
+   * ✅ ÉTAPE 2 : Charger devis (simulé - en réalité, appelé quand traiteur envoie devis)
+   * Dans votre cas, ajoutez un endpoint pour récupérer le devis
+   */
+  loadQuote(): void {
+    if (!this.specialOrderId) return;
+
+    this.orderService.getSpecialOrderById(this.specialOrderId).subscribe({
+      next: (order: any) => {
+        if (order.status === 'quoted') {
+          this.quote = {
+            quoted_amount: order.quoted_amount,
+            deposit_percentage: order.deposit_percentage,
+            deposit_amount: order.deposit_amount,
+            transport_fee: order.transport_fee || 0,
+            final_amount: order.final_amount,
+            quote_notes: order.quote_notes
+          };
+          this.step = 'quote_received';
+        }
+      },
+      error: (error) => {
+        console.error('Error loading quote:', error);
+      }
+    });
+  }
+
+  /**
+   * ✅ ÉTAPE 3 : Calculer frais acompte
+   */
+  selectPaymentMethod(method: string): void {
+    this.selectedPaymentMethod = method;
+    this.calculateDepositFees();
+  }
+
+  calculateDepositFees(): void {
+    if (!this.quote || !this.selectedPaymentMethod) {
+      this.depositFee = 0;
+      this.totalDeposit = this.quote?.deposit_amount || 0;
+      return;
+    }
+
+    // COD : pas de frais
+    if (this.selectedPaymentMethod === 'cod') {
+      this.depositFee = 0;
+      this.totalDeposit = this.quote.deposit_amount;
+      return;
+    }
+
+    // Carte : 3.5% + 150 FCFA
+    if (this.selectedPaymentMethod === 'card') {
+      this.depositFee = Math.round((this.quote.deposit_amount * 0.035) + 150);
+    } 
+    // Mobile money : 2.9% + 100 FCFA
+    else {
+      this.depositFee = Math.round((this.quote.deposit_amount * 0.029) + 100);
+    }
+
+    this.totalDeposit = this.quote.deposit_amount + this.depositFee;
+  }
+
+  /**
+   * ✅ ÉTAPE 4 : Accepter devis et payer acompte
+   */
+  acceptQuoteAndPay(): void {
+    if (!this.selectedPaymentMethod) {
+      this.toastService.showWarning(
+        'Mode de paiement requis',
+        'Veuillez sélectionner un mode de paiement'
+      );
+      return;
+    }
+
+    this.loading = true;
+
+    this.orderService.acceptSpecialOrderQuote(this.specialOrderId!, {
+      deposit_payment_method: this.selectedPaymentMethod
+    }).subscribe({
+      next: (response: any) => {
+        this.loading = false;
+
+        // COD
+        if (this.selectedPaymentMethod === 'cod') {
+          this.step = 'confirmed';
+          this.toastService.showSuccess(
+            'Commande confirmée !',
+            `Acompte de ${this.totalDeposit.toLocaleString('fr-FR')} FCFA à payer chez le traiteur`
+          );
+          return;
+        }
+
+        // Paiement en ligne
+        if (response.payment_url) {
+          this.toastService.showInfo(
+            'Redirection paiement',
+            `Acompte : ${this.totalDeposit.toLocaleString('fr-FR')} FCFA`
+          );
+          window.location.href = response.payment_url;
+        } 
+        // Sandbox
+        else if (response.sandbox || this.isSandbox) {
+          this.step = 'confirmed';
+          this.toastService.showSuccess(
+            '✅ Paiement accepté (Sandbox) !',
+            'Votre commande est confirmée'
+          );
+        }
+      },
+      error: (error) => {
+        this.loading = false;
+        this.toastService.showError(
+          'Erreur de paiement',
+          error.error?.message || 'Impossible d\'initier le paiement'
+        );
+      }
+    });
+  }
+
+  // Helpers
   getFieldError(fieldName: string): string {
     const control = this.orderForm.get(fieldName);
-    
-    if (control?.hasError('required')) {
-      return 'Ce champ est requis';
-    }
-    if (control?.hasError('email')) {
-      return 'Email invalide';
-    }
-    if (control?.hasError('pattern')) {
-      return 'Format invalide (8-15 chiffres pour le téléphone)';
-    }
-    if (control?.hasError('min')) {
-      const minValue = control.errors?.['min']?.min;
-      return `Valeur minimale: ${minValue}`;
-    }
-    if (control?.hasError('minlength')) {
-      const minLength = control.errors?.['minlength']?.requiredLength;
-      return `Minimum ${minLength} caractères requis`;
-    }
-    
+    if (control?.hasError('required')) return 'Ce champ est requis';
+    if (control?.hasError('email')) return 'Email invalide';
+    if (control?.hasError('pattern')) return 'Format invalide';
+    if (control?.hasError('min')) return `Valeur minimale: ${control.errors?.['min']?.min}`;
+    if (control?.hasError('minlength')) return `Minimum ${control.errors?.['minlength']?.requiredLength} caractères`;
     return '';
   }
 
@@ -274,19 +318,13 @@ export class SpecialOrderComponent implements OnInit {
     this.router.navigate(['/']);
   }
 
-  onImageError(event: any): void {
-    event.target.src = 'assets/images/default-caterer.jpg';
-  }
-
   makeNewOrder(): void {
-    this.success = false;
+    this.step = 'form';
+    this.specialOrderId = null;
+    this.quote = null;
+    this.selectedPaymentMethod = '';
     this.orderForm.reset();
     this.initializeForm();
     window.scrollTo({ top: 0, behavior: 'smooth' });
-    
-    this.toastService.showInfo(
-      'Nouveau formulaire',
-      'Le formulaire a été réinitialisé pour une nouvelle commande'
-    );
   }
 }

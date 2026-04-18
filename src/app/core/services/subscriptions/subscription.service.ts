@@ -12,6 +12,8 @@ export interface SubscriptionPlan {
   billing_period: 'monthly' | 'yearly' | 'lifetime';
   max_menu_items: number | null;
   max_orders_per_month: number | null;
+  max_reservations_per_month: number | null;
+  max_special_orders_per_month: number | null;
   max_photos: number;
   can_accept_online_orders: boolean;
   can_accept_reservations: boolean;
@@ -34,11 +36,24 @@ export interface BusinessSubscription {
   plan_name: string;
   display_name: string;
   commission_rate: number;
+  billing_period: string;
 }
 
-@Injectable({
-  providedIn: 'root'
-})
+// ✅ NOUVEAU
+export interface PaymentInitResponse {
+  success:        boolean;
+  payment_url:    string;
+  transaction_id: string;
+  amount:         number;
+  plan_name:      string;
+}
+
+export interface PaymentStatusResponse {
+  status:    'pending' | 'success' | 'failed';
+  plan_name: string;
+}
+
+@Injectable({ providedIn: 'root' })
 export class SubscriptionService {
   private apiUrl = `${environment.apiUrl}/subscriptions`;
 
@@ -52,6 +67,7 @@ export class SubscriptionService {
     return this.http.get<BusinessSubscription>(`${this.apiUrl}/current`);
   }
 
+  /** Plans gratuits uniquement (price = 0) */
   subscribe(planId: number): Observable<any> {
     return this.http.post(`${this.apiUrl}/subscribe`, { plan_id: planId });
   }
@@ -68,14 +84,23 @@ export class SubscriptionService {
     return this.http.get(`${this.apiUrl}/usage`);
   }
 
-  // 🆕 Méthodes pour l'admin dashboard
+  // ✅ NOUVEAU : Initier un paiement CinetPay pour un plan payant
+  initiatePayment(planId: number): Observable<PaymentInitResponse> {
+    return this.http.post<PaymentInitResponse>(`${this.apiUrl}/pay`, { plan_id: planId });
+  }
+
+  // ✅ NOUVEAU : Vérifier le statut d'un paiement
+  checkPaymentStatus(transactionId: string): Observable<PaymentStatusResponse> {
+    return this.http.get<PaymentStatusResponse>(
+      `${this.apiUrl}/payment-status/${transactionId}`
+    );
+  }
+
   getSubscriptionStats(): Observable<any> {
     return this.http.get(`${this.apiUrl}/admin/stats`);
   }
 
   getPlatformCommissionStats(period: string = 'month'): Observable<any> {
-    return this.http.get(`${this.apiUrl}/admin/commissions`, {
-      params: { period }
-    });
+    return this.http.get(`${this.apiUrl}/admin/commissions`, { params: { period } });
   }
 }

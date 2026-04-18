@@ -1,260 +1,300 @@
-<div class="register-container">
-  <div class="container">
-    <div class="row justify-content-center">
-      <div class="col-md-8 col-lg-6">
-        <div class="register-card">
-          <div class="card-header-register">
-            <i class="bi bi-person-plus"></i>
-            <h2>Inscription</h2>
-            <p>Créez votre compte</p>
+<div class="register-page">
+  <div class="register-card anim-fadeup">
+
+    <!-- Header -->
+    <div class="card-header-register">
+      <div class="brand-mark">
+        <i class="bi bi-person-plus"></i>
+      </div>
+      <h1>Créer un compte</h1>
+      <p>Rejoignez la plateforme RestoTraiteur</p>
+    </div>
+
+    <!-- Body -->
+    <div class="card-body-register">
+
+      <!-- Erreur -->
+      <div *ngIf="error" class="error-banner">
+        <i class="bi bi-exclamation-circle-fill"></i>
+        <span>{{ error }}</span>
+        <button type="button" class="error-close" (click)="error = ''">
+          <i class="bi bi-x"></i>
+        </button>
+      </div>
+
+      <form [formGroup]="registerForm" (ngSubmit)="onSubmit()">
+
+        <!-- ── SECTION 1 : Informations personnelles ── -->
+        <div class="form-section">
+          <div class="section-title">
+            <span class="section-num">1</span>
+            <span>Informations personnelles</span>
           </div>
 
-          <div class="card-body-register">
-            <div *ngIf="error" class="alert alert-danger alert-dismissible fade show">
-              <i class="bi bi-exclamation-triangle"></i>
-              {{ error }}
-              <button type="button" class="btn-close" (click)="error = ''"></button>
+          <!-- Prénom / Nom -->
+          <div class="fields-row">
+            <div class="form-group">
+              <label for="first_name" class="form-label">Prénom *</label>
+              <div class="input-wrapper">
+                <i class="bi bi-person"></i>
+                <input
+                  type="text"
+                  class="form-control"
+                  id="first_name"
+                  formControlName="first_name"
+                  placeholder="Marie"
+                  [class.is-invalid]="registerForm.get('first_name')?.invalid && registerForm.get('first_name')?.touched">
+              </div>
+              <div class="invalid-feedback" *ngIf="registerForm.get('first_name')?.invalid && registerForm.get('first_name')?.touched">
+                Prénom requis
+              </div>
             </div>
 
-            <form [formGroup]="registerForm" (ngSubmit)="onSubmit()">
-              <!-- Personal Information -->
-              <div class="form-section">
-                <h5 class="section-title">
-                  <i class="bi bi-person"></i>
-                  Informations personnelles
-                </h5>
-                
-                <div class="row">
-                  <div class="col-md-6 mb-3">
-                    <label for="first_name" class="form-label">Prénom *</label>
-                    <input 
-                      type="text" 
-                      class="form-control" 
-                      id="first_name" 
-                      formControlName="first_name"
-                      [class.is-invalid]="registerForm.get('first_name')?.invalid && registerForm.get('first_name')?.touched">
-                    <div class="invalid-feedback">Prénom requis</div>
-                  </div>
-                  
-                  <div class="col-md-6 mb-3">
-                    <label for="last_name" class="form-label">Nom *</label>
-                    <input 
-                      type="text" 
-                      class="form-control" 
-                      id="last_name" 
-                      formControlName="last_name"
-                      [class.is-invalid]="registerForm.get('last_name')?.invalid && registerForm.get('last_name')?.touched">
-                    <div class="invalid-feedback">Nom requis</div>
-                  </div>
-                </div>
-
-                <div class="mb-3">
-                  <label for="email" class="form-label">Email *</label>
-                  <div class="input-group">
-                    <span class="input-group-text">
-                      <i class="bi bi-envelope"></i>
-                    </span>
-                    <input 
-                      type="email" 
-                      class="form-control" 
-                      id="email" 
-                      formControlName="email"
-                      [class.is-invalid]="registerForm.get('email')?.invalid && registerForm.get('email')?.touched">
-                  </div>
-                  <div class="invalid-feedback d-block" *ngIf="registerForm.get('email')?.invalid && registerForm.get('email')?.touched">
-                    Email valide requis
-                  </div>
-                </div>
-
-                <div class="mb-3">
-                  <label for="phone" class="form-label">Téléphone</label>
-                  <div class="input-group">
-                    <span class="input-group-text">
-                      <i class="bi bi-telephone"></i>
-                    </span>
-                    <input 
-                      type="tel" 
-                      class="form-control" 
-                      id="phone" 
-                      formControlName="phone"
-                      placeholder="+228 90 12 34 56">
-                  </div>
-                </div>
-
-                <div class="mb-3">
-                  <label for="password" class="form-label">Mot de passe *</label>
-                  <div class="input-group">
-                    <span class="input-group-text">
-                      <i class="bi bi-lock"></i>
-                    </span>
-                    <input 
-                      [type]="showPassword ? 'text' : 'password'"
-                      class="form-control" 
-                      id="password" 
-                      formControlName="password"
-                      [class.is-invalid]="registerForm.get('password')?.invalid && registerForm.get('password')?.touched">
-                    <button 
-                      class="btn btn-outline-secondary" 
-                      type="button"
-                      (click)="togglePasswordVisibility('password')">
-                      <i class="bi" [ngClass]="showPassword ? 'bi-eye-slash' : 'bi-eye'"></i>
-                    </button>
-                  </div>
-                  <div class="password-requirements mt-2">
-                    <small class="text-muted d-block mb-1">
-                      <i class="bi bi-info-circle"></i>
-                      Le mot de passe doit contenir :
-                    </small>
-                    <ul class="requirement-list">
-                      <li [class.valid]="hasMinLength()">
-                        <i class="bi" [ngClass]="hasMinLength() ? 'bi-check-circle text-success' : 'bi-circle'"></i>
-                        Au moins 8 caractères
-                      </li>
-                      <li [class.valid]="hasUpperCase()">
-                        <i class="bi" [ngClass]="hasUpperCase() ? 'bi-check-circle text-success' : 'bi-circle'"></i>
-                        Une lettre majuscule
-                      </li>
-                      <li [class.valid]="hasLowerCase()">
-                        <i class="bi" [ngClass]="hasLowerCase() ? 'bi-check-circle text-success' : 'bi-circle'"></i>
-                        Une lettre minuscule
-                      </li>
-                      <li [class.valid]="hasNumber()">
-                        <i class="bi" [ngClass]="hasNumber() ? 'bi-check-circle text-success' : 'bi-circle'"></i>
-                        Un chiffre
-                      </li>
-                      <li [class.valid]="hasSpecialChar()">
-                        <i class="bi" [ngClass]="hasSpecialChar() ? 'bi-check-circle text-success' : 'bi-circle'"></i>
-                        Un caractère spécial
-                      </li>
-                    </ul>
-                  </div>
-                </div>
-
-                <div class="mb-3">
-                  <label for="confirmPassword" class="form-label">Confirmer le mot de passe *</label>
-                  <div class="input-group">
-                    <span class="input-group-text">
-                      <i class="bi bi-lock-fill"></i>
-                    </span>
-                    <input 
-                      [type]="showConfirmPassword ? 'text' : 'password'"
-                      class="form-control" 
-                      id="confirmPassword" 
-                      formControlName="confirmPassword"
-                      [class.is-invalid]="(registerForm.get('confirmPassword')?.invalid && registerForm.get('confirmPassword')?.touched) || registerForm.hasError('passwordMismatch')">
-                    <button 
-                      class="btn btn-outline-secondary" 
-                      type="button"
-                      (click)="togglePasswordVisibility('confirmPassword')">
-                      <i class="bi" [ngClass]="showConfirmPassword ? 'bi-eye-slash' : 'bi-eye'"></i>
-                    </button>
-                  </div>
-                  <div class="invalid-feedback d-block" *ngIf="registerForm.hasError('passwordMismatch') && registerForm.get('confirmPassword')?.touched">
-                    <i class="bi bi-x-circle"></i>
-                    Les mots de passe ne correspondent pas
-                  </div>
-                  <div class="valid-feedback d-block" *ngIf="!registerForm.hasError('passwordMismatch') && registerForm.get('confirmPassword')?.value && registerForm.get('confirmPassword')?.touched">
-                    <i class="bi bi-check-circle"></i>
-                    Les mots de passe correspondent
-                  </div>
-                </div>
+            <div class="form-group">
+              <label for="last_name" class="form-label">Nom *</label>
+              <div class="input-wrapper">
+                <i class="bi bi-person"></i>
+                <input
+                  type="text"
+                  class="form-control"
+                  id="last_name"
+                  formControlName="last_name"
+                  placeholder="Dupont"
+                  [class.is-invalid]="registerForm.get('last_name')?.invalid && registerForm.get('last_name')?.touched">
               </div>
-
-              <!-- Account Type -->
-              <div class="form-section">
-                <h5 class="section-title">
-                  <i class="bi bi-grid"></i>
-                  Type de compte
-                </h5>
-                
-                <div class="mb-3">
-                  <div class="role-selection">
-                    <div class="role-option" 
-                         [class.selected]="registerForm.get('role')?.value === 'client'"
-                         (click)="selectRole('client')">
-                      <i class="bi bi-person"></i>
-                      <div class="role-info">
-                        <strong>Client</strong>
-                        <small>Commander et réserver</small>
-                      </div>
-                      <i class="bi bi-check-circle-fill check-icon" *ngIf="registerForm.get('role')?.value === 'client'"></i>
-                    </div>
-
-                    <div class="role-option" 
-                         [class.selected]="registerForm.get('role')?.value === 'restaurant'"
-                         (click)="selectRole('restaurant')">
-                      <i class="bi bi-building"></i>
-                      <div class="role-info">
-                        <strong>Restaurant</strong>
-                        <small>Gérer mon restaurant</small>
-                      </div>
-                      <i class="bi bi-check-circle-fill check-icon" *ngIf="registerForm.get('role')?.value === 'restaurant'"></i>
-                    </div>
-
-                    <div class="role-option" 
-                         [class.selected]="registerForm.get('role')?.value === 'traiteur'"
-                         (click)="selectRole('traiteur')">
-                      <i class="bi bi-cake2"></i>
-                      <div class="role-info">
-                        <strong>Traiteur</strong>
-                        <small>Gérer mon service traiteur</small>
-                      </div>
-                      <i class="bi bi-check-circle-fill check-icon" *ngIf="registerForm.get('role')?.value === 'traiteur'"></i>
-                    </div>
-                  </div>
-                  <div class="invalid-feedback d-block" *ngIf="registerForm.get('role')?.invalid && registerForm.get('role')?.touched">
-                    Veuillez sélectionner un type de compte
-                  </div>
-                </div>
+              <div class="invalid-feedback" *ngIf="registerForm.get('last_name')?.invalid && registerForm.get('last_name')?.touched">
+                Nom requis
               </div>
+            </div>
+          </div>
 
-              <!-- Business Information (conditional) -->
-              <div class="form-section" *ngIf="showBusinessFields">
-                <h5 class="section-title">
-                  <i class="bi bi-shop"></i>
-                  Informations établissement
-                </h5>
-                
-                <div class="mb-3">
-                  <label for="business_name" class="form-label">Nom de l'établissement *</label>
-                  <div class="input-group">
-                    <span class="input-group-text">
-                      <i class="bi bi-shop-window"></i>
-                    </span>
-                    <input 
-                      type="text" 
-                      class="form-control" 
-                      id="business_name" 
-                      formControlName="business_name"
-                      [class.is-invalid]="registerForm.get('business_name')?.invalid && registerForm.get('business_name')?.touched"
-                      placeholder="Mon Restaurant / Mon Service Traiteur">
-                  </div>
-                  <div class="invalid-feedback d-block" *ngIf="registerForm.get('business_name')?.invalid && registerForm.get('business_name')?.touched">
-                    Nom de l'établissement requis
-                  </div>
-                </div>
-              </div>
+          <!-- Email -->
+          <div class="form-group">
+            <label for="email" class="form-label">Email *</label>
+            <div class="input-wrapper">
+              <i class="bi bi-envelope"></i>
+              <input
+                type="email"
+                class="form-control"
+                id="email"
+                formControlName="email"
+                placeholder="votre@email.com"
+                [class.is-invalid]="registerForm.get('email')?.invalid && registerForm.get('email')?.touched">
+            </div>
+            <div class="invalid-feedback" *ngIf="registerForm.get('email')?.invalid && registerForm.get('email')?.touched">
+              Email valide requis
+            </div>
+          </div>
 
-              <button 
-                type="submit" 
-                class="btn btn-primary btn-lg w-100 mt-4" 
-                [disabled]="registerForm.invalid || loading">
-                <span *ngIf="loading" class="spinner-border spinner-border-sm me-2"></span>
-                <i class="bi bi-check-circle" *ngIf="!loading"></i>
-                {{ loading ? 'Inscription en cours...' : 'S\'inscrire' }}
+          <!-- Téléphone -->
+          <div class="form-group">
+            <label for="phone" class="form-label">
+              Téléphone
+              <span class="label-optional">optionnel</span>
+            </label>
+            <div class="input-wrapper">
+              <i class="bi bi-telephone"></i>
+              <input
+                type="tel"
+                class="form-control"
+                id="phone"
+                formControlName="phone"
+                placeholder="+228 90 12 34 56">
+            </div>
+          </div>
+
+          <!-- Mot de passe -->
+          <div class="form-group">
+            <label for="password" class="form-label">Mot de passe *</label>
+            <div class="input-wrapper">
+              <i class="bi bi-lock"></i>
+              <input
+                [type]="showPassword ? 'text' : 'password'"
+                class="form-control toggle-present"
+                id="password"
+                formControlName="password"
+                placeholder="Minimum 8 caractères"
+                [class.is-invalid]="registerForm.get('password')?.invalid && registerForm.get('password')?.touched">
+              <button type="button" class="toggle-password"
+                (click)="togglePasswordVisibility('password')" tabindex="-1">
+                <i class="bi" [class.bi-eye]="!showPassword" [class.bi-eye-slash]="showPassword"></i>
               </button>
-            </form>
+            </div>
 
-            <div class="register-footer mt-4">
-              <p class="text-center mb-2">Vous avez déjà un compte ?</p>
-              <a routerLink="/login" class="btn btn-outline-primary w-100">
-                <i class="bi bi-box-arrow-in-right"></i>
-                Se connecter
-              </a>
+            <!-- Indicateurs force mot de passe -->
+            <div class="password-strength" *ngIf="registerForm.get('password')?.value">
+              <div class="strength-bars">
+                <div class="bar" [class.active]="hasMinLength()"></div>
+                <div class="bar" [class.active]="hasUpperCase()"></div>
+                <div class="bar" [class.active]="hasLowerCase()"></div>
+                <div class="bar" [class.active]="hasNumber()"></div>
+                <div class="bar" [class.active]="hasSpecialChar()"></div>
+              </div>
+              <div class="req-list">
+                <span class="req" [class.valid]="hasMinLength()">
+                  <i class="bi" [class.bi-check-circle-fill]="hasMinLength()" [class.bi-circle]="!hasMinLength()"></i>
+                  8 caractères
+                </span>
+                <span class="req" [class.valid]="hasUpperCase()">
+                  <i class="bi" [class.bi-check-circle-fill]="hasUpperCase()" [class.bi-circle]="!hasUpperCase()"></i>
+                  Majuscule
+                </span>
+                <span class="req" [class.valid]="hasLowerCase()">
+                  <i class="bi" [class.bi-check-circle-fill]="hasLowerCase()" [class.bi-circle]="!hasLowerCase()"></i>
+                  Minuscule
+                </span>
+                <span class="req" [class.valid]="hasNumber()">
+                  <i class="bi" [class.bi-check-circle-fill]="hasNumber()" [class.bi-circle]="!hasNumber()"></i>
+                  Chiffre
+                </span>
+                <span class="req" [class.valid]="hasSpecialChar()">
+                  <i class="bi" [class.bi-check-circle-fill]="hasSpecialChar()" [class.bi-circle]="!hasSpecialChar()"></i>
+                  Spécial
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Confirmer mot de passe -->
+          <div class="form-group">
+            <label for="confirmPassword" class="form-label">Confirmer le mot de passe *</label>
+            <div class="input-wrapper">
+              <i class="bi bi-lock-fill"></i>
+              <input
+                [type]="showConfirmPassword ? 'text' : 'password'"
+                class="form-control toggle-present"
+                id="confirmPassword"
+                formControlName="confirmPassword"
+                placeholder="Répétez votre mot de passe"
+                [class.is-invalid]="registerForm.hasError('passwordMismatch') && registerForm.get('confirmPassword')?.touched">
+              <button type="button" class="toggle-password"
+                (click)="togglePasswordVisibility('confirmPassword')" tabindex="-1">
+                <i class="bi" [class.bi-eye]="!showConfirmPassword" [class.bi-eye-slash]="showConfirmPassword"></i>
+              </button>
+            </div>
+            <div class="invalid-feedback"
+              *ngIf="registerForm.hasError('passwordMismatch') && registerForm.get('confirmPassword')?.touched">
+              Les mots de passe ne correspondent pas
+            </div>
+            <div class="valid-msg"
+              *ngIf="!registerForm.hasError('passwordMismatch') && registerForm.get('confirmPassword')?.value && registerForm.get('confirmPassword')?.touched">
+              <i class="bi bi-check-circle-fill"></i>
+              Les mots de passe correspondent
             </div>
           </div>
         </div>
+
+        <!-- ── SECTION 2 : Type de compte ── -->
+        <div class="form-section">
+          <div class="section-title">
+            <span class="section-num">2</span>
+            <span>Type de compte</span>
+          </div>
+
+          <div class="role-grid">
+
+            <div class="role-card"
+              [class.selected]="registerForm.get('role')?.value === 'client'"
+              (click)="selectRole('client')">
+              <div class="role-icon client">
+                <i class="bi bi-person-fill"></i>
+              </div>
+              <div class="role-info">
+                <strong>Client</strong>
+                <small>Commander & réserver</small>
+              </div>
+              <div class="role-check" *ngIf="registerForm.get('role')?.value === 'client'">
+                <i class="bi bi-check-circle-fill"></i>
+              </div>
+            </div>
+
+            <div class="role-card"
+              [class.selected]="registerForm.get('role')?.value === 'restaurant'"
+              (click)="selectRole('restaurant')">
+              <div class="role-icon restaurant">
+                <i class="bi bi-building-fill"></i>
+              </div>
+              <div class="role-info">
+                <strong>Restaurant</strong>
+                <small>Gérer mon établissement</small>
+              </div>
+              <div class="role-check" *ngIf="registerForm.get('role')?.value === 'restaurant'">
+                <i class="bi bi-check-circle-fill"></i>
+              </div>
+            </div>
+
+            <div class="role-card"
+              [class.selected]="registerForm.get('role')?.value === 'traiteur'"
+              (click)="selectRole('traiteur')">
+              <div class="role-icon traiteur">
+                <i class="bi bi-cake2-fill"></i>
+              </div>
+              <div class="role-info">
+                <strong>Traiteur</strong>
+                <small>Gérer mon service</small>
+              </div>
+              <div class="role-check" *ngIf="registerForm.get('role')?.value === 'traiteur'">
+                <i class="bi bi-check-circle-fill"></i>
+              </div>
+            </div>
+
+          </div>
+
+          <div class="invalid-feedback d-block"
+            *ngIf="registerForm.get('role')?.invalid && registerForm.get('role')?.touched">
+            Veuillez sélectionner un type de compte
+          </div>
+        </div>
+
+        <!-- ── SECTION 3 : Établissement (conditionnel) ── -->
+        <div class="form-section anim-fadein" *ngIf="showBusinessFields">
+          <div class="section-title">
+            <span class="section-num">3</span>
+            <span>Informations établissement</span>
+          </div>
+
+          <div class="form-group">
+            <label for="business_name" class="form-label">Nom de l'établissement *</label>
+            <div class="input-wrapper">
+              <i class="bi bi-shop-window"></i>
+              <input
+                type="text"
+                class="form-control"
+                id="business_name"
+                formControlName="business_name"
+                placeholder="Ex : Chez Marie, Traiteur Excellence..."
+                [class.is-invalid]="registerForm.get('business_name')?.invalid && registerForm.get('business_name')?.touched">
+            </div>
+            <div class="invalid-feedback"
+              *ngIf="registerForm.get('business_name')?.invalid && registerForm.get('business_name')?.touched">
+              Nom de l'établissement requis
+            </div>
+          </div>
+
+          <div class="business-info-note">
+            <i class="bi bi-info-circle"></i>
+            <span>Un email de vérification vous sera envoyé pour activer votre compte.</span>
+          </div>
+        </div>
+
+        <!-- Submit -->
+        <button type="submit" class="btn-register-submit" [disabled]="registerForm.invalid || loading">
+          <span *ngIf="loading" class="spinner-border spinner-border-sm"></span>
+          <i *ngIf="!loading" class="bi bi-person-check-fill"></i>
+          {{ loading ? 'Inscription en cours...' : 'Créer mon compte' }}
+        </button>
+
+      </form>
+
+      <!-- Footer -->
+      <div class="card-footer-register">
+        <p>Vous avez déjà un compte ?</p>
+        <a routerLink="/login" class="btn-login-link">
+          <i class="bi bi-box-arrow-in-right"></i>
+          Se connecter
+        </a>
       </div>
+
     </div>
   </div>
 </div>

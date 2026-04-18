@@ -1,334 +1,182 @@
-<!-- menu-items-modal.component.html - VERSION MOBILE-FIRST AMÉLIORÉE -->
-<div class="modal" [class.show]="show" [style.display]="show ? 'block' : 'none'">
-    <div class="modal-dialog modal-lg modal-dialog-scrollable">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h5 class="modal-title">
-              <i class="bi bi-list-ul"></i>
-              <span class="d-none d-md-inline">Gérer les items - </span>{{ menu?.name }}
-            </h5>
-            <button type="button" class="btn-close" (click)="close()"></button>
+<!-- menu-items-modal.component.html -->
+<div class="mim-overlay" [class.on]="show" (click)="close()">
+  <div class="mim-box" (click)="$event.stopPropagation()">
+
+    <!-- ── En-tête ──────────────────────────────────────────── -->
+    <div class="mim-head">
+      <div class="mim-head-left">
+        <div class="mim-head-icon"><i class="bi bi-list-ul"></i></div>
+        <div>
+          <h4>{{ menu?.name }}</h4>
+          <span class="mim-count">{{ items.length }} article{{ items.length > 1 ? 's' : '' }}</span>
+        </div>
+      </div>
+      <button class="mim-close" (click)="close()"><i class="bi bi-x-lg"></i></button>
+    </div>
+
+    <!-- ════════════════════════════════════════════════════════
+         FORMULAIRE — haut de la modal, ne scrolle pas
+         ✅ #formRef : utilisé par le TS pour scrollIntoView mobile
+    ═════════════════════════════════════════════════════════ -->
+    <div class="mim-form-section" *ngIf="showForm" #formRef>
+
+      <div class="mim-form-header">
+        <i class="bi" [ngClass]="isEditing ? 'bi-pencil-fill' : 'bi-plus-circle-fill'"></i>
+        <span>{{ isEditing ? 'Modifier « ' + editingItem!.name + ' »' : 'Nouvel article' }}</span>
+        <button class="mim-form-close" (click)="closeForm()">
+          <i class="bi bi-x-lg"></i>
+        </button>
+      </div>
+
+      <form [formGroup]="itemForm" (ngSubmit)="saveItem()" class="mim-form">
+
+        <!-- Nom + Prix -->
+        <div class="mim-f-row">
+          <div class="mim-f-grp" style="flex:2">
+            <label class="mim-lbl"><i class="bi bi-type"></i> Nom *</label>
+            <input type="text" class="mim-inp" formControlName="name"
+              placeholder="Ex: Poulet braisé…"
+              [class.bad]="itemForm.get('name')?.invalid && itemForm.get('name')?.touched">
+            <span class="mim-err"
+              *ngIf="itemForm.get('name')?.invalid && itemForm.get('name')?.touched">
+              Minimum 2 caractères requis
+            </span>
           </div>
-
-          <div class="modal-body">
-            <!-- Bouton Ajouter Item -->
-            <div class="mb-3">
-              <button class="btn btn-primary w-100 w-md-auto" (click)="showItemForm()">
-                <i class="bi bi-plus-circle"></i>
-                Ajouter un item
-              </button>
-            </div>
-
-            <!-- Formulaire d'item -->
-            <div *ngIf="showForm" class="item-form mb-4">
-              <form [formGroup]="itemForm" (ngSubmit)="saveItem()">
-                <div class="row">
-                  <!-- NOM avec validation inline -->
-                  <div class="col-12 col-md-6 mb-3">
-                    <label class="form-label">
-                      Nom <span class="text-danger">*</span>
-                    </label>
-                    <input 
-                      type="text" 
-                      class="form-control" 
-                      formControlName="name"
-                      placeholder="Ex: Pizza Margherita"
-                      [class.is-invalid]="itemForm.get('name')?.invalid && itemForm.get('name')?.touched">
-                    <div class="invalid-feedback" *ngIf="itemForm.get('name')?.invalid && itemForm.get('name')?.touched">
-                      <i class="bi bi-exclamation-circle me-1"></i>
-                      {{ getFieldError('name') }}
-                    </div>
-                    <small class="text-muted" *ngIf="!itemForm.get('name')?.invalid || !itemForm.get('name')?.touched">
-                      <i class="bi bi-info-circle me-1"></i>
-                      Minimum 3 caractères
-                    </small>
-                  </div>
-
-                  <!-- PRIX avec validation inline -->
-                  <div class="col-12 col-md-6 mb-3">
-                    <label class="form-label">
-                      Prix (FCFA) <span class="text-danger">*</span>
-                    </label>
-                    <input 
-                      type="number" 
-                      class="form-control" 
-                      formControlName="price"
-                      placeholder="5000"
-                      [class.is-invalid]="itemForm.get('price')?.invalid && itemForm.get('price')?.touched">
-                    <div class="invalid-feedback" *ngIf="itemForm.get('price')?.invalid && itemForm.get('price')?.touched">
-                      <i class="bi bi-exclamation-circle me-1"></i>
-                      {{ getFieldError('price') }}
-                    </div>
-                  </div>
-
-                  <!-- CATÉGORIE -->
-                  <div class="col-12 col-md-6 mb-3">
-                    <label class="form-label">Catégorie</label>
-                    <select class="form-select" formControlName="category">
-                      <option value="">Sélectionner une catégorie</option>
-                      <option value="entree">Entrée</option>
-                      <option value="plat">Plat principal</option>
-                      <option value="dessert">Dessert</option>
-                      <option value="boisson">Boisson</option>
-                      <option value="accompagnement">Accompagnement</option>
-                    </select>
-                  </div>
-
-                  <!-- IMAGE - MODE SÉLECTION -->
-                  <div class="col-12 col-md-6 mb-3">
-                    <label class="form-label">Image</label>
-                    <div class="btn-group w-100 mb-2" role="group">
-                      <button 
-                        type="button" 
-                        class="btn"
-                        [class.btn-primary]="uploadMode === 'url'"
-                        [class.btn-outline-primary]="uploadMode !== 'url'"
-                        (click)="toggleUploadMode('url')">
-                        <i class="bi bi-link-45deg"></i>
-                        <span class="d-none d-sm-inline ms-1">URL</span>
-                      </button>
-                      <button 
-                        type="button" 
-                        class="btn"
-                        [class.btn-primary]="uploadMode === 'file'"
-                        [class.btn-outline-primary]="uploadMode !== 'file'"
-                        (click)="toggleUploadMode('file')">
-                        <i class="bi bi-upload"></i>
-                        <span class="d-none d-sm-inline ms-1">Fichier</span>
-                      </button>
-                    </div>
-
-                    <!-- Mode URL -->
-                    <div *ngIf="uploadMode === 'url'">
-                      <input 
-                        type="url" 
-                        class="form-control" 
-                        formControlName="image_url"
-                        placeholder="https://exemple.com/image.jpg">
-                    </div>
-
-                    <!-- Mode Fichier -->
-                    <div *ngIf="uploadMode === 'file'">
-                      <input 
-                        type="file" 
-                        class="form-control" 
-                        accept="image/*"
-                        (change)="onFileSelected($event)">
-                      <small class="text-muted d-block mt-1">
-                        <i class="bi bi-info-circle"></i>
-                        Formats: JPEG, PNG, WebP, GIF (max 5MB)
-                      </small>
-                    </div>
-
-                    <!-- Prévisualisation de l'image -->
-                    <div *ngIf="imagePreview" class="mt-3">
-                      <div class="image-preview-wrapper">
-                        <img 
-                          [src]="imagePreview" 
-                          alt="Aperçu" 
-                          class="image-preview">
-                      </div>
-                      <button 
-                        type="button" 
-                        class="btn btn-sm btn-outline-danger mt-2 w-100"
-                        (click)="resetImageUpload()">
-                        <i class="bi bi-x-circle"></i>
-                        Supprimer l'image
-                      </button>
-                    </div>
-                  </div>
-
-                  <!-- DESCRIPTION -->
-                  <div class="col-12 mb-3">
-                    <label class="form-label">Description</label>
-                    <textarea 
-                      class="form-control" 
-                      formControlName="description"
-                      rows="3"
-                      placeholder="Décrivez cet item (ingrédients, allergènes, etc.)"></textarea>
-                    <small class="text-muted">
-                      <i class="bi bi-info-circle me-1"></i>
-                      Optionnel mais recommandé
-                    </small>
-                  </div>
-
-                  <!-- DISPONIBILITÉ -->
-                  <div class="col-12 mb-3">
-                    <div class="form-check form-switch">
-                      <input 
-                        class="form-check-input" 
-                        type="checkbox" 
-                        role="switch"
-                        id="itemAvailable" 
-                        formControlName="is_available">
-                      <label class="form-check-label" for="itemAvailable">
-                        <strong>Disponible</strong>
-                        <small class="text-muted d-block">L'item sera visible et commandable par les clients</small>
-                      </label>
-                    </div>
-                  </div>
-                </div>
-
-                <!-- Boutons d'action -->
-                <div class="d-flex flex-column flex-sm-row gap-2 mt-4">
-                  <button 
-                    type="submit" 
-                    class="btn btn-primary btn-lg flex-grow-1" 
-                    [disabled]="loading || uploadingImage">
-                    <span *ngIf="loading || uploadingImage" class="spinner-border spinner-border-sm me-2"></span>
-                    <i class="bi bi-check-circle" *ngIf="!loading && !uploadingImage"></i>
-                    {{ uploadingImage ? 'Upload...' : (loading ? 'Enregistrement...' : (editingItem ? 'Mettre à jour' : 'Ajouter')) }}
-                  </button>
-                  <button 
-                    type="button" 
-                    class="btn btn-secondary btn-lg" 
-                    (click)="cancelForm()"
-                    [disabled]="loading || uploadingImage">
-                    <i class="bi bi-x-circle"></i>
-                    Annuler
-                  </button>
-                </div>
-              </form>
-            </div>
-
-            <!-- ✅ LISTE DES ITEMS - VERSION MOBILE-FIRST -->
-            <div class="items-list">
-              <div *ngIf="items.length === 0" class="empty-state">
-                <i class="bi bi-inbox"></i>
-                <h5>Aucun item dans ce menu</h5>
-                <p class="text-muted">Cliquez sur "Ajouter un item" pour commencer</p>
-              </div>
-
-              <!-- ✅ VERSION DESKTOP (TABLE) -->
-              <div class="table-responsive d-none d-lg-block" *ngIf="items.length > 0">
-                <table class="table table-hover">
-                  <thead>
-                    <tr>
-                      <th style="width: 80px;">Image</th>
-                      <th>Nom</th>
-                      <th style="width: 130px;">Catégorie</th>
-                      <th style="width: 120px;">Prix</th>
-                      <th style="width: 130px;">Statut</th>
-                      <th style="width: 120px;">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <tr *ngFor="let item of items">
-                      <td>
-                        <img 
-                          *ngIf="item.image_url" 
-                          [src]="item.image_url" 
-                          alt="{{ item.name }}"
-                          class="item-thumb"
-                          (error)="onImageError($event)">
-                        <div *ngIf="!item.image_url" class="item-thumb-placeholder">
-                          <i class="bi bi-image"></i>
-                        </div>
-                      </td>
-                      <td>
-                        <strong>{{ item.name }}</strong>
-                        <br>
-                        <small class="text-muted">{{ item.description | slice:0:50 }}{{ item.description && item.description.length > 50 ? '...' : '' }}</small>
-                      </td>
-                      <td>
-                        <span class="badge bg-secondary">{{ getCategoryLabel(item.category) }}</span>
-                      </td>
-                      <td class="fw-bold">{{ item.price | number:'1.0-0' }} FCFA</td>
-                      <td>
-                        <span class="badge" [ngClass]="item.is_available ? 'bg-success' : 'bg-danger'">
-                          <i [class]="item.is_available ? 'bi bi-check-circle' : 'bi bi-x-circle'"></i>
-                          {{ item.is_available ? 'Disponible' : 'Indisponible' }}
-                        </span>
-                      </td>
-                      <td>
-                        <div class="btn-group btn-group-sm">
-                          <button 
-                            class="btn btn-outline-primary" 
-                            (click)="editItem(item)"
-                            title="Modifier">
-                            <i class="bi bi-pencil"></i>
-                          </button>
-                          <button 
-                            class="btn btn-outline-danger" 
-                            (click)="confirmDeleteItem(item.id!)"
-                            title="Supprimer">
-                            <i class="bi bi-trash"></i>
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-
-              <!-- ✅ VERSION MOBILE & TABLETTE (CARDS) -->
-              <div class="d-lg-none" *ngIf="items.length > 0">
-                <div class="item-card" *ngFor="let item of items">
-                  <!-- En-tête de la carte -->
-                  <div class="item-card-header">
-                    <div class="item-card-image">
-                      <img 
-                        *ngIf="item.image_url" 
-                        [src]="item.image_url" 
-                        alt="{{ item.name }}"
-                        (error)="onImageError($event)">
-                      <div *ngIf="!item.image_url" class="item-card-placeholder">
-                        <i class="bi bi-image"></i>
-                      </div>
-                    </div>
-                    <div class="item-card-info">
-                      <h6 class="item-card-name">{{ item.name }}</h6>
-                      <span class="badge" [ngClass]="item.is_available ? 'bg-success' : 'bg-danger'">
-                        <i [class]="item.is_available ? 'bi bi-check-circle' : 'bi bi-x-circle'"></i>
-                        {{ item.is_available ? 'Disponible' : 'Indisponible' }}
-                      </span>
-                    </div>
-                  </div>
-
-                  <!-- Corps de la carte -->
-                  <div class="item-card-body">
-                    <div class="item-card-meta">
-                      <div class="meta-item">
-                        <i class="bi bi-tag"></i>
-                        <span class="badge bg-secondary">{{ getCategoryLabel(item.category) }}</span>
-                      </div>
-                      <div class="meta-item">
-                        <i class="bi bi-cash"></i>
-                        <span class="fw-bold text-primary">{{ item.price | number:'1.0-0' }} FCFA</span>
-                      </div>
-                    </div>
-                    <p class="item-card-description" *ngIf="item.description">
-                      {{ item.description | slice:0:100 }}{{ item.description && item.description.length > 100 ? '...' : '' }}
-                    </p>
-                  </div>
-
-                  <!-- ✅ ACTIONS EN BAS (TOUJOURS VISIBLES SUR MOBILE) -->
-                  <div class="item-card-actions">
-                    <button 
-                      class="btn btn-outline-primary btn-sm flex-grow-1" 
-                      (click)="editItem(item)">
-                      <i class="bi bi-pencil"></i>
-                      Modifier
-                    </button>
-                    <button 
-                      class="btn btn-outline-danger btn-sm" 
-                      (click)="confirmDeleteItem(item.id!)">
-                      <i class="bi bi-trash"></i>
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div class="modal-footer">
-            <button type="button" class="btn btn-secondary w-100 w-md-auto" (click)="close()">
-              <i class="bi bi-x-lg"></i>
-              Fermer
-            </button>
+          <div class="mim-f-grp" style="flex:1">
+            <label class="mim-lbl"><i class="bi bi-currency-exchange"></i> Prix (FCFA) *</label>
+            <input type="number" class="mim-inp" formControlName="price"
+              placeholder="0" min="0" step="100"
+              [class.bad]="itemForm.get('price')?.invalid && itemForm.get('price')?.touched">
+            <span class="mim-err"
+              *ngIf="itemForm.get('price')?.invalid && itemForm.get('price')?.touched">
+              Prix invalide
+            </span>
           </div>
         </div>
+
+        <!-- Description -->
+        <div class="mim-f-grp">
+          <label class="mim-lbl"><i class="bi bi-card-text"></i> Description</label>
+          <textarea class="mim-inp" formControlName="description" rows="2"
+            placeholder="Ingrédients, composition, allergènes…"></textarea>
+        </div>
+
+        <!-- Catégorie + Disponibilité -->
+        <div class="mim-f-row">
+          <div class="mim-f-grp" style="flex:2">
+            <label class="mim-lbl"><i class="bi bi-tag"></i> Catégorie</label>
+            <select class="mim-inp" formControlName="category">
+              <option value="">— Aucune catégorie —</option>
+              <option *ngFor="let cat of CATEGORIES" [value]="cat">{{ cat }}</option>
+            </select>
+          </div>
+          <div class="mim-f-grp mim-avail-toggle" style="flex:1">
+            <label class="mim-lbl"><i class="bi bi-circle-fill"></i> Disponible</label>
+            <label class="mim-switch">
+              <input type="checkbox" formControlName="is_available">
+              <span class="mim-slider"></span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Actions formulaire -->
+        <div class="mim-form-acts">
+          <button type="button" class="mim-btn-ghost" (click)="closeForm()" [disabled]="saving">
+            Annuler
+          </button>
+          <button type="submit" class="mim-btn-primary" [disabled]="saving || itemForm.invalid">
+            <span *ngIf="saving" class="spinner-border spinner-border-sm"></span>
+            <i class="bi" [ngClass]="isEditing ? 'bi-floppy-fill' : 'bi-plus-circle-fill'"
+              *ngIf="!saving"></i>
+            {{ saving ? 'Enregistrement…' : (isEditing ? 'Enregistrer' : 'Ajouter') }}
+          </button>
+        </div>
+
+      </form>
     </div>
-    
+
+    <!-- ════════════════════════════════════════════════════════
+         LISTE DES ARTICLES — zone scrollable uniquement
+         ✅ #bodyRef : utilisé par le TS pour scrollTop = 0 mobile
+    ═════════════════════════════════════════════════════════ -->
+    <div class="mim-body" #bodyRef>
+
+      <div class="mim-loader" *ngIf="loading">
+        <div class="spinner-border"></div>
+        <p>Chargement des articles…</p>
+      </div>
+
+      <ng-container *ngIf="!loading">
+
+        <ng-container *ngIf="items.length > 0">
+          <ng-container *ngFor="let cat of usedCategories">
+
+            <div class="mim-cat-label">
+              <i class="bi bi-tag-fill"></i> {{ cat }}
+              <span class="mim-cat-count">({{ getCategoryItems(cat).length }})</span>
+            </div>
+
+            <div class="mim-item"
+              *ngFor="let item of getCategoryItems(cat); trackBy: trackById"
+              [class.editing]="editingItem?.id === item.id"
+              [class.deleting]="deletingId === item.id">
+
+              <div class="mim-avail-dot" [class.on]="item.is_available !== false"
+                [title]="item.is_available !== false ? 'Disponible' : 'Indisponible'">
+              </div>
+
+              <div class="mim-item-body">
+                <div class="mim-item-name">{{ item.name }}</div>
+                <div class="mim-item-desc" *ngIf="item.description">{{ item.description }}</div>
+              </div>
+
+              <div class="mim-item-price">
+                {{ formatPrice(item.price) }}&nbsp;<small>FCFA</small>
+              </div>
+
+              <div class="mim-item-acts">
+                <button class="mim-btn edit"
+                  [class.active]="editingItem?.id === item.id"
+                  (click)="openEditForm(item)"
+                  [title]="editingItem?.id === item.id ? 'Fermer' : 'Modifier'">
+                  <i class="bi"
+                    [ngClass]="editingItem?.id === item.id ? 'bi-x-lg' : 'bi-pencil-fill'">
+                  </i>
+                </button>
+                <button class="mim-btn delete"
+                  (click)="deleteItem(item)"
+                  [disabled]="deletingId === item.id"
+                  title="Supprimer">
+                  <span *ngIf="deletingId === item.id" class="spinner-border spinner-border-sm"></span>
+                  <i class="bi bi-trash3-fill" *ngIf="deletingId !== item.id"></i>
+                </button>
+              </div>
+            </div>
+
+          </ng-container>
+        </ng-container>
+
+        <div class="mim-empty" *ngIf="items.length === 0">
+          <i class="bi bi-journal-x"></i>
+          <p>Aucun article dans ce menu</p>
+          <span>Cliquez sur « Ajouter un article » pour commencer</span>
+        </div>
+
+      </ng-container>
+    </div><!-- /mim-body -->
+
+    <!-- ── Pied ──────────────────────────────────────────────── -->
+    <div class="mim-foot">
+      <button class="mim-btn-ghost" (click)="close()">
+        <i class="bi bi-arrow-left"></i> Fermer
+      </button>
+      <button class="mim-btn-primary"
+        (click)="showForm && !isEditing ? closeForm() : openNewForm()"
+        [disabled]="loading">
+        <i class="bi" [ngClass]="showForm && !isEditing ? 'bi-x-lg' : 'bi-plus-lg'"></i>
+        {{ showForm && !isEditing ? 'Annuler' : 'Ajouter un article' }}
+      </button>
+    </div>
+
+  </div>
 </div>
-<div class="modal-backdrop fade" [class.show]="show" *ngIf="show"></div>

@@ -31,7 +31,7 @@ export class ChatWidgetComponent implements OnInit, OnDestroy {
   isOpen = false;
   showConversationList = true;
   currentUser: any;
-  isHomePage: boolean = false; // ✅ NOUVELLE PROPRIÉTÉ
+  isHomePage: boolean = false;
   
   conversations: any[] = [];
   selectedConversation: any = null;
@@ -60,7 +60,7 @@ export class ChatWidgetComponent implements OnInit, OnDestroy {
     private chatService: ChatService,
     private authService: AuthService,
     private cdr: ChangeDetectorRef,
-    private router: Router // ✅ INJECTION DU ROUTER
+    private router: Router
   ) {}
 
   ngOnInit(): void {
@@ -264,10 +264,23 @@ export class ChatWidgetComponent implements OnInit, OnDestroy {
     const currentUrl = this.router.url;
     
     // Masquer le bouton flottant sur la page home SEULEMENT si le chat n'est PAS ouvert
-    const hideChatPages = ['/'];
+    const hideChatPages = [
+      '/', 
+      '/login', 
+      '/register', 
+      '/admin/login', 
+      '/business/login', 
+      '/contact', 
+      '/about', 
+      '/faq', 
+      '/legal'
+    ];
     
-    const isOnHiddenPage = hideChatPages.some(page => 
-      currentUrl === page || currentUrl.startsWith(page + '?') || currentUrl.startsWith(page + '#')
+    const isOnHiddenPage = hideChatPages.some(page =>
+      currentUrl === page ||
+      currentUrl.startsWith(page + '/') ||
+      currentUrl.startsWith(page + '?') ||
+      currentUrl.startsWith(page + '#')
     );
     
     // Si on est sur une page cachée ET que le chat n'est pas ouvert, masquer le bouton

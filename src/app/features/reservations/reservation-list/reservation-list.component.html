@@ -1,30 +1,67 @@
-<div class="reservation-list">
-      <div class="table-responsive">
-        <table class="table">
-          <thead>
-            <tr>
-              <th>ID</th>
-              <th>Client</th>
-              <th>Date</th>
-              <th>Heure</th>
-              <th>Personnes</th>
-              <th>Statut</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr *ngFor="let reservation of reservations">
-              <td>{{ reservation.id }}</td>
-              <td>{{ reservation.client_name }}</td>
-              <td>{{ reservation.reservation_date | date:'shortDate' }}</td>
-              <td>{{ reservation.time_slot }}</td>
-              <td>{{ reservation.number_of_people }}</td>
-              <td>
-                <span class="badge bg-{{ getStatusColor(reservation.status) }}">
-                  {{ reservation.status }}
-                </span>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
+<div class="rl-container">
+
+  <!-- Empty state -->
+  <div *ngIf="!reservations || reservations.length === 0" class="rl-empty">
+    <div class="rl-empty-icon">
+      <i class="bi bi-calendar-x"></i>
     </div>
+    <h5>Aucune réservation</h5>
+    <p>Les réservations de vos clients apparaîtront ici.</p>
+  </div>
+
+  <!-- Table -->
+  <div *ngIf="reservations && reservations.length > 0" class="rl-table-wrap">
+    <table class="rl-table">
+      <thead>
+        <tr>
+          <th>N°</th>
+          <th>Client</th>
+          <th>Date</th>
+          <th>Heure</th>
+          <th><i class="bi bi-people-fill me-1"></i>Personnes</th>
+          <th>Statut</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let r of reservations">
+          <td>
+            <code class="rl-id">#{{ r.id }}</code>
+          </td>
+          <td>
+            <div class="rl-client">
+              <!-- ✅ CORRECTION 2 : ?. → . car client_name n'est pas nullable -->
+              <div class="rl-avatar">{{ r.client_name.charAt(0).toUpperCase() || '?' }}</div>
+              <span>{{ r.client_name }}</span>
+            </div>
+          </td>
+          <td>
+            <div class="rl-date">
+              <i class="bi bi-calendar3"></i>
+              {{ r.reservation_date | date:'dd/MM/yyyy' }}
+            </div>
+          </td>
+          <td>
+            <div class="rl-time">
+              <i class="bi bi-clock"></i>
+              {{ r.time_slot }}
+            </div>
+          </td>
+          <td>
+            <div class="rl-people">
+              <i class="bi bi-people"></i>
+              {{ r.number_of_people }}
+            </div>
+          </td>
+          <td>
+            <span class="rl-badge" [ngClass]="'rl-badge--' + getStatusColor(r.status)">
+              <span class="rl-badge-dot"></span>
+              <!-- ✅ CORRECTION 1 : appel direct — getStatusLabel est toujours défini -->
+              {{ getStatusLabel(r.status) }}
+            </span>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+</div>

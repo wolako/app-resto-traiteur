@@ -12,5 +12,5 @@ export class TermsOfSaleComponent {
   lastUpdated: string = 'Février 2026';
   company = { name: 'RestoTraiteur', email: 'support@restotraiteur.com' };
   
-  paymentMethods = ['T-Money', 'Flooz'];
+  paymentMethods = ['Mixx By Yas', 'Flooz'];
 }

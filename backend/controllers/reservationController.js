@@ -1,7 +1,7 @@
 const Reservation = require('../models/Reservation');
 const Business = require('../models/Business');
 const User = require('../models/User');
-const { pool } = require('../config/db'); // AJOUT: Import de pool
+const { pool } = require('../config/db');
 const { HTTP_STATUS, ERROR_CODES, RESERVATION_STATUS, BUSINESS_TYPES } = require('../config/constants');
 const { asyncHandler } = require('../middleware/errorHandler');
 const logger = require('../utils/logger');
@@ -9,12 +9,23 @@ const notificationService = require('../services/notificationService');
 const clientNotificationService = require('../services/clientNotificationService');
 const { emailService } = require('../services/emailService');
 const { smsService } = require('../services/smsService');
+const { calculateDepositFees } = require('../utils/feeCalculator');
+const { cinetpayService } = require('../services/cinetpayService');
+// ✅ AJOUT
+const { getSettings } = require('../utils/settingsHelper');
 
-// Créer une réservation (public)
+/**
+ * Créer une réservation avec support paiement acompte
+ */
 const createReservation = asyncHandler(async (req, res) => {
-  const { restaurant_id, reservation_date, time_slot, ...reservationData } = req.body;
+  const { 
+    restaurant_id, 
+    reservation_date, 
+    time_slot,
+    deposit_payment_method,
+    ...reservationData 
+  } = req.body;
 
-  // Vérifier que le restaurant existe et est actif
   const business = await Business.findById(restaurant_id);
 
   if (!business || !business.is_active || business.type !== BUSINESS_TYPES.RESTAURANT) {
@@ -23,6 +34,40 @@ const createReservation = asyncHandler(async (req, res) => {
       message: 'Restaurant introuvable ou inactif',
       code: ERROR_CODES.NOT_FOUND,
     });
+  }
+
+  // ✅ Lire les limites configurées par l'admin en une seule requête
+  const { max_reservation_people, reservation_advance_days } = await getSettings([
+    'max_reservation_people',
+    'reservation_advance_days'
+  ]);
+
+  const maxPeople   = max_reservation_people   ?? 50;  // défaut 50 personnes
+  const advanceDays = reservation_advance_days  ?? 90;  // défaut 90 jours à l'avance
+
+  // ✅ Valider le nombre de personnes
+  const numberOfPeople = Number(reservationData.number_of_people || 1);
+  if (numberOfPeople > maxPeople) {
+    return res.status(HTTP_STATUS.BAD_REQUEST).json({
+      success: false,
+      message: `Maximum ${maxPeople} personne(s) par réservation`,
+      code: ERROR_CODES.VALIDATION_ERROR,
+    });
+  }
+
+  // ✅ Valider que la date n'est pas trop loin
+  if (reservation_date) {
+    const resDate = new Date(reservation_date);
+    const maxDate = new Date();
+    maxDate.setDate(maxDate.getDate() + advanceDays);
+
+    if (resDate > maxDate) {
+      return res.status(HTTP_STATUS.BAD_REQUEST).json({
+        success: false,
+        message: `Réservation possible jusqu'à ${advanceDays} jours à l'avance`,
+        code: ERROR_CODES.VALIDATION_ERROR,
+      });
+    }
   }
 
   // Vérifier la disponibilité du créneau
@@ -35,75 +80,161 @@ const createReservation = asyncHandler(async (req, res) => {
     });
   }
 
-  // AJOUT: Attacher le client_id si l'utilisateur est connecté
   let reservationDataWithClient = {
-    restaurant_id,
-    reservation_date,
-    time_slot,
-    ...reservationData
+    restaurant_id, reservation_date, time_slot, ...reservationData
   };
   
   if (req.user && req.user.role === 'client') {
     reservationDataWithClient.client_id = req.user.id;
   }
 
-  // Créer la réservation
-  const reservation = await Reservation.create(reservationDataWithClient);
+  const depositRequired = business.requires_reservation_deposit || false;
+  const depositAmount   = business.default_deposit_amount || 0;
 
-  // Envoyer une notification au restaurant
-  if (business) {
+  reservationDataWithClient.deposit_required = depositRequired;
+  reservationDataWithClient.deposit_amount   = depositAmount;
+
+  // Pas d'acompte requis → créer directement
+  if (!depositRequired) {
+    reservationDataWithClient.deposit_status = 'none';
+    const reservation = await Reservation.create(reservationDataWithClient);
     await notificationService.notifyNewReservation(reservation, business);
+
+    logger.info('Réservation créée sans acompte', { reservationId: reservation.id, restaurantId: restaurant_id });
+
+    return res.status(HTTP_STATUS.CREATED).json({
+      success: true,
+      message: 'Réservation créée avec succès',
+      data: reservation,
+    });
   }
 
-  logger.info('Nouvelle réservation créée', {
-    reservationId: reservation.id,
-    restaurantId: restaurant_id,
-    clientId: client_id,
-    clientName: reservation.client_name,
-    date: reservation_date,
-    timeSlot: time_slot,
-  });
+  // Acompte requis mais méthode non fournie
+  if (!deposit_payment_method) {
+    return res.status(HTTP_STATUS.BAD_REQUEST).json({
+      success: false,
+      message: 'Mode de paiement requis pour l\'acompte',
+      code: ERROR_CODES.VALIDATION_ERROR,
+      deposit_required: true,
+      deposit_amount: depositAmount
+    });
+  }
 
-  res.status(HTTP_STATUS.CREATED).json({
-    success: true,
-    message: 'Réservation créée avec succès',
-    data: reservation,
-  });
+  const depositFees = calculateDepositFees(depositAmount, deposit_payment_method);
+  reservationDataWithClient.deposit_payment_method = deposit_payment_method;
+  reservationDataWithClient.deposit_payment_fee    = depositFees.deposit_payment_fee;
+
+  // COD
+  if (deposit_payment_method === 'cod' || deposit_payment_method === 'cash') {
+    reservationDataWithClient.deposit_status = 'cod_pending';
+    const reservation = await Reservation.create(reservationDataWithClient);
+    await notificationService.notifyNewReservation(reservation, business);
+
+    return res.status(HTTP_STATUS.CREATED).json({
+      success: true,
+      message: 'Réservation créée. Acompte à payer au restaurant.',
+      data: reservation,
+      payment_info: {
+        type: 'cod',
+        deposit_amount: depositAmount,
+        deposit_fee: depositFees.deposit_payment_fee,
+        total_deposit: depositFees.total_deposit
+      }
+    });
+  }
+
+  // Paiement en ligne
+  reservationDataWithClient.deposit_status = 'pending';
+  const reservation = await Reservation.create(reservationDataWithClient);
+  const amountInt   = Math.round(Number(depositFees.total_deposit));
+  const isSandbox   = process.env.PAYMENT_MODE === 'sandbox';
+
+  if (isSandbox) {
+    await Reservation.updateDepositStatus(reservation.id, 'pending', {
+      deposit_payment_id: `SANDBOX-RESERVATION-${reservation.id}-${Date.now()}`
+    });
+
+    return res.status(HTTP_STATUS.CREATED).json({
+      success: true, message: 'Réservation créée (mode sandbox).', data: reservation,
+      payment_url: null, sandbox: true,
+      payment_info: { type: 'online', deposit_amount: depositAmount, deposit_fee: depositFees.deposit_payment_fee, total_deposit: amountInt, payment_method: deposit_payment_method }
+    });
+  }
+
+  try {
+    const payment = await cinetpayService.initiatePayment({
+      amount: amountInt, currency: 'XOF',
+      transaction_id: `RESERVATION-${reservation.id}-${Date.now()}`,
+      description: `Acompte réservation #${reservation.id}`,
+      customer_name: reservationData.client_name,
+      customer_phone_number: reservationData.client_phone || '',
+      customer_email: reservationData.client_email || '',
+      payment_method: deposit_payment_method
+    });
+
+    if (!payment.success) throw new Error('Erreur initiation paiement CinetPay');
+
+    await Reservation.updateDepositStatus(reservation.id, 'pending', {
+      deposit_payment_id: payment.data.payment_id
+    });
+
+    return res.status(HTTP_STATUS.CREATED).json({
+      success: true, message: 'Réservation créée. Redirection vers paiement.',
+      data: reservation, payment_url: payment.data.payment_url, sandbox: false,
+      payment_info: { type: 'online', deposit_amount: depositAmount, deposit_fee: depositFees.deposit_payment_fee, total_deposit: amountInt, payment_method: deposit_payment_method }
+    });
+
+  } catch (error) {
+    logger.error('Erreur initiation paiement acompte', { reservationId: reservation.id, error: error.message });
+    try { await Reservation.updateDepositStatus(reservation.id, 'failed', {}); } catch (_) {}
+    return res.status(500).json({ success: false, message: 'Impossible d\'initier le paiement', error: error.message });
+  }
+});
+
+/**
+ * Confirmer paiement acompte COD
+ */
+const confirmDepositCOD = asyncHandler(async (req, res) => {
+  const { reservationId } = req.params;
+  const { deposit_amount } = req.body;
+
+  const reservation = await Reservation.findById(reservationId);
+  if (!reservation) {
+    return res.status(HTTP_STATUS.NOT_FOUND).json({ success: false, message: 'Réservation introuvable' });
+  }
+
+  if (reservation.deposit_status !== 'cod_pending') {
+    return res.status(HTTP_STATUS.BAD_REQUEST).json({ success: false, message: 'Cette réservation n\'a pas d\'acompte COD en attente' });
+  }
+
+  const expectedAmount = reservation.deposit_amount + (reservation.deposit_payment_fee || 0);
+  const receivedAmount = Number(deposit_amount || expectedAmount);
+
+  if (Math.abs(receivedAmount - expectedAmount) > 0.01) {
+    return res.status(HTTP_STATUS.BAD_REQUEST).json({ success: false, message: `Montant incorrect. Attendu: ${expectedAmount} FCFA` });
+  }
+
+  await Reservation.updateDepositStatus(reservationId, 'cod_received', { confirmed_by: req.user.id });
+
+  res.json({ success: true, message: 'Acompte COD confirmé avec succès' });
 });
 
 // Obtenir une réservation par ID
 const getReservationById = asyncHandler(async (req, res) => {
   const { id } = req.params;
-
   const reservation = await Reservation.findById(id);
   if (!reservation) {
-    return res.status(HTTP_STATUS.NOT_FOUND).json({
-      success: false,
-      message: 'Réservation introuvable',
-      code: ERROR_CODES.NOT_FOUND,
-    });
+    return res.status(HTTP_STATUS.NOT_FOUND).json({ success: false, message: 'Réservation introuvable', code: ERROR_CODES.NOT_FOUND });
   }
-
-  res.json({
-    success: true,
-    data: reservation,
-  });
+  res.json({ success: true, data: reservation });
 });
 
 // Obtenir les réservations d'un restaurant
 const getRestaurantReservations = asyncHandler(async (req, res) => {
   const { restaurantId } = req.params;
   const { status, date } = req.query;
-
-  const reservations = await Reservation.getByRestaurantId(restaurantId, {
-    status,
-    date,
-  });
-
-  res.json({
-    success: true,
-    data: reservations,
-  });
+  const reservations = await Reservation.getByRestaurantId(restaurantId, { status, date });
+  res.json({ success: true, data: reservations });
 });
 
 // Mettre à jour le statut d'une réservation
@@ -111,168 +242,80 @@ const updateReservationStatus = asyncHandler(async (req, res) => {
   const { id } = req.params;
   const { status } = req.body;
 
-  // Vérifier que le statut est valide
   if (!Object.values(RESERVATION_STATUS).includes(status)) {
-    return res.status(HTTP_STATUS.BAD_REQUEST).json({
-      success: false,
-      message: 'Statut invalide',
-      code: ERROR_CODES.VALIDATION_ERROR,
-    });
+    return res.status(HTTP_STATUS.BAD_REQUEST).json({ success: false, message: 'Statut invalide', code: ERROR_CODES.VALIDATION_ERROR });
   }
 
   const reservation = await Reservation.updateStatus(id, status);
   if (!reservation) {
-    return res.status(HTTP_STATUS.NOT_FOUND).json({
-      success: false,
-      message: 'Réservation introuvable',
-      code: ERROR_CODES.NOT_FOUND,
-    });
+    return res.status(HTTP_STATUS.NOT_FOUND).json({ success: false, message: 'Réservation introuvable', code: ERROR_CODES.NOT_FOUND });
   }
 
   const business = await Business.findById(reservation.restaurant_id);
 
-  // ✅ NOTIFICATION AU CLIENT SI client_id EXISTE
   if (status === 'confirmed' && reservation.client_id && business) {
     try {
       const clientUser = await User.findById(reservation.client_id);
-      
       if (clientUser) {
-        const clientInfo = {
-          user_id: clientUser.id,
-          email: clientUser.email,
-          phone: clientUser.phone,
-          first_name: clientUser.first_name
-        };
-
+        const clientInfo = { user_id: clientUser.id, email: clientUser.email, phone: clientUser.phone, first_name: clientUser.first_name };
         await clientNotificationService.notifyReservationConfirmed(reservation, business, clientInfo);
-        
-        logger.info('Notification réservation confirmée envoyée au client', {
-          reservationId: reservation.id,
-          clientId: reservation.client_id
-        });
       }
     } catch (error) {
-      logger.error('Erreur notification client', {
-        error: error.message,
-        reservationId: reservation.id,
-        clientId: reservation.client_id
-      });
+      logger.error('Erreur notification client', { error: error.message, reservationId: reservation.id });
     }
   }
 
-  // ✅ ENVOI DES NOTIFICATIONS AU CLIENT (même sans compte)
   if (status === 'confirmed') {
-    // Notification au restaurant
     try {
       await notificationService.createNotification({
-        business_id: business.id,
-        type: 'reservation_confirmed',
+        business_id: business.id, type: 'reservation_confirmed',
         title: 'Réservation confirmée',
         message: `Vous avez confirmé la réservation de ${reservation.client_name} pour le ${new Date(reservation.reservation_date).toLocaleDateString('fr-FR')} à ${reservation.time_slot}`,
-        reference_id: reservation.id,
-        reference_type: 'reservation',
-        priority: 'normal',
+        reference_id: reservation.id, reference_type: 'reservation', priority: 'normal',
       });
     } catch (error) {
-      logger.error('Erreur création notification restaurant', { error: error.message });
+      logger.error('Erreur notification restaurant', { error: error.message });
     }
 
-    // ✅ Email au client
-    if (reservation.client_email && reservation.client_email.trim() !== '') {
+    if (reservation.client_email?.trim()) {
       try {
-        const emailResult = await emailService.sendReservationConfirmation(reservation, business);
-        if (emailResult.success) {
-          logger.info('Email de confirmation envoyé au client', {
-            reservationId: reservation.id,
-            clientEmail: reservation.client_email,
-          });
-        } else {
-          logger.warn('Échec envoi email de confirmation', {
-            reservationId: reservation.id,
-            clientEmail: reservation.client_email,
-            error: emailResult.error || emailResult.message,
-          });
-        }
+        await emailService.sendReservationConfirmation(reservation, business);
       } catch (error) {
-        logger.error('Erreur envoi email de confirmation', {
-          reservationId: reservation.id,
-          error: error.message,
-        });
+        logger.error('Erreur envoi email confirmation', { reservationId: reservation.id, error: error.message });
       }
     }
 
-    // ✅ SMS au client
-    if (reservation.client_phone && reservation.client_phone.trim() !== '') {
+    if (reservation.client_phone?.trim()) {
       try {
         const reservationDate = new Date(reservation.reservation_date).toLocaleDateString('fr-FR');
-        const smsMessage = `Réservation confirmée au ${business.name} ! ` +
-          `${reservationDate} à ${reservation.time_slot} pour ${reservation.number_of_people} personne${reservation.number_of_people > 1 ? 's' : ''}. ` +
-          `À bientôt !`;
-        
-        const smsResult = await smsService.sendSMS(reservation.client_phone, smsMessage);
-        if (smsResult.success) {
-          logger.info('SMS de confirmation envoyé au client', {
-            reservationId: reservation.id,
-            clientPhone: reservation.client_phone,
-          });
-        } else {
-          logger.warn('Échec envoi SMS de confirmation', {
-            reservationId: reservation.id,
-            clientPhone: reservation.client_phone,
-            error: smsResult.error || smsResult.message,
-          });
-        }
+        const smsMessage = `Réservation confirmée au ${business.name} ! ${reservationDate} à ${reservation.time_slot} pour ${reservation.number_of_people} personne${reservation.number_of_people > 1 ? 's' : ''}. À bientôt !`;
+        await smsService.sendSMS(reservation.client_phone, smsMessage);
       } catch (error) {
-        logger.error('Erreur envoi SMS de confirmation', {
-          reservationId: reservation.id,
-          error: error.message,
-        });
+        logger.error('Erreur envoi SMS confirmation', { reservationId: reservation.id, error: error.message });
       }
     }
   }
 
-  // ✅ ENVOI DES NOTIFICATIONS D'ANNULATION
   if (status === 'cancelled') {
-    // Notification au restaurant
     await notificationService.createNotification({
-      business_id: business.id,
-      type: 'reservation_cancelled',
+      business_id: business.id, type: 'reservation_cancelled',
       title: 'Réservation annulée',
       message: `La réservation de ${reservation.client_name} pour le ${new Date(reservation.reservation_date).toLocaleDateString('fr-FR')} à ${reservation.time_slot} a été annulée`,
-      reference_id: reservation.id,
-      reference_type: 'reservation',
-      priority: 'normal',
+      reference_id: reservation.id, reference_type: 'reservation', priority: 'normal',
     });
 
-    // ✅ Email au client
     if (reservation.client_email) {
       await emailService.sendReservationCancellation(reservation, business);
-      logger.info('Email d\'annulation envoyé au client', {
-        reservationId: reservation.id,
-        clientEmail: reservation.client_email,
-      });
     }
 
-    // ✅ SMS au client
     if (reservation.client_phone) {
       const reservationDate = new Date(reservation.reservation_date).toLocaleDateString('fr-FR');
-      const smsMessage = `Réservation annulée au ${business.name}. ` +
-        `${reservationDate} à ${reservation.time_slot}. ` +
-        `Pour toute question, contactez-nous.`;
-      
+      const smsMessage = `Réservation annulée au ${business.name}. ${reservationDate} à ${reservation.time_slot}. Pour toute question, contactez-nous.`;
       await smsService.sendSMS(reservation.client_phone, smsMessage);
-      logger.info('SMS d\'annulation envoyé au client', {
-        reservationId: reservation.id,
-        clientPhone: reservation.client_phone,
-      });
     }
   }
 
-  logger.info('Statut de réservation mis à jour', {
-    reservationId: id,
-    newStatus: status,
-    userId: req.user?.id,
-  });
+  logger.info('Statut de réservation mis à jour', { reservationId: id, newStatus: status, userId: req.user?.id });
 
   res.json({
     success: true,
@@ -287,58 +330,33 @@ const getAvailableTimeSlots = asyncHandler(async (req, res) => {
   const { date } = req.query;
 
   if (!date) {
-    return res.status(HTTP_STATUS.BAD_REQUEST).json({
-      success: false,
-      message: 'Date requise',
-      code: ERROR_CODES.VALIDATION_ERROR,
-    });
+    return res.status(HTTP_STATUS.BAD_REQUEST).json({ success: false, message: 'Date requise', code: ERROR_CODES.VALIDATION_ERROR });
   }
 
   const availableSlots = await Reservation.getAvailableTimeSlots(restaurantId, date);
-
-  res.json({
-    success: true,
-    data: availableSlots,
-  });
+  res.json({ success: true, data: availableSlots });
 });
 
-// Obtenir les statistiques des réservations
+// Statistiques
 const getReservationStatistics = asyncHandler(async (req, res) => {
   const { restaurant_id } = req.query;
-
   let restaurantId = restaurant_id;
   if (!restaurantId && req.business && req.business.type === BUSINESS_TYPES.RESTAURANT) {
     restaurantId = req.business.id;
   }
-
   const statistics = await Reservation.getStatistics(restaurantId);
-
-  res.json({
-    success: true,
-    data: statistics,
-  });
+  res.json({ success: true, data: statistics });
 });
 
-// Obtenir toutes les réservations (admin)
+// Toutes les réservations (admin)
 const getAllReservations = asyncHandler(async (req, res) => {
   const { status } = req.query;
-
-  const reservations = await Reservation.getAll({
-    status,
-  });
-
-  res.json({
-    success: true,
-    data: reservations,
-  });
+  const reservations = await Reservation.getAll({ status });
+  res.json({ success: true, data: reservations });
 });
 
 module.exports = {
-  createReservation,
-  getReservationById,
-  getRestaurantReservations,
-  updateReservationStatus,
-  getAvailableTimeSlots,
-  getReservationStatistics,
-  getAllReservations,
+  createReservation, confirmDepositCOD, getReservationById,
+  getRestaurantReservations, updateReservationStatus,
+  getAvailableTimeSlots, getReservationStatistics, getAllReservations,
 };

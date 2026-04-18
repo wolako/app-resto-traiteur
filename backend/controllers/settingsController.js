@@ -1,14 +1,32 @@
 const AppSetting = require('../models/AppSetting');
-const pool = require('../config/db');
+const { pool } = require('../config/db');
+
+// ─── helpers ─────────────────────────────────────────────────────────────────
+
+/**
+ * Applique les headers Cache-Control cohérents.
+ * - Les données publiques changent peu → cache court côté client.
+ * - Les données admin ne doivent jamais être mises en cache.
+ */
+function setNoCacheHeaders(res) {
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
+  res.setHeader('Pragma', 'no-cache');
+  res.setHeader('Expires', '0');
+  res.setHeader('Content-Type', 'application/json; charset=utf-8');
+}
+
+function setShortCacheHeaders(res, seconds = 15) {
+  res.setHeader('Cache-Control', `public, max-age=${seconds}, stale-while-revalidate=5`);
+  res.setHeader('Content-Type', 'application/json; charset=utf-8');
+}
+
+// ─── controllers ─────────────────────────────────────────────────────────────
 
 // Obtenir tous les paramètres (admin seulement)
 exports.getAllSettings = async (req, res) => {
   try {
-    await pool.query('SET CLIENT_ENCODING TO UTF8');
-    
     const settings = await AppSetting.getAll();
-    
-    res.setHeader('Content-Type', 'application/json; charset=utf-8');
+    setNoCacheHeaders(res);
     res.json(settings);
   } catch (error) {
     console.error('Erreur récupération paramètres:', error);
@@ -19,11 +37,8 @@ exports.getAllSettings = async (req, res) => {
 // Obtenir les paramètres publics
 exports.getPublicSettings = async (req, res) => {
   try {
-    await pool.query('SET CLIENT_ENCODING TO UTF8');
-    
     const settings = await AppSetting.getAll(true);
-    
-    res.setHeader('Content-Type', 'application/json; charset=utf-8');
+    setShortCacheHeaders(res, 30);
     res.json(settings);
   } catch (error) {
     console.error('Erreur récupération paramètres publics:', error);
@@ -34,21 +49,18 @@ exports.getPublicSettings = async (req, res) => {
 // Obtenir un paramètre par clé
 exports.getSettingByKey = async (req, res) => {
   try {
-    await pool.query('SET CLIENT_ENCODING TO UTF8');
-    
     const { key } = req.params;
     const setting = await AppSetting.getByKey(key);
-    
+
     if (!setting) {
       return res.status(404).json({ error: 'Paramètre non trouvé' });
     }
-    
-    // Si le paramètre n'est pas public et l'utilisateur n'est pas admin
+
     if (!setting.is_public && req.user.role !== 'superadmin') {
       return res.status(403).json({ error: 'Accès refusé' });
     }
-    
-    res.setHeader('Content-Type', 'application/json; charset=utf-8');
+
+    setNoCacheHeaders(res);
     res.json(setting);
   } catch (error) {
     console.error('Erreur récupération paramètre:', error);
@@ -59,17 +71,14 @@ exports.getSettingByKey = async (req, res) => {
 // Obtenir les paramètres par catégorie
 exports.getSettingsByCategory = async (req, res) => {
   try {
-    await pool.query('SET CLIENT_ENCODING TO UTF8');
-    
     const { category } = req.params;
     const settings = await AppSetting.getByCategory(category);
-    
-    // Filtrer les paramètres non publics si l'utilisateur n'est pas admin
-    const filteredSettings = req.user && req.user.role === 'superadmin' 
-      ? settings 
+
+    const filteredSettings = req.user?.role === 'superadmin'
+      ? settings
       : settings.filter(s => s.is_public);
-    
-    res.setHeader('Content-Type', 'application/json; charset=utf-8');
+
+    setNoCacheHeaders(res);
     res.json(filteredSettings);
   } catch (error) {
     console.error('Erreur récupération paramètres par catégorie:', error);
@@ -80,42 +89,38 @@ exports.getSettingsByCategory = async (req, res) => {
 // Mettre à jour un paramètre (admin seulement)
 exports.updateSetting = async (req, res) => {
   try {
-    await pool.query('SET CLIENT_ENCODING TO UTF8');
-    
     const { key } = req.params;
     const { value, value_type, description, is_public } = req.body;
-    
+
     const updateData = {};
+
     if (value !== undefined) {
-      // Convertir la valeur selon le type
       let stringValue = value;
       if (value_type === 'json' && typeof value !== 'string') {
         stringValue = JSON.stringify(value);
       } else if (value_type === 'boolean') {
         stringValue = value ? 'true' : 'false';
       } else if (value_type === 'number') {
-        stringValue = value.toString();
+        stringValue = String(value);
       }
       updateData.value = stringValue;
     }
-    
-    if (value_type) updateData.value_type = value_type;
-    if (description) updateData.description = description;
+
+    if (value_type)          updateData.value_type  = value_type;
+    if (description)         updateData.description = description;
     if (is_public !== undefined) updateData.is_public = is_public;
-    
+
     const setting = await AppSetting.update(key, updateData);
-    
+
     if (!setting) {
       return res.status(404).json({ error: 'Paramètre non trouvé' });
     }
-    
-    // 🆕 Log spécial pour le mode maintenance
+
     if (key === 'maintenance_mode') {
-      const isEnabled = setting.value === 'true';
-      console.log(`🔧 Mode maintenance ${isEnabled ? 'ACTIVÉ' : 'DÉSACTIVÉ'} par ${req.user.email}`);
+      console.log(`🔧 Mode maintenance ${setting.value === 'true' ? 'ACTIVÉ' : 'DÉSACTIVÉ'} par ${req.user.email}`);
     }
-    
-    res.setHeader('Content-Type', 'application/json; charset=utf-8');
+
+    setNoCacheHeaders(res);
     res.json(setting);
   } catch (error) {
     console.error('Erreur mise à jour paramètre:', error);
@@ -126,40 +131,34 @@ exports.updateSetting = async (req, res) => {
 // Créer un nouveau paramètre (admin seulement)
 exports.createSetting = async (req, res) => {
   try {
-    await pool.query('SET CLIENT_ENCODING TO UTF8');
-    
     const { key, value, value_type, category, description, is_public } = req.body;
-    
-    // Validation
+
     if (!key || !value || !value_type || !category) {
-      return res.status(400).json({ 
-        error: 'Données manquantes (key, value, value_type, category requis)' 
+      return res.status(400).json({
+        error: 'Données manquantes (key, value, value_type, category requis)',
       });
     }
-    
-    // Convertir la valeur
+
     let stringValue = value;
     if (value_type === 'json' && typeof value !== 'string') {
       stringValue = JSON.stringify(value);
     } else if (value_type === 'boolean') {
       stringValue = value ? 'true' : 'false';
     } else if (value_type === 'number') {
-      stringValue = value.toString();
+      stringValue = String(value);
     }
-    
+
     const setting = await AppSetting.setValue(key, stringValue, value_type);
-    
-    // Mettre à jour les autres champs si fournis
+
     if (description || category || is_public !== undefined) {
       const updateData = {};
-      if (description) updateData.description = description;
-      if (category) updateData.category = category;
+      if (description)         updateData.description = description;
+      if (category)            updateData.category    = category;
       if (is_public !== undefined) updateData.is_public = is_public;
-      
       await AppSetting.update(key, updateData);
     }
-    
-    res.setHeader('Content-Type', 'application/json; charset=utf-8');
+
+    setNoCacheHeaders(res);
     res.status(201).json(setting);
   } catch (error) {
     console.error('Erreur création paramètre:', error);
@@ -170,31 +169,28 @@ exports.createSetting = async (req, res) => {
 // Supprimer un paramètre (admin seulement)
 exports.deleteSetting = async (req, res) => {
   try {
-    await pool.query('SET CLIENT_ENCODING TO UTF8');
-    
     const { key } = req.params;
-    
-    // 🆕 Protection : ne pas supprimer les paramètres critiques
+
     const criticalSettings = [
       'maintenance_mode',
       'app_name',
       'default_commission_rate',
-      'currency'
+      'currency',
     ];
-    
+
     if (criticalSettings.includes(key)) {
-      return res.status(400).json({ 
-        error: 'Impossible de supprimer ce paramètre critique. Vous pouvez le modifier à la place.' 
+      return res.status(400).json({
+        error: 'Impossible de supprimer ce paramètre critique. Vous pouvez le modifier à la place.',
       });
     }
-    
+
     const setting = await AppSetting.delete(key);
-    
+
     if (!setting) {
       return res.status(404).json({ error: 'Paramètre non trouvé' });
     }
-    
-    res.setHeader('Content-Type', 'application/json; charset=utf-8');
+
+    setNoCacheHeaders(res);
     res.json({ message: 'Paramètre supprimé avec succès' });
   } catch (error) {
     console.error('Erreur suppression paramètre:', error);
@@ -205,12 +201,9 @@ exports.deleteSetting = async (req, res) => {
 // Obtenir les catégories disponibles
 exports.getCategories = async (req, res) => {
   try {
-    await pool.query('SET CLIENT_ENCODING TO UTF8');
-    
     const result = await AppSetting.getAll();
     const categories = [...new Set(result.map(s => s.category))];
-    
-    res.setHeader('Content-Type', 'application/json; charset=utf-8');
+    setShortCacheHeaders(res, 60);
     res.json(categories);
   } catch (error) {
     console.error('Erreur récupération catégories:', error);
@@ -218,33 +211,27 @@ exports.getCategories = async (req, res) => {
   }
 };
 
-// 🆕 Activer/Désactiver le mode maintenance rapidement
+// Activer/Désactiver le mode maintenance (raccourci admin)
 exports.toggleMaintenance = async (req, res) => {
   try {
-    await pool.query('SET CLIENT_ENCODING TO UTF8');
-    
     const { enabled, message, end_time } = req.body;
-    
-    // Mettre à jour le mode maintenance
-    await AppSetting.setValue('maintenance_mode', enabled ? 'true' : 'false', 'boolean');
-    
-    // Mettre à jour le message si fourni
-    if (message) {
-      await AppSetting.setValue('maintenance_message', message, 'string');
-    }
-    
-    // Mettre à jour l'heure de fin si fournie
-    if (end_time !== undefined) {
-      await AppSetting.setValue('maintenance_end_time', end_time, 'string');
-    }
-    
+
+    // ✅ Toutes les mises à jour en parallèle — pas de requêtes séquentielles
+    const updates = [
+      AppSetting.setValue('maintenance_mode', enabled ? 'true' : 'false', 'boolean'),
+    ];
+    if (message    !== undefined) updates.push(AppSetting.setValue('maintenance_message',  message,   'string'));
+    if (end_time   !== undefined) updates.push(AppSetting.setValue('maintenance_end_time', end_time,  'string'));
+
+    await Promise.all(updates);
+
     console.log(`🔧 Mode maintenance ${enabled ? 'ACTIVÉ' : 'DÉSACTIVÉ'} par ${req.user.email}`);
-    
-    res.setHeader('Content-Type', 'application/json; charset=utf-8');
+
+    setNoCacheHeaders(res);
     res.json({
-      success: true,
+      success:          true,
       maintenance_mode: enabled,
-      message: 'Mode maintenance mis à jour'
+      message:          'Mode maintenance mis à jour',
     });
   } catch (error) {
     console.error('Erreur toggle maintenance:', error);
@@ -252,20 +239,23 @@ exports.toggleMaintenance = async (req, res) => {
   }
 };
 
-// 🆕 Obtenir le statut de maintenance (public)
+// Obtenir le statut de maintenance (public — appelé toutes les 30s par le frontend)
 exports.getMaintenanceStatus = async (req, res) => {
   try {
-    await pool.query('SET CLIENT_ENCODING TO UTF8');
-    
-    const maintenanceMode = await AppSetting.getValue('maintenance_mode');
-    const maintenanceMessage = await AppSetting.getValue('maintenance_message');
-    const maintenanceEndTime = await AppSetting.getValue('maintenance_end_time');
-    
-    res.setHeader('Content-Type', 'application/json; charset=utf-8');
+    const settings = await AppSetting.getMultipleValues([
+      'maintenance_mode',
+      'maintenance_message',
+      'maintenance_end_time',
+    ]);
+
+    const enabled = settings['maintenance_mode'] || false;
+
+    setShortCacheHeaders(res, 15);
     res.json({
-      enabled: maintenanceMode || false,
-      message: maintenanceMessage || 'L\'application est en maintenance',
-      end_time: maintenanceEndTime || null
+      enabled,
+      // ✅ message et end_time seulement si maintenance active
+      message:  enabled ? (settings['maintenance_message'] || "L'application est en maintenance") : null,
+      end_time: enabled ? (settings['maintenance_end_time'] || null) : null,
     });
   } catch (error) {
     console.error('Erreur récupération statut maintenance:', error);

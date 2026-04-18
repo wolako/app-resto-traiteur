@@ -1,28 +1,291 @@
-<div class="order-list">
-    <div class="table-responsive">
-        <table class="table">
-          <thead>
-            <tr>
-              <th>ID</th>
-              <th>Client</th>
-              <th>Montant</th>
-              <th>Statut</th>
-              <th>Date</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr *ngFor="let order of orders">
-              <td>{{ order.id }}</td>
-              <td>{{ order.client_name }}</td>
-              <td>{{ order.total_amount }} FCFA</td>
-              <td>
-                <span class="badge bg-{{ getStatusColor(order.status) }}">
-                  {{ order.status }}
-                </span>
-              </td>
-              <td>{{ order.created_at | date:'short' }}</td>
-            </tr>
-          </tbody>
-        </table>
+<div class="order-list-container">
+  
+  <!-- ══════════════════════════════════════════════════════════════════════
+       HEADER SECTION
+       ══════════════════════════════════════════════════════════════════════ -->
+  <div class="order-list-header">
+    <div class="header-content">
+      <div class="header-title">
+        <i class="bi bi-receipt-cutoff"></i>
+        <div>
+          <h2>Mes Commandes</h2>
+          <p class="subtitle">Historique et suivi de vos commandes</p>
+        </div>
+      </div>
+      <div class="header-stats">
+        <div class="stat-card">
+          <div class="stat-icon bg-primary">
+            <i class="bi bi-bag-check"></i>
+          </div>
+          <div class="stat-content">
+            <span class="stat-value">{{ orders.length }}</span>
+            <span class="stat-label">Total</span>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon bg-success">
+            <i class="bi bi-check-circle"></i>
+          </div>
+          <div class="stat-content">
+            <span class="stat-value">{{ getOrdersByStatus('delivered').length }}</span>
+            <span class="stat-label">Livrées</span>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon bg-warning">
+            <i class="bi bi-clock-history"></i>
+          </div>
+          <div class="stat-content">
+            <span class="stat-value">{{ getOrdersByStatus('pending').length }}</span>
+            <span class="stat-label">En cours</span>
+          </div>
+        </div>
+      </div>
     </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════════════════
+       FILTERS SECTION
+       ══════════════════════════════════════════════════════════════════════ -->
+  <div class="order-filters">
+    <div class="filter-group">
+      <label class="filter-label">
+        <i class="bi bi-funnel"></i>
+        Filtrer par statut
+      </label>
+      <select class="form-select" [(ngModel)]="statusFilter" (change)="applyFilters()">
+        <option value="">Tous les statuts</option>
+        <option value="pending">En attente</option>
+        <option value="confirmed">Confirmée</option>
+        <option value="preparing">En préparation</option>
+        <option value="ready">Prête</option>
+        <option value="delivered">Livrée</option>
+        <option value="cancelled">Annulée</option>
+      </select>
+    </div>
+
+    <div class="filter-group">
+      <label class="filter-label">
+        <i class="bi bi-calendar3"></i>
+        Période
+      </label>
+      <select class="form-select" [(ngModel)]="periodFilter" (change)="applyFilters()">
+        <option value="">Toute la période</option>
+        <option value="today">Aujourd'hui</option>
+        <option value="week">Cette semaine</option>
+        <option value="month">Ce mois</option>
+      </select>
+    </div>
+
+    <div class="filter-group">
+      <label class="filter-label">
+        <i class="bi bi-search"></i>
+        Rechercher
+      </label>
+      <input 
+        type="text" 
+        class="form-control" 
+        placeholder="Rechercher par ID, nom..."
+        [(ngModel)]="searchTerm"
+        (input)="applyFilters()">
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════════════════
+       ORDERS LIST - CARDS VIEW (Mobile/Tablet friendly)
+       ══════════════════════════════════════════════════════════════════════ -->
+  <div class="orders-cards-view d-lg-none">
+    <div class="order-card" *ngFor="let order of filteredOrders" (click)="viewOrder(order)">
+      <div class="order-card-header">
+        <div class="order-id">
+          <i class="bi bi-hash"></i>
+          <strong>{{ order.id }}</strong>
+        </div>
+        <span class="badge order-status-badge" [ngClass]="'badge-' + order.status">
+          <i [class]="getStatusIcon(order.status)"></i>
+          {{ getStatusLabel(order.status) }}
+        </span>
+      </div>
+
+      <div class="order-card-body">
+        <div class="order-info-row">
+          <i class="bi bi-person-circle"></i>
+          <span>{{ order.client_name }}</span>
+        </div>
+
+        <div class="order-info-row">
+          <i class="bi bi-telephone"></i>
+          <span>{{ order.client_phone }}</span>
+        </div>
+
+        <div class="order-info-row">
+          <i class="bi bi-calendar3"></i>
+          <span>{{ order.created_at | date:'dd/MM/yyyy à HH:mm' }}</span>
+        </div>
+
+        <div class="order-info-row highlight">
+          <i class="bi bi-cash-coin"></i>
+          <strong class="order-amount">{{ order.total_amount | number:'1.0-0' }} FCFA</strong>
+        </div>
+
+        <div class="order-info-row" *ngIf="order.payment_type">
+          <i class="bi" [ngClass]="order.payment_type === 'cod' ? 'bi-wallet2' : 'bi-credit-card'"></i>
+          <span class="payment-type-label">
+            {{ order.payment_type === 'cod' ? 'Paiement à la livraison' : 'Paiement en ligne' }}
+          </span>
+        </div>
+      </div>
+
+      <div class="order-card-footer">
+        <button class="btn btn-sm btn-primary">
+          <i class="bi bi-eye"></i>
+          Détails
+        </button>
+        <button class="btn btn-sm btn-outline-secondary">
+          <i class="bi bi-arrow-repeat"></i>
+          Recommander
+        </button>
+      </div>
+    </div>
+
+    <!-- Empty State -->
+    <div class="empty-state" *ngIf="filteredOrders.length === 0">
+      <div class="empty-icon">
+        <i class="bi bi-inbox"></i>
+      </div>
+      <h3>Aucune commande trouvée</h3>
+      <p>Essayez de modifier vos filtres ou passez votre première commande !</p>
+      <button class="btn btn-primary" routerLink="/">
+        <i class="bi bi-shop"></i>
+        Commander maintenant
+      </button>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════════════════
+       ORDERS LIST - TABLE VIEW (Desktop)
+       ══════════════════════════════════════════════════════════════════════ -->
+  <div class="orders-table-view d-none d-lg-block">
+    <div class="table-responsive">
+      <table class="table orders-table">
+        <thead>
+          <tr>
+            <th>
+              <i class="bi bi-hash"></i>
+              ID
+            </th>
+            <th>
+              <i class="bi bi-person"></i>
+              Client
+            </th>
+            <th>
+              <i class="bi bi-telephone"></i>
+              Contact
+            </th>
+            <th>
+              <i class="bi bi-cash-coin"></i>
+              Montant
+            </th>
+            <th>
+              <i class="bi bi-wallet2"></i>
+              Mode paiement
+            </th>
+            <th>
+              <i class="bi bi-flag"></i>
+              Statut
+            </th>
+            <th>
+              <i class="bi bi-calendar3"></i>
+              Date
+            </th>
+            <th class="text-center">
+              <i class="bi bi-gear"></i>
+              Actions
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let order of filteredOrders" class="order-row" (click)="viewOrder(order)">
+            <td>
+              <div class="order-id-cell">
+                <strong>{{ order.id }}</strong>
+              </div>
+            </td>
+            <td>
+              <div class="client-info">
+                <i class="bi bi-person-circle client-icon"></i>
+                <span class="client-name">{{ order.client_name }}</span>
+              </div>
+            </td>
+            <td>
+              <span class="phone-number">{{ order.client_phone }}</span>
+            </td>
+            <td>
+              <div class="amount-cell">
+                <strong class="amount-value">{{ order.total_amount | number:'1.0-0' }}</strong>
+                <span class="currency">FCFA</span>
+              </div>
+            </td>
+            <td>
+              <span class="payment-type-badge" [ngClass]="order.payment_type === 'cod' ? 'cod-badge' : 'online-badge'">
+                <i class="bi" [ngClass]="order.payment_type === 'cod' ? 'bi-wallet2' : 'bi-credit-card'"></i>
+                {{ order.payment_type === 'cod' ? 'COD' : 'En ligne' }}
+              </span>
+            </td>
+            <td>
+              <span class="badge status-badge" [ngClass]="'status-' + order.status">
+                <i [class]="getStatusIcon(order.status)"></i>
+                {{ getStatusLabel(order.status) }}
+              </span>
+            </td>
+            <td>
+              <div class="date-cell">
+                <span class="date-value">{{ order.created_at | date:'dd/MM/yyyy' }}</span>
+                <span class="time-value">{{ order.created_at | date:'HH:mm' }}</span>
+              </div>
+            </td>
+            <td>
+              <div class="actions-cell">
+                <button class="btn btn-sm btn-primary action-btn" (click)="viewOrder(order); $event.stopPropagation()">
+                  <i class="bi bi-eye"></i>
+                </button>
+                <button class="btn btn-sm btn-outline-secondary action-btn" (click)="reorder(order); $event.stopPropagation()">
+                  <i class="bi bi-arrow-repeat"></i>
+                </button>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Empty State Table -->
+    <div class="empty-state" *ngIf="filteredOrders.length === 0">
+      <div class="empty-icon">
+        <i class="bi bi-inbox"></i>
+      </div>
+      <h3>Aucune commande trouvée</h3>
+      <p>Essayez de modifier vos filtres ou passez votre première commande !</p>
+      <button class="btn btn-primary" routerLink="/">
+        <i class="bi bi-shop"></i>
+        Commander maintenant
+      </button>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════════════════
+       PAGINATION (if needed)
+       ══════════════════════════════════════════════════════════════════════ -->
+  <div class="pagination-container" *ngIf="totalPages > 1">
+    <button class="btn btn-outline-primary" [disabled]="currentPage === 1" (click)="previousPage()">
+      <i class="bi bi-chevron-left"></i>
+      Précédent
+    </button>
+    <span class="page-info">Page {{ currentPage }} / {{ totalPages }}</span>
+    <button class="btn btn-outline-primary" [disabled]="currentPage === totalPages" (click)="nextPage()">
+      Suivant
+      <i class="bi bi-chevron-right"></i>
+    </button>
+  </div>
+
 </div>

@@ -132,16 +132,16 @@ class ClientNotificationService {
       switch (type) {
         case 'order_confirmed':
           if (metadata.order.id) {
-            message = `Votre commande #${metadata.order.id} chez ${metadata.business.name} a été confirmée ! Montant: ${metadata.order.total_amount || metadata.order.estimated_budget || 0} FCFA`;
+            message = `Votre commande ${metadata.order.id} chez ${metadata.business.name} a été confirmée ! Montant: ${metadata.order.total_amount || metadata.order.estimated_budget || 0} FCFA`;
           } else {
             message = `Votre commande spéciale pour ${metadata.order.event_type} a été confirmée par ${metadata.business.name}`;
           }
           break;
         case 'order_ready':
-          message = `Votre commande #${metadata.order.id} est prête ! Vous pouvez venir la récupérer chez ${metadata.business.name}.`;
+          message = `Votre commande ${metadata.order.id} est prête ! Vous pouvez venir la récupérer chez ${metadata.business.name}.`;
           break;
         case 'order_delivered':
-          message = `Votre commande #${metadata.order.id} a été livrée. Merci de confirmer la réception depuis votre profil.`;
+          message = `Votre commande ${metadata.order.id} a été livrée. Merci de confirmer la réception depuis votre profil.`;
           break;
         case 'order_cancelled':
           message = `Votre commande chez ${metadata.business.name} a été annulée. Contactez-nous pour plus d'infos.`;
@@ -168,7 +168,7 @@ class ClientNotificationService {
       user_id: order.client_id,
       type: 'order_confirmed',
       title: 'Commande confirmée',
-      message: `Votre commande #${order.id} a été confirmée par ${business.name}`,
+      message: `Votre commande ${order.id} a été confirmée par ${business.name}`,
       reference_id: order.id,
       reference_type: 'order',
       priority: 'high',
@@ -184,7 +184,7 @@ class ClientNotificationService {
       user_id: order.client_id,
       type: 'order_ready',
       title: 'Commande prête',
-      message: `Votre commande #${order.id} est prête ! Vous pouvez venir la récupérer.`,
+      message: `Votre commande ${order.id} est prête ! Vous pouvez venir la récupérer.`,
       reference_id: order.id,
       reference_type: 'order',
       priority: 'high',
@@ -200,7 +200,7 @@ class ClientNotificationService {
       user_id: order.client_id,
       type: 'order_delivered',
       title: 'Commande livrée',
-      message: `Votre commande #${order.id} a été livrée. Merci de confirmer la réception.`,
+      message: `Votre commande ${order.id} a été livrée. Merci de confirmer la réception.`,
       reference_id: order.id,
       reference_type: 'order',
       priority: 'normal',
@@ -216,7 +216,7 @@ class ClientNotificationService {
       user_id: order.client_id,
       type: 'order_cancelled',
       title: 'Commande annulée',
-      message: `Votre commande #${order.id} a été annulée par ${business.name}`,
+      message: `Votre commande ${order.id} a été annulée par ${business.name}`,
       reference_id: order.id,
       reference_type: 'order',
       priority: 'high',

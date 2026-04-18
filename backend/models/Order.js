@@ -12,17 +12,39 @@ class Order {
     return result.rows[0];
   }
 
+  static async findByIdWithDetails(id) {
+    const order = await this.findById(id);
+    if (!order) return null;
+
+    const itemsResult = await pool.query(
+      `SELECT oi.*, mi.name as item_name, mi.description as item_description
+       FROM order_items oi
+       LEFT JOIN menu_items mi ON oi.menu_item_id = mi.id
+       WHERE oi.order_id = $1`,
+      [id]
+    );
+
+    order.items = itemsResult.rows;
+    return order;
+  }
+
+  /**
+   * ✅ MODIFIÉ : Créer une commande avec les frais
+   */
   static async create(orderData, items) {
     const client = await pool.connect();
 
     try {
       await client.query('BEGIN');
 
+      // ✅ MODIFIÉ : Ajout des nouveaux champs de frais
       const orderResult = await client.query(
         `INSERT INTO orders
-         (business_id, client_id, client_name, client_phone, client_email, total_amount,
-          status, payment_status, payment_method, notes)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+         (business_id, client_id, client_name, client_phone, client_email,
+          status, payment_status, payment_type, payment_method, notes,
+          subtotal_amount, delivery_fee, payment_fee, total_amount,
+          delivery_address, delivery_distance)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
          RETURNING *`,
         [
           orderData.business_id,
@@ -30,11 +52,17 @@ class Order {
           orderData.client_name,
           orderData.client_phone,
           orderData.client_email,
-          orderData.total_amount,
           orderData.status || 'pending',
           orderData.payment_status || 'pending',
+          orderData.payment_type || 'online',           // ✅ NOUVEAU
           orderData.payment_method,
           orderData.notes,
+          orderData.subtotal_amount || orderData.total_amount,  // ✅ NOUVEAU
+          orderData.delivery_fee || 0,                  // ✅ NOUVEAU
+          orderData.payment_fee || 0,                   // ✅ NOUVEAU
+          orderData.total_amount,
+          orderData.delivery_address,                   // ✅ NOUVEAU
+          orderData.delivery_distance                   // ✅ NOUVEAU
         ]
       );
 
@@ -64,7 +92,6 @@ class Order {
     }
   }
 
-  // ✅ Méthode manquante ajoutée — mise à jour du statut de commande
   static async updateStatus(id, status) {
     const result = await pool.query(
       `UPDATE orders
@@ -76,7 +103,6 @@ class Order {
     return result.rows[0];
   }
 
-  // ✅ Méthode manquante ajoutée — mise à jour du payment_status
   static async updatePaymentStatus(id, paymentStatus) {
     const result = await pool.query(
       `UPDATE orders
@@ -133,6 +159,39 @@ class Order {
     return result.rows;
   }
 
+  static async getAllForAdmin(filters = {}) {
+    let query = `
+      SELECT
+        o.*,
+        b.name AS business_name,
+        COUNT(oi.id) AS items_count
+      FROM orders o
+      JOIN businesses b ON o.business_id = b.id
+      LEFT JOIN order_items oi ON oi.order_id = o.id
+      WHERE 1=1
+    `;
+
+    const values = [];
+    let paramCount = 1;
+
+    if (filters.status) {
+      query += ` AND o.status = $${paramCount}`;
+      values.push(filters.status);
+      paramCount++;
+    }
+
+    if (filters.payment_status) {
+      query += ` AND o.payment_status = $${paramCount}`;
+      values.push(filters.payment_status);
+      paramCount++;
+    }
+
+    query += ` GROUP BY o.id, b.name ORDER BY o.created_at DESC`;
+
+    const result = await pool.query(query, values);
+    return result.rows;
+  }
+
   static async getAll(filters = {}) {
     let query = `
       SELECT o.*, b.name as business_name
@@ -165,12 +224,15 @@ class Order {
   static async getStatistics(businessId = null) {
     let query = `
       SELECT
-        COUNT(*) as total_orders,
-        COUNT(*) FILTER (WHERE DATE(created_at) = CURRENT_DATE) as today_orders,
-        COUNT(*) FILTER (WHERE status = 'pending') as pending_orders,
-        COUNT(*) FILTER (WHERE status = 'confirmed') as confirmed_orders,
-        COALESCE(SUM(total_amount), 0) as total_revenue,
-        COALESCE(AVG(total_amount), 0) as average_order_value
+        COUNT(*) AS total_orders,
+        COUNT(*) FILTER (WHERE DATE(created_at AT TIME ZONE 'Africa/Lome') = CURRENT_DATE) AS today_orders,
+        COUNT(*) FILTER (WHERE status = 'pending')   AS pending_orders,
+        COUNT(*) FILTER (WHERE status = 'confirmed') AS confirmed_orders,
+        COALESCE(SUM(total_amount), 0) AS total_revenue,
+        COALESCE(SUM(total_amount) FILTER (
+          WHERE DATE(created_at AT TIME ZONE 'Africa/Lome') = CURRENT_DATE
+        ), 0) AS today_revenue,
+        COALESCE(AVG(total_amount), 0) AS average_order_value
       FROM orders
     `;
 
@@ -183,6 +245,11 @@ class Order {
 
     const result = await pool.query(query, values);
     return result.rows[0];
+  }
+
+  static async getCount() {
+    const result = await pool.query('SELECT COUNT(*) FROM orders');
+    return parseInt(result.rows[0].count);
   }
 }
 

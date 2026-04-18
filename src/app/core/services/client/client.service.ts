@@ -26,9 +26,9 @@ export interface ClientStatistics {
   total_reservations: number;
   upcoming_reservations: number;
   total_spent: number;
-  total_special_orders: number;        
-  confirmed_special_orders: number;    
-  pending_special_orders: number; 
+  total_special_orders: number;
+  confirmed_special_orders: number;
+  pending_special_orders: number;
 }
 
 export interface ClientNotification {
@@ -46,6 +46,13 @@ export interface ClientNotification {
   created_at: Date;
 }
 
+// ✅ Interface pour la mise à jour du profil
+export interface UpdateProfilePayload {
+  first_name: string;
+  last_name: string;
+  phone?: string;
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -54,62 +61,48 @@ export class ClientService {
   private unreadCountSubject = new BehaviorSubject<number>(0);
   public unreadCount$ = this.unreadCountSubject.asObservable();
 
-  // ✅ Ajout des propriétés pour le polling
   private pollingInterval: any = null;
-  private readonly POLLING_INTERVAL_MS = 30000; // 30 secondes
-  
-  constructor(private http: HttpClient) {
-    // // Polling toutes les 30 secondes pour mettre à jour le compteur
-    // interval(30000).subscribe(() => {
-    //   this.refreshUnreadCount();
-    // });
-  }
+  private readonly POLLING_INTERVAL_MS = 30000;
 
-  // =============================================
+  constructor(private http: HttpClient) {}
+
+  // ═══════════════════════════════════════════════════════════
   // PROFIL
-  // =============================================
+  // ═══════════════════════════════════════════════════════════
 
-  /**
-   * Obtenir le profil complet du client
-   */
   getProfile(): Observable<any> {
     return this.http.get<any>(`${this.apiUrl}/profile`).pipe(
-      map(response => {
-        console.log('📊 Raw profile response:', response); // DEBUG
-        return response.data;
-      })
+      map(response => response.data)
     );
   }
 
-  // =============================================
-  // PRÉFÉRENCES DE NOTIFICATION
-  // =============================================
+  // ✅ Nouvelle méthode : mettre à jour le profil
+  updateProfile(payload: UpdateProfilePayload): Observable<any> {
+    return this.http.put<any>(`${this.apiUrl}/profile`, payload).pipe(
+      map(response => response.data)
+    );
+  }
 
-  /**
-   * Obtenir les préférences de notification
-   */
+  // ═══════════════════════════════════════════════════════════
+  // PRÉFÉRENCES DE NOTIFICATION
+  // ═══════════════════════════════════════════════════════════
+
   getNotificationPreferences(): Observable<ClientNotificationPreferences> {
     return this.http.get<any>(`${this.apiUrl}/notification-preferences`).pipe(
       map(response => response.data)
     );
   }
 
-  /**
-   * Mettre à jour les préférences de notification
-   */
   updateNotificationPreferences(preferences: Partial<ClientNotificationPreferences>): Observable<ClientNotificationPreferences> {
     return this.http.put<any>(`${this.apiUrl}/notification-preferences`, preferences).pipe(
       map(response => response.data)
     );
   }
 
-  // =============================================
+  // ═══════════════════════════════════════════════════════════
   // COMMANDES
-  // =============================================
+  // ═══════════════════════════════════════════════════════════
 
-  /**
-   * Obtenir les commandes du client
-   */
   getOrders(filters?: { status?: string; payment_status?: string; limit?: number }): Observable<any[]> {
     let params: any = {};
     if (filters) {
@@ -117,26 +110,19 @@ export class ClientService {
       if (filters.payment_status) params.payment_status = filters.payment_status;
       if (filters.limit) params.limit = filters.limit.toString();
     }
-
     return this.http.get<any>(`${this.apiUrl}/orders`, { params }).pipe(
       map(response => response.data)
     );
   }
 
-  /**
-   * Confirmer la livraison d'une commande
-   */
   confirmDelivery(orderId: number): Observable<any> {
     return this.http.post<any>(`${this.apiUrl}/orders/${orderId}/confirm-delivery`, {});
   }
 
-  // =============================================
+  // ═══════════════════════════════════════════════════════════
   // RÉSERVATIONS
-  // =============================================
+  // ═══════════════════════════════════════════════════════════
 
-  /**
-   * Obtenir les réservations du client
-   */
   getReservations(filters?: { status?: string; upcoming?: boolean; limit?: number }): Observable<any[]> {
     let params: any = {};
     if (filters) {
@@ -144,187 +130,124 @@ export class ClientService {
       if (filters.upcoming !== undefined) params.upcoming = filters.upcoming.toString();
       if (filters.limit) params.limit = filters.limit.toString();
     }
-
     return this.http.get<any>(`${this.apiUrl}/reservations`, { params }).pipe(
       map(response => response.data)
     );
   }
 
-  // =============================================
+  // ═══════════════════════════════════════════════════════════
   // COMMANDES SPÉCIALES
-  // =============================================
+  // ═══════════════════════════════════════════════════════════
 
-  /**
-   * Obtenir les commandes spéciales du client
-   */
   getSpecialOrders(filters?: { status?: string }): Observable<any[]> {
     let params: any = {};
-    if (filters?.status) {
-      params.status = filters.status;
-    }
-
+    if (filters?.status) params.status = filters.status;
     return this.http.get<any>(`${this.apiUrl}/special-orders`, { params }).pipe(
       map(response => response.data)
     );
   }
 
-  // =============================================
+  // ═══════════════════════════════════════════════════════════
   // NOTIFICATIONS
-  // =============================================
+  // ═══════════════════════════════════════════════════════════
 
-  /**
-   * Obtenir les notifications du client
-   */
   getNotifications(options?: { limit?: number; offset?: number; unreadOnly?: boolean }): Observable<any> {
     const params: any = {};
     if (options?.limit) params.limit = options.limit.toString();
     if (options?.offset) params.offset = options.offset.toString();
     if (options?.unreadOnly) params.unreadOnly = 'true';
-
     return this.http.get<any>(`${this.apiUrl}/notifications`, { params }).pipe(
       map(response => response.data)
     );
   }
 
-  /**
-   * Obtenir le nombre de notifications non lues
-   */
   getUnreadCount(): Observable<number> {
     return this.http.get<any>(`${this.apiUrl}/notifications/unread-count`).pipe(
       map(response => response.data.count)
     );
   }
 
-  /**
-   * Rafraîchir le compteur de notifications non lues
-   */
   refreshUnreadCount(): void {
     this.getUnreadCount().subscribe({
-      next: (count: number) => {
-        this.unreadCountSubject.next(count);
-      },
-      error: (error) => {
-        console.error('Error fetching unread count:', error);
-      }
+      next: (count: number) => { this.unreadCountSubject.next(count); },
+      error: (error) => { console.warn('Impossible de récupérer le compteur de notifications:', error.status); }
     });
   }
 
-  /**
-   * Marquer une notification comme lue
-   */
   markNotificationAsRead(notificationId: number): Observable<any> {
     return this.http.put<any>(`${this.apiUrl}/notifications/${notificationId}/read`, {}).pipe(
       tap(() => this.refreshUnreadCount())
     );
   }
 
-  /**
-   * Marquer toutes les notifications comme lues
-   */
   markAllNotificationsAsRead(): Observable<any> {
     return this.http.put<any>(`${this.apiUrl}/notifications/read-all`, {}).pipe(
       tap(() => this.refreshUnreadCount())
     );
   }
 
-  /**
-   * Supprimer une notification
-   */
   deleteNotification(notificationId: number): Observable<any> {
     return this.http.delete<any>(`${this.apiUrl}/notifications/${notificationId}`).pipe(
       tap(() => this.refreshUnreadCount())
     );
   }
 
-  // =============================================
+  // ═══════════════════════════════════════════════════════════
   // UTILITAIRES
-  // =============================================
+  // ═══════════════════════════════════════════════════════════
 
-  /**
-   * Obtenir l'icône selon le type de notification
-   */
   getNotificationIcon(type: string): string {
     const icons: { [key: string]: string } = {
-      'order_confirmed': 'bi-check-circle',
-      'order_ready': 'bi-box-seam',
-      'order_delivered': 'bi-truck',
-      'reservation_confirmed': 'bi-calendar-check',
-      'reservation_reminder': 'bi-bell',
-      'order_cancelled': 'bi-x-circle',
-      'reservation_cancelled': 'bi-calendar-x'
+      'order_confirmed': 'bi bi-check-circle',
+      'order_ready': 'bi bi-box-seam',
+      'order_delivered': 'bi bi-truck',
+      'reservation_confirmed': 'bi bi-calendar-check',
+      'reservation_reminder': 'bi bi-bell',
+      'order_cancelled': 'bi bi-x-circle',
+      'reservation_cancelled': 'bi bi-calendar-x'
     };
-    return icons[type] || 'bi-bell';
+    return icons[type] || 'bi bi-bell';
   }
 
-  /**
-   * Obtenir la classe CSS selon le type de notification
-   */
   getNotificationClass(type: string): string {
     const classes: { [key: string]: string } = {
-      'order_confirmed': 'text-success',
-      'order_ready': 'text-primary',
-      'order_delivered': 'text-info',
-      'reservation_confirmed': 'text-success',
-      'reservation_reminder': 'text-warning',
-      'order_cancelled': 'text-danger',
-      'reservation_cancelled': 'text-danger'
+      'order_confirmed': 'notif-success',
+      'order_ready': 'notif-primary',
+      'order_delivered': 'notif-info',
+      'reservation_confirmed': 'notif-success',
+      'reservation_reminder': 'notif-warning',
+      'order_cancelled': 'notif-danger',
+      'reservation_cancelled': 'notif-danger'
     };
-    return classes[type] || 'text-secondary';
+    return classes[type] || 'notif-default';
   }
 
-  /**
-   * Formater le statut de commande
-   */
   getOrderStatusLabel(status: string): string {
     const labels: { [key: string]: string } = {
-      'pending': 'En attente',
-      'confirmed': 'Confirmée',
-      'preparing': 'En préparation',
-      'ready': 'Prête',
-      'delivered': 'Livrée',
-      'cancelled': 'Annulée'
+      'pending': 'En attente', 'confirmed': 'Confirmée', 'preparing': 'En préparation',
+      'ready': 'Prête', 'delivered': 'Livrée', 'cancelled': 'Annulée'
     };
     return labels[status] || status;
   }
 
-  /**
-   * Formater le statut de réservation
-   */
   getReservationStatusLabel(status: string): string {
     const labels: { [key: string]: string } = {
-      'pending': 'En attente',
-      'confirmed': 'Confirmée',
-      'cancelled': 'Annulée'
+      'pending': 'En attente', 'confirmed': 'Confirmée', 'cancelled': 'Annulée'
     };
     return labels[status] || status;
   }
 
-  // ✅ AJOUT : Démarrer le polling
   startPolling(): void {
-    // Éviter de créer plusieurs timers
-    if (this.pollingInterval) {
-      return;
-    }
-
-    // Premier rafraîchissement immédiat
+    if (this.pollingInterval) return;
     this.refreshUnreadCount();
-
-    // Polling toutes les 30 secondes
-    this.pollingInterval = setInterval(() => {
-      this.refreshUnreadCount();
-    }, this.POLLING_INTERVAL_MS);
-
-    console.log('✅ Polling des notifications démarré');
+    this.pollingInterval = setInterval(() => this.refreshUnreadCount(), this.POLLING_INTERVAL_MS);
   }
 
-  // ✅ AJOUT : Arrêter le polling
   stopPolling(): void {
     if (this.pollingInterval) {
       clearInterval(this.pollingInterval);
       this.pollingInterval = null;
       this.unreadCountSubject.next(0);
-      console.log('🛑 Polling des notifications arrêté');
     }
   }
-
 }

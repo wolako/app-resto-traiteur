@@ -1,4 +1,4 @@
-const pool = require('../config/db');
+const { pool } = require('../config/db');
 
 class Commission {
   static async create(commissionData) {
@@ -63,8 +63,6 @@ class Commission {
     return result.rows[0];
   }
 
-  // ✅ CORRIGÉ : retourne les totaux par statut séparément
-  //   Utilisé par getBusinessCommissions et getCommissionsByBusinessId
   static async getTotalByBusiness(businessId) {
     const result = await pool.query(`
       SELECT
@@ -95,29 +93,45 @@ class Commission {
     return result.rows[0];
   }
 
-  static async createFromOrder(orderId, businessId, orderAmount, commissionRate) {
-    const commissionAmount = (orderAmount * commissionRate) / 100;
+  /**
+   * ✅ MODIFIÉ : Créer commission depuis une commande
+   * IMPORTANT : Utilise subtotalAmount (montant plats uniquement), PAS total_amount
+   */
+  static async createFromOrder(orderId, businessId, subtotalAmount, commissionRate) {
+    // ✅ Commission calculée sur SUBTOTAL uniquement (pas sur total avec frais)
+    const commissionAmount = Math.round((subtotalAmount * commissionRate) / 100);
 
     const result = await pool.query(
       `INSERT INTO commissions
        (order_id, business_id, order_amount, commission_rate, commission_amount, status)
        VALUES ($1, $2, $3, $4, $5, 'pending')
        RETURNING *`,
-      [orderId, businessId, orderAmount, commissionRate, commissionAmount]
+      [orderId, businessId, subtotalAmount, commissionRate, commissionAmount]
     );
+    
+    console.log(`✅ Commission créée: ${commissionRate}% de ${subtotalAmount} FCFA = ${commissionAmount} FCFA`);
+    
     return result.rows[0];
   }
 
-  static async createFromSpecialOrder(specialOrderId, businessId, orderAmount, commissionRate) {
-    const commissionAmount = (orderAmount * commissionRate) / 100;
+  /**
+   * ✅ MODIFIÉ : Créer commission depuis commande spéciale
+   * IMPORTANT : Utilise quotedAmount (montant devis), PAS le montant avec frais
+   */
+  static async createFromSpecialOrder(specialOrderId, businessId, quotedAmount, commissionRate) {
+    // ✅ Commission calculée sur montant devis uniquement
+    const commissionAmount = Math.round((quotedAmount * commissionRate) / 100);
 
     const result = await pool.query(
       `INSERT INTO commissions
        (special_order_id, business_id, order_amount, commission_rate, commission_amount, status)
        VALUES ($1, $2, $3, $4, $5, 'pending')
        RETURNING *`,
-      [specialOrderId, businessId, orderAmount, commissionRate, commissionAmount]
+      [specialOrderId, businessId, quotedAmount, commissionRate, commissionAmount]
     );
+    
+    console.log(`✅ Commission commande spéciale créée: ${commissionRate}% de ${quotedAmount} FCFA = ${commissionAmount} FCFA`);
+    
     return result.rows[0];
   }
 }

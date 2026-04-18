@@ -3,83 +3,127 @@
     <div class="row justify-content-center">
       <div class="col-md-10 col-lg-8">
         <div class="reservation-card">
+
+          <!-- ── HEADER ── -->
           <div class="card-header-reservation">
-            <i class="bi bi-calendar-plus"></i>
+            <i class="bi bi-calendar-heart"></i>
             <h2>Réserver une table</h2>
             <p class="restaurant-name">{{ restaurant?.name }}</p>
           </div>
 
           <div class="card-body-reservation">
-            <!-- Success Message -->
+
+            <!-- Badge Sandbox -->
+            <div *ngIf="isSandbox" class="alert alert-warning mb-4">
+              <i class="bi bi-shield-fill-check"></i>
+              <div>
+                <strong>Mode Sandbox actif</strong>
+                — Paiements acceptés sans débit réel.
+              </div>
+            </div>
+
+            <!-- ══════════════════════════════════════
+                 SUCCESS
+            ══════════════════════════════════════ -->
             <div *ngIf="success" class="success-message">
               <div class="success-icon">
-                <i class="bi bi-check-circle"></i>
+                <i class="bi bi-check-circle-fill"></i>
               </div>
               <h3>Réservation confirmée !</h3>
-              <p>Nous avons bien reçu votre réservation. Vous recevrez une confirmation par email.</p>
+              <p *ngIf="!depositRequired">
+                Nous avons bien reçu votre réservation. À très bientôt !
+              </p>
+              <p *ngIf="depositRequired && selectedPaymentMethod === 'cod'">
+                Votre réservation est enregistrée. Acompte de
+                <strong>{{ totalDeposit | number:'1.0-0' }} FCFA</strong>
+                à régler au restaurant.
+              </p>
+              <p *ngIf="depositRequired && selectedPaymentMethod !== 'cod'">
+                Votre paiement a été validé. Réservation confirmée !
+              </p>
               <button class="btn btn-primary" (click)="goBack()">
-                <i class="bi bi-house"></i>
+                <i class="bi bi-house-fill"></i>
                 Retour à l'accueil
               </button>
             </div>
 
-            <!-- Reservation Form -->
+            <!-- ══════════════════════════════════════
+                 FORMULAIRE
+            ══════════════════════════════════════ -->
             <form [formGroup]="reservationForm" (ngSubmit)="onSubmit()" *ngIf="!success">
+
+              <!-- Alerte acompte requis -->
+              <div *ngIf="depositRequired" class="alert alert-info mb-4">
+                <i class="bi bi-info-circle-fill"></i>
+                <div>
+                  <strong>Acompte requis : {{ depositAmount | number:'1.0-0' }} FCFA</strong>
+                  <small>Cet établissement demande un acompte pour valider votre réservation.</small>
+                </div>
+              </div>
+
+              <!-- ── 1. INFORMATIONS CLIENT ── -->
+              <p class="form-section-title">
+                <i class="bi bi-person-circle"></i>
+                Vos informations
+              </p>
+
               <div class="row">
-                <!-- Client Information -->
                 <div class="col-md-6 mb-3">
-                  <label for="client_name" class="form-label">
+                  <label class="form-label">
                     <i class="bi bi-person"></i>
                     Nom complet *
                   </label>
-                  <input 
-                    type="text" 
-                    class="form-control" 
-                    id="client_name" 
+                  <input
+                    type="text"
+                    class="form-control"
                     formControlName="client_name"
-                    placeholder="Votre nom complet"
+                    placeholder="Jean Dupont"
                     [class.is-invalid]="reservationForm.get('client_name')?.invalid && reservationForm.get('client_name')?.touched">
                   <div class="invalid-feedback">Nom requis</div>
                 </div>
 
                 <div class="col-md-6 mb-3">
-                  <label for="client_phone" class="form-label">
+                  <label class="form-label">
                     <i class="bi bi-telephone"></i>
                     Téléphone *
                   </label>
-                  <input 
-                    type="tel" 
-                    class="form-control" 
-                    id="client_phone" 
+                  <input
+                    type="tel"
+                    class="form-control"
                     formControlName="client_phone"
                     placeholder="+228 90 12 34 56"
                     [class.is-invalid]="reservationForm.get('client_phone')?.invalid && reservationForm.get('client_phone')?.touched">
                   <div class="invalid-feedback">Téléphone requis</div>
                 </div>
 
-                <div class="col-12 mb-3">
-                  <label for="client_email" class="form-label">
+                <div class="col-12 mb-4">
+                  <label class="form-label">
                     <i class="bi bi-envelope"></i>
-                    Email (optionnel)
+                    Email <span style="font-weight:400;color:var(--rt-t4);">(optionnel)</span>
                   </label>
-                  <input 
-                    type="email" 
-                    class="form-control" 
-                    id="client_email" 
+                  <input
+                    type="email"
+                    class="form-control"
                     formControlName="client_email"
-                    placeholder="votre@email.com">
+                    placeholder="vous@email.com">
                 </div>
+              </div>
 
-                <!-- Reservation Details -->
+              <!-- ── 2. DÉTAILS DE LA RÉSERVATION ── -->
+              <p class="form-section-title">
+                <i class="bi bi-calendar2-check"></i>
+                Détails de la réservation
+              </p>
+
+              <div class="row">
                 <div class="col-md-6 mb-3">
-                  <label for="reservation_date" class="form-label">
-                    <i class="bi bi-calendar"></i>
-                    Date de réservation *
+                  <label class="form-label">
+                    <i class="bi bi-calendar3"></i>
+                    Date *
                   </label>
-                  <input 
-                    type="date" 
-                    class="form-control" 
-                    id="reservation_date" 
+                  <input
+                    type="date"
+                    class="form-control"
                     formControlName="reservation_date"
                     [min]="minDate"
                     (change)="onDateChange()"
@@ -88,13 +132,12 @@
                 </div>
 
                 <div class="col-md-6 mb-3">
-                  <label for="number_of_people" class="form-label">
+                  <label class="form-label">
                     <i class="bi bi-people"></i>
-                    Nombre de personnes *
+                    Personnes *
                   </label>
-                  <select 
-                    class="form-select" 
-                    id="number_of_people" 
+                  <select
+                    class="form-select"
                     formControlName="number_of_people"
                     [class.is-invalid]="reservationForm.get('number_of_people')?.invalid && reservationForm.get('number_of_people')?.touched">
                     <option value="">Sélectionner</option>
@@ -102,89 +145,122 @@
                       {{ i }} personne{{ i > 1 ? 's' : '' }}
                     </option>
                   </select>
-                  <div class="invalid-feedback">Nombre de personnes requis</div>
+                  <div class="invalid-feedback">Requis</div>
                 </div>
 
                 <div class="col-12 mb-3">
-                  <label for="time_slot" class="form-label">
+                  <label class="form-label">
                     <i class="bi bi-clock"></i>
                     Créneau horaire *
                   </label>
-                  
+
+                  <!-- Chargement -->
                   <div *ngIf="loadingSlots" class="loading-slots">
-                    <div class="spinner-border spinner-border-sm"></div>
-                    <span>Chargement des créneaux disponibles...</span>
+                    <span class="spinner-border"></span>
+                    <span>Chargement des créneaux disponibles…</span>
                   </div>
 
-                  <div *ngIf="!loadingSlots && availableSlots.length === 0 && reservationForm.get('reservation_date')?.value" 
+                  <!-- Aucun créneau -->
+                  <div *ngIf="!loadingSlots && availableSlots.length === 0 && reservationForm.get('reservation_date')?.value"
                        class="alert alert-warning">
-                    <i class="bi bi-exclamation-circle"></i>
-                    Aucun créneau disponible pour cette date
+                    <i class="bi bi-clock-history"></i>
+                    <span>Aucun créneau disponible pour cette date. Essayez une autre date.</span>
                   </div>
 
-                  <!-- <div *ngIf="!loadingSlots && availableSlots.length > 0" class="time-slots-grid">
-                    <div 
-                      *ngFor="let slot of availableSlots" 
-                      class="time-slot"
-                      [class.selected]="reservationForm.get('time_slot')?.value === slot"
-                      (click)="selectTimeSlot(slot)">
-                      <i class="bi bi-clock"></i>
-                      {{ slot }}
-                    </div>
-                  </div> -->
-
-                  <select 
-                    class="form-select mb-3" 
-                    id="time_slot" 
+                  <!-- Select créneaux -->
+                  <select
+                    *ngIf="!loadingSlots"
+                    class="form-select"
                     formControlName="time_slot"
-                    (change)="onTimeSlotChange()"
                     [class.is-invalid]="reservationForm.get('time_slot')?.invalid && reservationForm.get('time_slot')?.touched">
                     <option value="">Sélectionner un créneau</option>
                     <option [value]="slot" *ngFor="let slot of availableSlots">{{ slot }}</option>
                   </select>
 
-                  <div class="invalid-feedback">
-                    Veuillez sélectionner un créneau horaire
-                  </div>
-
-                  <div class="invalid-feedback d-block" 
-                       *ngIf="reservationForm.get('time_slot')?.invalid && reservationForm.get('time_slot')?.touched">
-                    Créneau horaire requis
+                  <div class="invalid-feedback"
+                    *ngIf="reservationForm.get('time_slot')?.invalid && reservationForm.get('time_slot')?.touched">
+                    Créneau requis
                   </div>
                 </div>
 
-                <div class="col-12 mb-3">
-                  <label for="special_requests" class="form-label">
+                <div class="col-12 mb-2">
+                  <label class="form-label">
                     <i class="bi bi-chat-left-text"></i>
-                    Demandes spéciales (optionnel)
+                    Demandes spéciales <span style="font-weight:400;color:var(--rt-t4);">(optionnel)</span>
                   </label>
-                  <textarea 
-                    class="form-control" 
-                    id="special_requests" 
-                    rows="4" 
+                  <textarea
+                    class="form-control"
+                    rows="3"
                     formControlName="special_requests"
-                    placeholder="Allergie, préférence de table, occasion spéciale..."></textarea>
+                    placeholder="Allergie, préférence de table, occasion spéciale…"></textarea>
                 </div>
               </div>
 
-              <div class="form-actions">
-                <button 
-                  type="button" 
+              <!-- ── 3. PAIEMENT ACOMPTE ── -->
+              <div *ngIf="depositRequired" class="payment-section">
+                <h5>
+                  <i class="bi bi-credit-card-2-front"></i>
+                  Mode de paiement de l'acompte *
+                </h5>
+
+                <div class="payment-methods-grid">
+                  <div
+                    *ngFor="let method of paymentMethods"
+                    class="payment-method-card"
+                    [class.selected]="selectedPaymentMethod === method.value"
+                    (click)="selectPaymentMethod(method.value)">
+                    <span class="method-icon">{{ method.icon }}</span>
+                    <span class="method-label">{{ method.label }}</span>
+                    <span *ngIf="selectedPaymentMethod === method.value" class="check-icon">
+                      <i class="bi bi-check-circle-fill"></i>
+                    </span>
+                  </div>
+                </div>
+
+                <!-- Validation paiement -->
+                <div *ngIf="!selectedPaymentMethod && reservationForm.touched" class="text-danger">
+                  <i class="bi bi-exclamation-circle"></i>
+                  Veuillez sélectionner un mode de paiement
+                </div>
+
+                <!-- Récapitulatif acompte -->
+                <div *ngIf="selectedPaymentMethod" class="deposit-summary mt-3">
+                  <div class="d-flex justify-content-between mb-2">
+                    <span>Acompte</span>
+                    <strong>{{ depositAmount | number:'1.0-0' }} FCFA</strong>
+                  </div>
+                  <div *ngIf="depositFee > 0" class="d-flex justify-content-between mb-2">
+                    <span>Frais de transaction</span>
+                    <span class="text-warning">+{{ depositFee | number:'1.0-0' }} FCFA</span>
+                  </div>
+                  <hr>
+                  <div class="d-flex justify-content-between">
+                    <strong>Total à payer</strong>
+                    <strong class="text-primary">{{ totalDeposit | number:'1.0-0' }} FCFA</strong>
+                  </div>
+                </div>
+              </div>
+
+              <!-- ── ACTIONS ── -->
+              <div class="form-actions mt-4">
+                <button
+                  type="button"
                   class="btn btn-secondary"
                   (click)="goBack()"
                   [disabled]="loading">
                   <i class="bi bi-x-circle"></i>
                   Annuler
                 </button>
-                <button 
-                  type="submit" 
-                  class="btn btn-success" 
+                <button
+                  type="submit"
+                  class="btn btn-success"
                   [disabled]="reservationForm.invalid || loading">
-                  <span *ngIf="loading" class="spinner-border spinner-border-sm me-2"></span>
+                  <span *ngIf="loading" class="spinner-border"></span>
                   <i class="bi bi-calendar-check" *ngIf="!loading"></i>
-                  {{ loading ? 'Confirmation...' : 'Confirmer la réservation' }}
+                  {{ loading ? 'Confirmation…' : 'Confirmer la réservation' }}
                 </button>
               </div>
+
             </form>
           </div>
         </div>

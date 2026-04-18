@@ -1,108 +1,373 @@
-<div class="branding-container">
-      <h3><i class="bi bi-palette"></i> Branding Personnalisé</h3>
+<div class="branding-page">
 
-      <!-- Alerte si pas Premium -->
-      <div *ngIf="!hasPremium" class="alert alert-warning">
-        <i class="bi bi-lock-fill"></i>
-        <strong>Fonctionnalité Premium</strong>
-        <p class="mb-2">Cette fonctionnalité nécessite le plan Premium.</p>
-        <button class="btn btn-warning" (click)="navigateToSubscription()">
-          <i class="bi bi-star"></i> Passer au Premium
-        </button>
-      </div>
+  <!-- Header -->
+  <div class="branding-header">
+    <div class="branding-header__icon"><i class="bi bi-palette2"></i></div>
+    <div>
+      <h2 class="branding-header__title">Branding Personnalisé</h2>
+      <p class="branding-header__subtitle">Créez l'identité visuelle de votre établissement</p>
+    </div>
+  </div>
 
-      <!-- Formulaire (Premium uniquement) -->
-      <form [formGroup]="brandingForm" (ngSubmit)="saveBranding()" *ngIf="hasPremium">
-        <!-- Couleurs -->
-        <div class="card mb-3">
-          <div class="card-header">
-            <h5><i class="bi bi-palette-fill"></i> Couleurs</h5>
-          </div>
-          <div class="card-body">
-            <div class="row">
-              <div class="col-md-4 mb-3">
-                <label class="form-label">Couleur principale</label>
-                <input type="color" class="form-control form-control-color" formControlName="primary_color">
-                <small class="text-muted">Utilisée pour les boutons et liens</small>
-              </div>
-              <div class="col-md-4 mb-3">
-                <label class="form-label">Couleur secondaire</label>
-                <input type="color" class="form-control form-control-color" formControlName="secondary_color">
-                <small class="text-muted">Utilisée pour les textes</small>
-              </div>
-              <div class="col-md-4 mb-3">
-                <label class="form-label">Couleur d'accentuation</label>
-                <input type="color" class="form-control form-control-color" formControlName="accent_color">
-                <small class="text-muted">Utilisée pour les éléments importants</small>
-              </div>
+  <!-- Lock Premium -->
+  <div *ngIf="!hasPremium" class="premium-gate">
+    <div class="premium-gate__icon"><i class="bi bi-star-fill"></i></div>
+    <h3>Fonctionnalité Premium</h3>
+    <p>Personnalisez votre vitrine avec logo, bannière, galerie, réseaux sociaux et bien plus.</p>
+    <div class="premium-features">
+      <span><i class="bi bi-check2"></i> Logo & bannière</span>
+      <span><i class="bi bi-check2"></i> Galerie photos</span>
+      <span><i class="bi bi-check2"></i> Couleurs de marque</span>
+      <span><i class="bi bi-check2"></i> Réseaux sociaux</span>
+      <span><i class="bi bi-check2"></i> Arguments clés</span>
+    </div>
+    <button class="btn-premium" (click)="navigateToSubscription()">
+      <i class="bi bi-lightning-fill"></i> Passer au Premium
+    </button>
+  </div>
+
+  <!-- Workspace Premium -->
+  <div *ngIf="hasPremium" class="branding-workspace">
+
+    <!-- Onglets -->
+    <div class="branding-tabs">
+      <button *ngFor="let tab of tabs"
+              class="branding-tab"
+              [class.active]="activeTab === tab.key"
+              (click)="setTab(tab.key)">
+        <i class="bi" [ngClass]="tab.icon"></i>
+        <span>{{ tab.label }}</span>
+      </button>
+    </div>
+
+    <form [formGroup]="brandingForm" (ngSubmit)="saveBranding()">
+
+      <!-- ═══ COULEURS ═══════════════════════════════════════════ -->
+      <div class="branding-panel" *ngIf="activeTab === 'colors'">
+        <div class="panel-title"><i class="bi bi-droplet-fill"></i> Palette de couleurs</div>
+        <div class="colors-grid">
+          <div class="color-item" *ngFor="let c of [
+            {ctrl:'primary_color',   label:'Principale',   hint:'Boutons, liens, header'},
+            {ctrl:'secondary_color', label:'Secondaire',   hint:'Textes secondaires'},
+            {ctrl:'accent_color',    label:'Accentuation', hint:'Prix, badges, étoiles'}
+          ]">
+            <div class="color-preview" [style.background]="brandingForm.get(c.ctrl)?.value">
+              <input type="color" [formControlName]="c.ctrl" class="color-input">
+            </div>
+            <div class="color-meta">
+              <span class="color-label">{{ c.label }}</span>
+              <span class="color-value">{{ brandingForm.get(c.ctrl)?.value }}</span>
+              <small>{{ c.hint }}</small>
             </div>
           </div>
         </div>
-
-        <!-- Logo -->
-        <div class="card mb-3">
-          <div class="card-header">
-            <h5><i class="bi bi-image"></i> Logo</h5>
-          </div>
-          <div class="card-body">
-            <div class="mb-3">
-              <label class="form-label">URL du logo</label>
-              <input type="url" class="form-control" formControlName="logo_url" 
-                     placeholder="https://example.com/logo.png">
-              <small class="text-muted">Recommandé : 200x80 pixels, PNG avec fond transparent</small>
+        <div class="panel-title mt-4"><i class="bi bi-eye-fill"></i> Aperçu en temps réel</div>
+        <div class="live-preview"
+             [style.--p]="brandingForm.value.primary_color"
+             [style.--a]="brandingForm.value.accent_color"
+             [style.--s]="brandingForm.value.secondary_color">
+          <div class="lp-header">
+            <div class="lp-logo">
+              <img *ngIf="logoPreview" [src]="logoPreview" alt="logo">
+              <i *ngIf="!logoPreview" class="bi bi-shop"></i>
             </div>
+            <span class="lp-name">{{ brandingForm.value.tagline || 'Votre établissement' }}</span>
           </div>
-        </div>
-
-        <!-- Aperçu -->
-        <div class="card mb-3">
-          <div class="card-header">
-            <h5><i class="bi bi-eye"></i> Aperçu</h5>
-          </div>
-          <div class="card-body">
-            <div class="preview-card p-4 rounded" 
-                 [style.background-color]="brandingForm.value.primary_color">
-              <img *ngIf="brandingForm.value.logo_url" 
-                   [src]="brandingForm.value.logo_url" 
-                   class="preview-logo mb-3"
-                   style="max-height: 60px;">
-              <h4 [style.color]="brandingForm.value.secondary_color">
-                Aperçu de votre branding
-              </h4>
-              <button class="btn mt-2" 
-                      [style.background-color]="brandingForm.value.accent_color"
-                      [style.color]="'#fff'">
-                Bouton exemple
+          <div class="lp-body">
+            <p class="lp-text" [style.color]="brandingForm.value.secondary_color">
+              Bienvenue dans notre espace en ligne
+            </p>
+            <div class="lp-btns">
+              <!-- ✅ CORRECTION : (click) bloque toute navigation — ce sont des boutons de PREVIEW uniquement -->
+              <button type="button" class="lp-btn-p"
+                (click)="$event.preventDefault(); $event.stopPropagation()">
+                Commander
+              </button>
+              <button type="button" class="lp-btn-a"
+                (click)="$event.preventDefault(); $event.stopPropagation()">
+                Réserver
               </button>
             </div>
           </div>
         </div>
+      </div>
 
-        <!-- Footer personnalisé -->
-        <div class="card mb-3">
-          <div class="card-header">
-            <h5><i class="bi bi-text-paragraph"></i> Footer personnalisé</h5>
+      <!-- ═══ LOGO ═══════════════════════════════════════════════ -->
+      <div class="branding-panel" *ngIf="activeTab === 'logo'">
+        <div class="panel-title"><i class="bi bi-image-fill"></i> Logo de l'établissement</div>
+        <div class="source-tabs mb-3">
+          <button type="button" class="source-tab" [class.active]="!showLogoUrl" (click)="showLogoUrl = false">
+            <i class="bi bi-upload me-1"></i> Depuis mon PC
+          </button>
+          <button type="button" class="source-tab" [class.active]="showLogoUrl" (click)="showLogoUrl = true">
+            <i class="bi bi-link-45deg me-1"></i> Depuis une URL
+          </button>
+        </div>
+        <ng-container *ngIf="!showLogoUrl">
+          <div class="upload-zone" [class.has-file]="logoPreview" (click)="logoFileInput.click()">
+            <div *ngIf="!logoPreview && !uploadingLogo" class="upload-empty">
+              <i class="bi bi-cloud-upload"></i>
+              <p>Cliquez pour choisir votre logo</p>
+              <small>JPG, PNG, WEBP, SVG · max 5 MB · Recommandé : 400×150 px</small>
+            </div>
+            <div *ngIf="uploadingLogo" class="upload-loading">
+              <div class="spinner-border text-primary"></div><p>Upload...</p>
+            </div>
+            <div *ngIf="logoPreview && !uploadingLogo" class="upload-preview">
+              <img [src]="logoPreview" alt="Logo">
+              <div class="upload-overlay"><i class="bi bi-pencil-fill"></i><span>Changer</span></div>
+            </div>
           </div>
-          <div class="card-body">
-            <div class="mb-3">
-              <label class="form-label">Texte du footer</label>
-              <textarea class="form-control" formControlName="footer_text" rows="3"
-                        placeholder="© 2024 Mon Restaurant - Tous droits réservés"></textarea>
+          <input #logoFileInput type="file" accept="image/*" style="display:none" (change)="onLogoSelected($event)">
+        </ng-container>
+        <ng-container *ngIf="showLogoUrl">
+          <div class="url-input-zone">
+            <div class="url-preview-box" *ngIf="logoUrlInput">
+              <img [src]="logoUrlInput" alt="Aperçu" (error)="logoUrlInput = ''" style="max-height:80px; object-fit:contain;">
+            </div>
+            <div class="input-group">
+              <span class="input-group-text"><i class="bi bi-link-45deg"></i></span>
+              <input type="url" class="form-control" [(ngModel)]="logoUrlInput" [ngModelOptions]="{standalone: true}" placeholder="https://exemple.com/logo.png">
+              <button type="button" class="btn btn-primary" (click)="addLogoFromUrl()" [disabled]="!logoUrlInput.trim()">Appliquer</button>
+            </div>
+            <small class="text-muted mt-1 d-block"><i class="bi bi-info-circle me-1"></i>L'image doit être publiquement accessible.</small>
+          </div>
+        </ng-container>
+        <div *ngIf="logoPreview && !showLogoUrl" class="file-actions mt-2">
+          <button type="button" class="btn-remove" (click)="removeLogo()"><i class="bi bi-trash3"></i> Supprimer le logo</button>
+        </div>
+        <div *ngIf="logoPreview" class="current-preview-info mt-2">
+          <small class="text-muted"><i class="bi bi-check-circle-fill text-success me-1"></i>Logo actuel appliqué</small>
+        </div>
+      </div>
+
+      <!-- ═══ BANNIÈRE ═══════════════════════════════════════════ -->
+      <div class="branding-panel" *ngIf="activeTab === 'banner'">
+        <div class="panel-title"><i class="bi bi-card-image"></i> Image de bannière (Hero)</div>
+        <p class="panel-hint">Affichée en haut de votre page profil. Recommandé : 1200×400 px</p>
+        <div class="source-tabs mb-3">
+          <button type="button" class="source-tab" [class.active]="!showBannerUrl" (click)="showBannerUrl = false">
+            <i class="bi bi-upload me-1"></i> Depuis mon PC
+          </button>
+          <button type="button" class="source-tab" [class.active]="showBannerUrl" (click)="showBannerUrl = true">
+            <i class="bi bi-link-45deg me-1"></i> Depuis une URL
+          </button>
+        </div>
+        <ng-container *ngIf="!showBannerUrl">
+          <div class="upload-zone banner-zone" [class.has-file]="bannerPreview" (click)="bannerFileInput.click()">
+            <div *ngIf="!bannerPreview && !uploadingBanner" class="upload-empty">
+              <i class="bi bi-panorama"></i>
+              <p>Cliquez pour choisir votre bannière</p>
+              <small>JPG, PNG, WEBP · max 8 MB · 1200×400 px recommandé</small>
+            </div>
+            <div *ngIf="uploadingBanner" class="upload-loading">
+              <div class="spinner-border text-primary"></div><p>Upload...</p>
+            </div>
+            <div *ngIf="bannerPreview && !uploadingBanner" class="upload-preview banner-preview">
+              <img [src]="bannerPreview" alt="Bannière">
+              <div class="upload-overlay"><i class="bi bi-pencil-fill"></i><span>Changer</span></div>
+            </div>
+          </div>
+          <input #bannerFileInput type="file" accept="image/jpeg,image/png,image/webp" style="display:none" (change)="onBannerSelected($event)">
+          <div *ngIf="bannerPreview" class="file-actions mt-2">
+            <button type="button" class="btn-remove" (click)="removeBanner()"><i class="bi bi-trash3"></i> Supprimer la bannière</button>
+          </div>
+        </ng-container>
+        <ng-container *ngIf="showBannerUrl">
+          <div class="url-input-zone">
+            <div class="url-preview-box banner-url-preview" *ngIf="bannerUrlInput">
+              <img [src]="bannerUrlInput" alt="Aperçu" (error)="bannerUrlInput = ''" style="width:100%; max-height:140px; object-fit:cover; border-radius:8px;">
+            </div>
+            <div class="input-group">
+              <span class="input-group-text"><i class="bi bi-link-45deg"></i></span>
+              <input type="url" class="form-control" [(ngModel)]="bannerUrlInput" [ngModelOptions]="{standalone: true}" placeholder="https://exemple.com/banniere.jpg">
+              <button type="button" class="btn btn-primary" (click)="addBannerFromUrl()" [disabled]="!bannerUrlInput.trim()">Appliquer</button>
+            </div>
+          </div>
+        </ng-container>
+        <div *ngIf="bannerPreview" class="current-preview-info mt-2">
+          <small class="text-muted"><i class="bi bi-check-circle-fill text-success me-1"></i>Bannière actuelle appliquée</small>
+        </div>
+        <div class="panel-title mt-4"><i class="bi bi-type"></i> Slogan / Tagline</div>
+        <input type="text" class="form-control" formControlName="tagline" placeholder="Ex: La cuisine du terroir, revisitée avec passion">
+        <small class="text-muted mt-1 d-block">Affiché sous le nom de votre établissement</small>
+      </div>
+
+      <!-- ═══ GALERIE ════════════════════════════════════════════ -->
+      <div class="branding-panel" *ngIf="activeTab === 'gallery'">
+        <div class="panel-title">
+          <i class="bi bi-images"></i> Galerie photos
+          <span class="count-badge">{{ galleryUrls.length }}/10</span>
+        </div>
+        <p class="panel-hint">Montrez vos plats, votre salle, votre ambiance. Max 10 photos.</p>
+        <div class="source-tabs mb-3" *ngIf="galleryUrls.length < 10">
+          <button type="button" class="source-tab" [class.active]="!showGalleryUrl" (click)="showGalleryUrl = false">
+            <i class="bi bi-upload me-1"></i> Depuis mon PC
+          </button>
+          <button type="button" class="source-tab" [class.active]="showGalleryUrl" (click)="showGalleryUrl = true">
+            <i class="bi bi-link-45deg me-1"></i> Depuis une URL
+          </button>
+        </div>
+        <div class="url-input-zone mb-3" *ngIf="showGalleryUrl && galleryUrls.length < 10">
+          <div class="url-preview-box" *ngIf="galleryUrlInput">
+            <img [src]="galleryUrlInput" alt="Aperçu" (error)="galleryUrlInput = ''" style="max-height:100px; object-fit:cover; border-radius:6px;">
+          </div>
+          <div class="input-group">
+            <span class="input-group-text"><i class="bi bi-link-45deg"></i></span>
+            <input type="url" class="form-control" [(ngModel)]="galleryUrlInput" [ngModelOptions]="{standalone: true}" placeholder="https://images.unsplash.com/...">
+            <button type="button" class="btn btn-primary" (click)="addGalleryFromUrl()" [disabled]="!galleryUrlInput.trim()">
+              <i class="bi bi-plus-lg"></i> Ajouter
+            </button>
+          </div>
+        </div>
+        <div class="gallery-manager">
+          <div class="gallery-grid-edit">
+            <div class="gallery-edit-item" *ngFor="let img of galleryUrls; let i = index">
+              <img [src]="img" [alt]="'Photo ' + (i+1)">
+              <button type="button" class="gallery-remove" (click)="removeGalleryImage(i)"><i class="bi bi-x-lg"></i></button>
+            </div>
+            <div class="gallery-add-btn" *ngIf="galleryUrls.length < 10 && !showGalleryUrl" (click)="galleryFileInput.click()">
+              <div *ngIf="!uploadingGallery"><i class="bi bi-plus-lg"></i><span>Ajouter</span></div>
+              <div *ngIf="uploadingGallery"><div class="spinner-border spinner-border-sm"></div></div>
             </div>
           </div>
         </div>
+        <input #galleryFileInput type="file" accept="image/jpeg,image/png,image/webp" style="display:none" (change)="onGallerySelected($event)">
+      </div>
 
-        <!-- Boutons d'action -->
-        <div class="d-flex gap-2">
-          <button type="submit" class="btn btn-primary" [disabled]="loading">
-            <span *ngIf="loading" class="spinner-border spinner-border-sm me-2"></span>
-            <i class="bi bi-save" *ngIf="!loading"></i>
-            Enregistrer
-          </button>
-          <button type="button" class="btn btn-outline-secondary" (click)="resetBranding()" [disabled]="loading">
-            <i class="bi bi-arrow-counterclockwise"></i>
-            Réinitialiser
-          </button>
+      <!-- ═══ RÉSEAUX SOCIAUX ════════════════════════════════════ -->
+      <div class="branding-panel" *ngIf="activeTab === 'social'">
+        <div class="panel-title"><i class="bi bi-share-fill"></i> Réseaux sociaux & Contact</div>
+        <div class="social-form">
+          <div class="social-input-row">
+            <div class="social-icon instagram"><i class="bi bi-instagram"></i></div>
+            <input type="url" class="form-control" formControlName="instagram_url" placeholder="https://instagram.com/votre-compte">
+          </div>
+          <div class="social-input-row">
+            <div class="social-icon facebook"><i class="bi bi-facebook"></i></div>
+            <input type="url" class="form-control" formControlName="facebook_url" placeholder="https://facebook.com/votre-page">
+          </div>
+          <div class="social-input-row">
+            <div class="social-icon tiktok"><i class="bi bi-tiktok"></i></div>
+            <input type="url" class="form-control" formControlName="tiktok_url" placeholder="https://tiktok.com/@votre-compte">
+          </div>
+          <div class="social-input-row">
+            <div class="social-icon whatsapp"><i class="bi bi-whatsapp"></i></div>
+            <input type="tel" class="form-control" formControlName="whatsapp_number" placeholder="+228 90 12 34 56">
+          </div>
         </div>
+      </div>
+
+      <!-- ═══ ARGUMENTS CLÉS ════════════════════════════════════ -->
+      <div class="branding-panel" *ngIf="activeTab === 'highlights'">
+        <div class="panel-title"><i class="bi bi-award-fill"></i> Vos 3 arguments clés</div>
+        <p class="panel-hint">Affiché en bandeau sur votre page profil. Mettez en avant ce qui vous distingue.</p>
+        <div class="highlights-editor">
+          <div class="highlight-row" *ngFor="let h of [
+            {n:1, iconCtrl:'highlight_1_icon', textCtrl:'highlight_1_text'},
+            {n:2, iconCtrl:'highlight_2_icon', textCtrl:'highlight_2_text'},
+            {n:3, iconCtrl:'highlight_3_icon', textCtrl:'highlight_3_text'}
+          ]">
+            <span class="hl-number">{{ h.n }}</span>
+            <div class="icon-picker">
+              <div class="icon-preview"><i class="bi" [ngClass]="brandingForm.get(h.iconCtrl)?.value"></i></div>
+              <select [formControlName]="h.iconCtrl" class="form-select icon-select">
+                <option *ngFor="let icon of highlightIcons" [value]="icon">{{ icon.replace('bi-', '') }}</option>
+              </select>
+            </div>
+            <input type="text" class="form-control" [formControlName]="h.textCtrl" placeholder="Ex: Cuisine 100% maison, Livraison 30 min...">
+          </div>
+        </div>
+        <div class="panel-title mt-4"><i class="bi bi-eye-fill"></i> Aperçu</div>
+        <div class="highlights-preview">
+          <ng-container *ngFor="let h of [
+            {icon: brandingForm.value.highlight_1_icon, text: brandingForm.value.highlight_1_text},
+            {icon: brandingForm.value.highlight_2_icon, text: brandingForm.value.highlight_2_text},
+            {icon: brandingForm.value.highlight_3_icon, text: brandingForm.value.highlight_3_text}
+          ]">
+            <div class="hl-preview-item" *ngIf="h.text">
+              <i class="bi" [ngClass]="h.icon" [style.color]="brandingForm.value.accent_color"></i>
+              <span>{{ h.text }}</span>
+            </div>
+          </ng-container>
+          <p class="text-muted small" *ngIf="!brandingForm.value.highlight_1_text && !brandingForm.value.highlight_2_text && !brandingForm.value.highlight_3_text">
+            Remplissez les champs ci-dessus pour voir l'aperçu
+          </p>
+        </div>
+      </div>
+
+      <!-- ═══ PRATIQUE ══════════════════════════════════════════ -->
+      <div class="branding-panel" *ngIf="activeTab === 'pratique'">
+        <div class="panel-title"><i class="bi bi-clock-fill"></i> Horaires d'ouverture</div>
+        <p class="panel-hint">Texte libre affiché dans la sidebar de votre profil public.</p>
+        <input type="text" class="form-control" formControlName="opening_hours_text"
+               placeholder="Ex: Lun–Sam 11h–22h · Dim 12h–21h · Fermé le mardi">
+        <small class="text-muted mt-1 d-block">
+          <i class="bi bi-lightbulb me-1 text-warning"></i>
+          Astuce : utilisez · pour séparer les jours. Ex: "Lun–Ven 11h–15h · 18h–22h"
+        </small>
+
+        <div class="panel-title mt-4"><i class="bi bi-credit-card-fill"></i> Moyens de paiement acceptés</div>
+        <p class="panel-hint">Cochez les modes de paiement disponibles dans votre établissement.</p>
+        <div class="payment-options">
+          <label *ngFor="let opt of paymentOptions"
+                 class="payment-option"
+                 [class.selected]="isPaymentSelected(opt.value)"
+                 (click)="togglePayment(opt.value)">
+            <i class="bi" [ngClass]="opt.icon"></i>
+            <span>{{ opt.label }}</span>
+            <i class="bi bi-check-circle-fill check-icon"></i>
+          </label>
+        </div>
+
+        <div class="panel-title mt-4"><i class="bi bi-info-circle-fill"></i> Informations pratiques</div>
+        <p class="panel-hint">Parking, WiFi, accès PMR, dress code, réservation obligatoire…</p>
+        <textarea class="form-control pratique-textarea" formControlName="practical_note" rows="3"
+                  placeholder="Ex: Parking gratuit · WiFi disponible · Accès PMR · Tenue correcte exigée">
+        </textarea>
+        <small class="text-muted mt-1 d-block">
+          <i class="bi bi-lightbulb me-1 text-warning"></i>
+          Utilisez · pour séparer les informations. Affiché dans la sidebar de votre profil.
+        </small>
+
+        <div class="panel-title mt-4"><i class="bi bi-eye-fill"></i> Aperçu dans la sidebar</div>
+        <div class="pratique-preview">
+          <div class="pp-card">
+            <div class="pp-section" *ngIf="brandingForm.value.opening_hours_text">
+              <i class="bi bi-clock-fill" [style.color]="brandingForm.value.primary_color"></i>
+              <span>{{ brandingForm.value.opening_hours_text }}</span>
+            </div>
+            <div class="pp-section" *ngIf="selectedPayments.length > 0">
+              <i class="bi bi-credit-card-fill" [style.color]="brandingForm.value.primary_color"></i>
+              <div class="pp-payments">
+                <span *ngFor="let p of selectedPayments" class="pp-badge">
+                  {{ getPaymentLabel(p) }}
+                </span>
+              </div>
+            </div>
+            <div class="pp-section" *ngIf="brandingForm.value.practical_note">
+              <i class="bi bi-info-circle-fill" [style.color]="brandingForm.value.primary_color"></i>
+              <span>{{ brandingForm.value.practical_note }}</span>
+            </div>
+            <div class="pp-empty" *ngIf="!brandingForm.value.opening_hours_text && selectedPayments.length === 0 && !brandingForm.value.practical_note">
+              <i class="bi bi-eye-slash text-muted"></i>
+              <span class="text-muted small">Remplissez les champs ci-dessus</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Actions ────────────────────────────────────────── -->
+      <div class="branding-actions">
+        <button type="button" class="btn-reset" (click)="resetBranding()" [disabled]="loading">
+          <i class="bi bi-arrow-counterclockwise"></i> Réinitialiser
+        </button>
+        <button type="submit" class="btn-save" [disabled]="loading">
+          <span *ngIf="loading" class="spinner-border spinner-border-sm me-2"></span>
+          <i class="bi bi-check2-circle" *ngIf="!loading"></i>
+          {{ loading ? 'Enregistrement...' : 'Enregistrer le branding' }}
+        </button>
+      </div>
     </form>
+  </div>
 </div>

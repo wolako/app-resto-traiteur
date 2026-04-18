@@ -1,7 +1,9 @@
 const { pool } = require('../config/db');
 
 class SpecialOrder {
-  // Créer une commande spéciale
+  /**
+   * Créer une commande spéciale
+   */
   static async create(orderData) {
     const query = `
       INSERT INTO special_orders (
@@ -15,7 +17,7 @@ class SpecialOrder {
 
     const values = [
       orderData.business_id,
-      orderData.client_id || null, // AJOUT: Inclure client_id
+      orderData.client_id || null,
       orderData.client_name,
       orderData.client_email,
       orderData.client_phone,
@@ -36,7 +38,9 @@ class SpecialOrder {
     return result.rows[0];
   }
 
-  // Trouver par ID
+  /**
+   * Trouver par ID
+   */
   static async findById(id) {
     const query = `
       SELECT so.*, b.name as business_name, b.type as business_type
@@ -48,7 +52,9 @@ class SpecialOrder {
     return result.rows[0];
   }
 
-  // Trouver par business ID
+  /**
+   * Trouver par business ID
+   */
   static async findByBusinessId(businessId) {
     const query = `
       SELECT so.*, b.name as business_name, b.type as business_type
@@ -61,7 +67,49 @@ class SpecialOrder {
     return result.rows;
   }
 
-  // Mettre à jour le statut
+  /**
+   * ✅ MODIFIÉ : Mettre à jour avec support devis
+   */
+  static async update(id, updateData) {
+    const fields = [];
+    const values = [];
+    let paramCount = 1;
+
+    const allowedFields = [
+      'status', 'quoted_amount', 'deposit_percentage', 'deposit_amount',
+      'deposit_status', 'deposit_payment_method', 'deposit_payment_fee',
+      'deposit_payment_id', 'transport_fee', 'final_amount', 'quote_notes'
+    ];
+
+    Object.keys(updateData).forEach(key => {
+      if (allowedFields.includes(key)) {
+        fields.push(`${key} = $${paramCount}`);
+        values.push(updateData[key]);
+        paramCount++;
+      }
+    });
+
+    if (fields.length === 0) {
+      return this.findById(id);
+    }
+
+    fields.push('updated_at = CURRENT_TIMESTAMP');
+    values.push(id);
+
+    const query = `
+      UPDATE special_orders 
+      SET ${fields.join(', ')}
+      WHERE id = $${paramCount}
+      RETURNING *
+    `;
+
+    const result = await pool.query(query, values);
+    return result.rows[0];
+  }
+
+  /**
+   * Mettre à jour le statut uniquement
+   */
   static async updateStatus(id, status) {
     const query = `
       UPDATE special_orders 
@@ -73,16 +121,57 @@ class SpecialOrder {
     return result.rows[0];
   }
 
-  // Obtenir les statistiques des commandes spéciales
+  /**
+   * ✅ NOUVEAU : Mettre à jour statut acompte
+   */
+  static async updateDepositStatus(id, depositStatus, extraData = {}) {
+    const fields = ['deposit_status = $1'];
+    const values = [depositStatus, id];
+    let paramCount = 2;
+
+    if (depositStatus === 'paid' && !extraData.deposit_paid_at) {
+      fields.push('deposit_paid_at = CURRENT_TIMESTAMP');
+    }
+
+    if (depositStatus === 'cod_received') {
+      fields.push('deposit_cod_confirmed_at = CURRENT_TIMESTAMP');
+      if (extraData.confirmed_by) {
+        paramCount++;
+        fields.push(`deposit_cod_confirmed_by = $${paramCount}`);
+        values.push(extraData.confirmed_by);
+      }
+    }
+
+    Object.keys(extraData).forEach(key => {
+      if (!['deposit_paid_at', 'confirmed_by'].includes(key)) {
+        paramCount++;
+        fields.push(`${key} = $${paramCount}`);
+        values.push(extraData[key]);
+      }
+    });
+
+    const result = await pool.query(
+      `UPDATE special_orders SET ${fields.join(', ')}, updated_at = CURRENT_TIMESTAMP WHERE id = $2 RETURNING *`,
+      values
+    );
+    return result.rows[0];
+  }
+
+  /**
+   * Obtenir les statistiques des commandes spéciales
+   */
   static async getStatistics(businessId = null) {
     let query = `
       SELECT 
         COUNT(*) as total_orders,
         COUNT(*) FILTER (WHERE DATE(created_at) = CURRENT_DATE) as today_orders,
         COUNT(*) FILTER (WHERE status = 'pending') as pending_orders,
+        COUNT(*) FILTER (WHERE status = 'quoted') as quoted_orders,
         COUNT(*) FILTER (WHERE status = 'confirmed') as confirmed_orders,
         COALESCE(AVG(estimated_budget), 0) as average_budget,
-        COALESCE(SUM(estimated_budget), 0) as total_budget
+        COALESCE(SUM(estimated_budget), 0) as total_budget,
+        COALESCE(SUM(quoted_amount), 0) as total_quoted,
+        COALESCE(SUM(deposit_amount) FILTER (WHERE deposit_status = 'paid'), 0) as total_deposits_received
       FROM special_orders
     `;
 

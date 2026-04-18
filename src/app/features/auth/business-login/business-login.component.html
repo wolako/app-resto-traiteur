@@ -1,0 +1,112 @@
+<div class="business-login-page">
+  <div class="blp-card anim-fadeup">
+
+    <!-- Header -->
+    <div class="blp-header">
+      <div class="blp-brand-mark">
+        <i class="bi bi-building-fill"></i>
+      </div>
+      <div class="blp-badge">Espace Établissement</div>
+      <h1>Connexion partenaire</h1>
+      <p>Accédez à votre tableau de bord restaurant ou traiteur</p>
+    </div>
+
+    <!-- Body -->
+    <div class="blp-body">
+
+      <!-- Erreur -->
+      <div *ngIf="error" class="blp-error">
+        <i class="bi bi-exclamation-circle-fill"></i>
+        <span>{{ error }}</span>
+      </div>
+
+      <!-- Formulaire -->
+      <form [formGroup]="loginForm" (ngSubmit)="onSubmit()">
+
+        <!-- Email -->
+        <div class="blp-form-group">
+          <label for="email" class="blp-label">Adresse email</label>
+          <div class="blp-input-wrapper">
+            <i class="bi bi-envelope"></i>
+            <input
+              type="email"
+              class="blp-input"
+              id="email"
+              formControlName="email"
+              placeholder="votre@restaurant.com"
+              autocomplete="username"
+              [class.is-invalid]="loginForm.get('email')?.invalid && loginForm.get('email')?.touched">
+          </div>
+          <div class="blp-invalid"
+            *ngIf="loginForm.get('email')?.touched && loginForm.get('email')?.errors?.['required']">
+            Email requis
+          </div>
+          <div class="blp-invalid"
+            *ngIf="loginForm.get('email')?.touched && loginForm.get('email')?.errors?.['email']">
+            Adresse email invalide
+          </div>
+        </div>
+
+        <!-- Mot de passe -->
+        <div class="blp-form-group">
+          <div class="blp-label-row">
+            <label for="password" class="blp-label">Mot de passe</label>
+            <a routerLink="/forgot-password" class="blp-forgot">Mot de passe oublié ?</a>
+          </div>
+          <div class="blp-input-wrapper">
+            <i class="bi bi-lock-fill"></i>
+            <input
+              [type]="showPassword ? 'text' : 'password'"
+              class="blp-input toggle-present"
+              id="password"
+              formControlName="password"
+              placeholder="Votre mot de passe"
+              autocomplete="current-password"
+              [class.is-invalid]="loginForm.get('password')?.invalid && loginForm.get('password')?.touched">
+            <button type="button" class="blp-toggle-pw"
+              (click)="togglePasswordVisibility()" tabindex="-1">
+              <i class="bi" [class.bi-eye]="!showPassword" [class.bi-eye-slash]="showPassword"></i>
+            </button>
+          </div>
+          <div class="blp-invalid"
+            *ngIf="loginForm.get('password')?.invalid && loginForm.get('password')?.touched">
+            Mot de passe requis
+          </div>
+        </div>
+
+        <!-- Submit -->
+        <button type="submit" class="blp-submit" [disabled]="loginForm.invalid || loading">
+          <span *ngIf="loading" class="spinner-border spinner-border-sm"></span>
+          <i *ngIf="!loading" class="bi bi-box-arrow-in-right"></i>
+          {{ loading ? 'Connexion...' : 'Accéder à mon espace' }}
+        </button>
+
+      </form>
+
+      <!-- Séparateur -->
+      <div class="blp-divider">
+        <span>Nouveau partenaire ?</span>
+      </div>
+
+      <!-- CTA inscription -->
+      <a routerLink="/register" class="blp-register-cta">
+        <div class="blp-cta-icon">
+          <i class="bi bi-shop-window"></i>
+        </div>
+        <div class="blp-cta-text">
+          <strong>Créer un compte établissement</strong>
+          <small>Restaurant ou service traiteur</small>
+        </div>
+        <i class="bi bi-arrow-right blp-cta-arrow"></i>
+      </a>
+
+    </div>
+
+    <!-- Footer -->
+    <div class="blp-footer">
+      <span>Vous êtes un client ?</span>
+      <a routerLink="/login">Connexion client</a>
+    </div>
+
+  </div>
+</div>

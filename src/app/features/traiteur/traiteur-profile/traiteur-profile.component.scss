@@ -1,0 +1,150 @@
+/* traiteur-profile.component.scss */
+
+:root {
+  --brand-primary:   #0d6efd;
+  --brand-secondary: #6c757d;
+  --brand-accent:    #ffc107;
+}
+
+/* ── Styles spécifiques traiteur ────────────────────────────────────────────── */
+.traiteur-profile {
+  .badge-type { background: #6f42c1; color: white; }
+  .section-title { border-bottom-color: #6f42c1; }
+  .cta-card { border: 2px solid var(--brand-primary); background: linear-gradient(135deg, #f8f9ff, #ffffff); }
+}
+
+/* ── Event types grid ──────────────────────────────────────────────────────── */
+.event-types-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 0.75rem;
+  .event-type-item {
+    display: flex; flex-direction: column; align-items: center; gap: 0.4rem;
+    padding: 1rem 0.5rem; background: #f8f9fa; border-radius: 10px;
+    text-align: center; font-size: 0.8rem; color: #555; transition: background 0.2s, transform 0.2s;
+    i { font-size: 1.5rem; color: var(--brand-primary); }
+    &:hover { background: rgba(13, 110, 253, 0.08); transform: translateY(-2px); }
+  }
+}
+
+/* ── Price per person ──────────────────────────────────────────────────────── */
+.item-price small { font-size: 0.65rem; margin-left: 2px; }
+
+/* ── CTA banner ────────────────────────────────────────────────────────────── */
+.cta-banner {
+  background: linear-gradient(135deg, var(--brand-primary), var(--brand-secondary));
+  border-radius: 16px; padding: 2.5rem 2rem; text-align: center; color: white; margin-top: 1rem;
+  h4 { font-weight: 700; margin-bottom: 0.5rem; }
+  p { opacity: 0.85; margin-bottom: 1.5rem; }
+  .btn-light { color: var(--brand-primary); font-weight: 600; }
+}
+
+/* ── How it works ──────────────────────────────────────────────────────────── */
+.how-it-works { background: linear-gradient(135deg, #f8f9ff, #fff); border: 1px solid rgba(13, 110, 253, 0.1); }
+.step-list { display: flex; flex-direction: column; gap: 1rem; }
+.step-item {
+  display: flex; gap: 0.75rem; align-items: flex-start;
+  .step-num { width: 28px; height: 28px; border-radius: 50%; background: var(--brand-primary); color: white; font-weight: 700; font-size: 0.8rem; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 2px; }
+  strong { font-size: 0.9rem; display: block; margin-bottom: 2px; }
+}
+
+/* ── Styles communs ─────────────────────────────────────────────────────────── */
+.profile-loading { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 60vh; }
+
+.profile-sticky-header {
+  position: fixed; top: 0; left: 0; right: 0; z-index: 1030;
+  background: rgba(255,255,255,0.95); backdrop-filter: blur(8px);
+  border-bottom: 1px solid rgba(0,0,0,.08); padding: 0.6rem 1rem;
+  transform: translateY(-100%); transition: transform 0.25s ease;
+  &.visible { transform: translateY(0); }
+  .sticky-logo { height: 32px; width: 32px; object-fit: contain; border-radius: 6px; }
+}
+
+.profile-hero {
+  position: relative; min-height: 420px; display: flex; flex-direction: column;
+  .hero-banner { position: absolute; inset: 0; background-size: cover; background-position: center; z-index: 0; }
+  .hero-overlay { position: absolute; inset: 0; background: linear-gradient(to bottom, rgba(0,0,0,0.2) 0%, rgba(0,0,0,0.55) 100%); }
+  .btn-back { position: absolute; top: 1rem; left: 1rem; z-index: 2; background: rgba(255,255,255,0.2); border: none; color: white; border-radius: 50%; width: 40px; height: 40px; font-size: 1.1rem; cursor: pointer; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(4px); transition: background 0.2s; &:hover { background: rgba(255,255,255,0.35); } }
+}
+
+.hero-identity {
+  position: relative; z-index: 2; margin-top: auto; padding-top: 80px; padding-bottom: 1.5rem;
+  .identity-card { display: flex; flex-wrap: wrap; gap: 1.25rem; align-items: flex-end; }
+  .identity-logo-wrap { width: 90px; height: 90px; background: white; border-radius: 16px; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 20px rgba(0,0,0,0.15); flex-shrink: 0; overflow: hidden; &.identity-logo-placeholder { color: var(--brand-primary); } }
+  .identity-logo { width: 100%; height: 100%; object-fit: contain; padding: 6px; }
+  .identity-info { flex: 1; min-width: 0; }
+  .identity-name { font-size: 1.8rem; font-weight: 700; color: white; text-shadow: 0 1px 4px rgba(0,0,0,0.4); margin-bottom: 0.25rem; }
+  .identity-tagline { color: rgba(255,255,255,0.85); font-style: italic; margin-bottom: 0.5rem; }
+  .identity-rating { display: flex; align-items: center; gap: 0.4rem; .stars { display: flex; gap: 2px; } .star { font-size: 0.9rem; color: var(--brand-accent); } .rating-value { font-weight: 700; color: white; font-size: 1rem; } .rating-count { color: rgba(255,255,255,0.75); font-size: 0.85rem; } }
+  .identity-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; align-self: flex-end; .btn-action { font-size: 0.9rem; } }
+}
+
+.badge-premium { background: linear-gradient(135deg, #ffd700, #ff8c00); color: white; }
+.badge-cat { background: rgba(111, 66, 193, 0.1); color: #6f42c1; font-size: 0.72rem; }
+
+.highlights-strip { display: flex; flex-wrap: wrap; gap: 0.75rem; padding: 1rem 1.25rem; background: linear-gradient(135deg, var(--brand-primary), var(--brand-secondary)); border-radius: 12px; margin-bottom: 1rem; .highlight-item { display: flex; align-items: center; gap: 0.5rem; color: white; font-size: 0.9rem; flex: 1; min-width: 140px; i { font-size: 1.1rem; } } }
+
+.profile-card { background: white; border-radius: 12px; padding: 1.25rem; box-shadow: 0 1px 8px rgba(0,0,0,0.06); }
+.section-title { font-size: 1rem; font-weight: 600; color: #333; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 2px solid var(--brand-primary); display: inline-block; }
+.section-title-sm { font-size: 0.875rem; font-weight: 600; color: #555; margin-bottom: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px; }
+
+.gallery-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 0.5rem; .gallery-item { position: relative; aspect-ratio: 1; border-radius: 8px; overflow: hidden; cursor: pointer; img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.3s; } .gallery-overlay { position: absolute; inset: 0; background: rgba(0,0,0,0.4); display: flex; align-items: center; justify-content: center; opacity: 0; transition: opacity 0.25s; color: white; font-size: 1.5rem; } &:hover { img { transform: scale(1.05); } .gallery-overlay { opacity: 1; } } } }
+
+.menu-tabs { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 1rem; .menu-tab { padding: 0.4rem 1rem; border: 2px solid var(--brand-primary); border-radius: 50px; background: transparent; color: var(--brand-primary); font-size: 0.875rem; cursor: pointer; transition: all 0.2s; &.active, &:hover { background: var(--brand-primary); color: white; } } }
+.category-filters { display: flex; gap: 0.4rem; flex-wrap: wrap; margin-bottom: 1rem; .cat-btn { padding: 0.3rem 0.8rem; border: 1px solid #dee2e6; border-radius: 50px; background: white; font-size: 0.8rem; cursor: pointer; transition: all 0.2s; &.active { background: #6f42c1; border-color: #6f42c1; color: white; } } }
+
+.menu-items-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 0.75rem; }
+.menu-item-card { display: flex; gap: 0.75rem; border: 1px solid #f0f0f0; border-radius: 10px; padding: 0.75rem; transition: box-shadow 0.2s; &:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.08); } .item-image { width: 70px; height: 70px; border-radius: 8px; overflow: hidden; flex-shrink: 0; img { width: 100%; height: 100%; object-fit: cover; } } .item-body { flex: 1; min-width: 0; } .item-header { display: flex; justify-content: space-between; gap: 0.5rem; margin-bottom: 0.25rem; } .item-name { font-weight: 600; font-size: 0.9rem; color: #222; } .item-price { font-weight: 700; color: var(--brand-primary); white-space: nowrap; font-size: 0.875rem; } .item-description { font-size: 0.78rem; color: #777; margin-bottom: 0.25rem; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; } }
+
+.rating-overview { display: flex; gap: 1.5rem; align-items: center; flex-wrap: wrap; .rating-big { text-align: center; .rating-number { font-size: 2.5rem; font-weight: 800; color: var(--brand-primary); display: block; } .rating-stars-big { color: #ffc107; font-size: 1rem; } } .rating-bars { flex: 1; min-width: 160px; .rating-bar-row { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.3rem; font-size: 0.8rem; .bar-label { width: 50px; white-space: nowrap; } .bar-track { flex: 1; height: 6px; background: #eee; border-radius: 3px; overflow: hidden; .bar-fill { height: 100%; background: var(--brand-accent); border-radius: 3px; transition: width 0.4s ease; } } .bar-pct { width: 36px; text-align: right; } } } }
+
+.reviews-list { display: flex; flex-direction: column; gap: 1rem; }
+.review-item { border-left: 3px solid var(--brand-primary); padding-left: 1rem; .review-header { display: flex; gap: 0.75rem; margin-bottom: 0.4rem; } .review-avatar { width: 38px; height: 38px; border-radius: 50%; background: var(--brand-primary); color: white; display: flex; align-items: center; justify-content: center; font-weight: 700; flex-shrink: 0; } .review-meta { display: flex; flex-direction: column; .review-author { font-weight: 600; font-size: 0.9rem; } .review-stars { font-size: 0.8rem; color: #ffc107; margin: 2px 0; } } .review-comment { font-size: 0.875rem; color: #555; margin-bottom: 0; } }
+
+.info-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 0.6rem; li { display: flex; align-items: flex-start; gap: 0.6rem; font-size: 0.875rem; i { margin-top: 2px; flex-shrink: 0; } a { color: inherit; text-decoration: none; &:hover { color: var(--brand-primary); } } } }
+
+/* ── Payment badges ────────────────────────────────────────────────────────── */
+.payment-badges-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-top: 2px;
+}
+
+.badge-payment {
+  display: inline-block;
+  padding: 0.2rem 0.55rem;
+  background: rgba(111, 66, 193, 0.08);
+  color: #6f42c1;
+  border: 1px solid rgba(111, 66, 193, 0.2);
+  border-radius: 50px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.social-links { display: flex; gap: 0.6rem; flex-wrap: wrap; }
+.social-link { width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 1.1rem; text-decoration: none; transition: transform 0.2s, opacity 0.2s; &:hover { transform: scale(1.1); opacity: 0.9; color: white; } &.facebook { background: #1877f2; } &.instagram { background: linear-gradient(135deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888); } &.tiktok { background: #010101; } &.whatsapp { background: #25d366; } }
+
+.sidebar-sticky { position: sticky; top: 80px; }
+
+/* ── Brand mention ─────────────────────────────────────────────────────────── */
+.brand-mention {
+  border-top: 1px solid rgba(0,0,0,0.06);
+  margin-top: 1rem;
+}
+
+.lightbox-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 9999; display: flex; align-items: center; justify-content: center; }
+.lightbox-content { max-width: 90vw; max-height: 90vh; display: flex; flex-direction: column; align-items: center; img { max-width: 100%; max-height: 80vh; object-fit: contain; border-radius: 8px; } .lightbox-counter { color: rgba(255,255,255,0.7); margin-top: 0.75rem; font-size: 0.875rem; } }
+.lightbox-close, .lightbox-prev, .lightbox-next { position: fixed; background: rgba(255,255,255,0.15); border: none; color: white; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background 0.2s; border-radius: 50%; width: 44px; height: 44px; font-size: 1.2rem; &:hover { background: rgba(255,255,255,0.3); } }
+.lightbox-close { top: 1rem; right: 1rem; }
+.lightbox-prev  { left: 1rem; top: 50%; transform: translateY(-50%); }
+.lightbox-next  { right: 1rem; top: 50%; transform: translateY(-50%); }
+
+@media (max-width: 768px) {
+  .hero-identity .identity-card { flex-direction: column; align-items: flex-start; }
+  .identity-actions { width: 100%; .btn-action { flex: 1; } }
+  .menu-items-grid { grid-template-columns: 1fr; }
+  .event-types-grid { grid-template-columns: repeat(3, 1fr); }
+  .rating-overview { flex-direction: column; align-items: flex-start; }
+  .sidebar-sticky { position: static; }
+  .cta-banner { padding: 1.5rem 1rem; }
+}

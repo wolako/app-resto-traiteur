@@ -1,1773 +1,764 @@
-<div class="admin-dashboard">
-  <div class="container-fluid">
-    <!-- Header -->
+<div class="admin-layout">
+
+  <!-- SIDEBAR -->
+  <aside class="admin-sidebar">
+    <div class="sidebar-brand">
+      <div class="brand-icon"><i class="bi bi-shield-check"></i></div>
+      <div class="brand-text"><span class="brand-title">Administration</span><span class="brand-sub">RestoTraiteur</span></div>
+    </div>
+    <div class="sidebar-stats">
+      <div class="s-stat"><span class="s-stat-value">{{ globalStats.users?.byRole?.client || 0 }}</span><span class="s-stat-label">Clients</span></div>
+      <div class="s-stat"><span class="s-stat-value">{{ globalStats.businesses?.total || 0 }}</span><span class="s-stat-label">Établ.</span></div>
+      <div class="s-stat"><span class="s-stat-value">{{ globalStats.orders?.today || 0 }}</span><span class="s-stat-label">Cmd. auj.</span></div>
+    </div>
+    <nav class="sidebar-nav">
+      <p class="nav-section-label">Principal</p>
+      <button class="nav-item" [class.active]="activeTab === 'overview'" (click)="activeTab = 'overview'"><i class="bi bi-speedometer2"></i><span>Aperçu</span></button>
+      <button class="nav-item" [class.active]="activeTab === 'users'" (click)="switchTab('users')"><i class="bi bi-people"></i><span>Clients</span></button>
+      <button class="nav-item" [class.active]="activeTab === 'businesses'" (click)="switchTab('businesses')"><i class="bi bi-shop"></i><span>Établissements</span></button>
+      <p class="nav-section-label">Transactions</p>
+      <button class="nav-item" [class.active]="activeTab === 'orders'" (click)="switchTab('orders')"><i class="bi bi-cart-check"></i><span>Commandes</span></button>
+      <button class="nav-item" [class.active]="activeTab === 'reservations'" (click)="switchTab('reservations')"><i class="bi bi-calendar-check"></i><span>Réservations</span></button>
+      <button class="nav-item" [class.active]="activeTab === 'payments'" (click)="switchTab('payments')"><i class="bi bi-credit-card"></i><span>Paiements</span></button>
+      <button class="nav-item" [class.active]="activeTab === 'commissions'" (click)="switchTab('commissions')"><i class="bi bi-percent"></i><span>Commissions</span></button>
+      <p class="nav-section-label">Gestion</p>
+      <button class="nav-item" [class.active]="activeTab === 'subscriptions'" (click)="switchTab('subscriptions')"><i class="bi bi-credit-card-2-front"></i><span>Abonnements</span><span class="nav-badge danger" *ngIf="getExpiredCount() > 0">{{ getExpiredCount() }}</span><span class="nav-badge warning" *ngIf="getExpiringCount() > 0 && getExpiredCount() === 0">{{ getExpiringCount() }}</span></button>
+      <button class="nav-item" [class.active]="activeTab === 'support'" (click)="switchTab('support')"><i class="bi bi-headset"></i><span>Support</span><span class="nav-badge warning" *ngIf="premiumTicketsCount > 0">{{ premiumTicketsCount }}</span></button>
+      <button class="nav-item" [class.active]="activeTab === 'testimonials'" (click)="switchTab('testimonials')"><i class="bi bi-chat-quote"></i><span>Témoignages</span><span class="nav-badge warning" *ngIf="(testimonialStats?.pending ?? 0) > 0">{{ testimonialStats?.pending }}</span></button>
+      <!-- ✅ CONTACTS -->
+      <button class="nav-item" [class.active]="activeTab === 'contacts'" (click)="switchTab('contacts')">
+        <i class="bi bi-envelope-fill"></i><span>Messages</span>
+        <span class="nav-badge danger" *ngIf="unreadContactsCount > 0">{{ unreadContactsCount }}</span>
+      </button>
+      <button class="nav-item" [class.active]="activeTab === 'analytics'" (click)="switchTab('analytics')"><i class="bi bi-graph-up-arrow"></i><span>Analytics</span></button>
+      <button class="nav-item" [class.active]="activeTab === 'payment-accounts'" (click)="switchTab('payment-accounts')">
+        <i class="bi bi-bank2"></i><span>Comptes paiement</span>
+        <span class="nav-badge warning" *ngIf="pendingPaymentAccountsCount > 0">
+          {{ pendingPaymentAccountsCount }}
+        </span>
+      </button>
+      <p class="nav-section-label">Modules</p>
+      <button class="nav-item" [class.active]="activeTab === 'plans'" (click)="switchTab('plans')"><i class="bi bi-layers"></i><span>Plans</span></button>
+      <button class="nav-item" [class.active]="activeTab === 'settings'" (click)="switchTab('settings')"><i class="bi bi-gear"></i><span>Paramètres</span></button>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="revenue-pill"><i class="bi bi-currency-exchange"></i><span>{{ globalStats.orders?.revenue?.today || 0 | number:'1.0-0' }} FCFA / auj.</span></div>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="admin-main">
     <div class="dashboard-header">
-      <h2>
-        <i class="bi bi-shield-check"></i>
-        Dashboard Administration
-      </h2>
-      <p class="text-muted">Vue globale de la plateforme</p>
+      <div><h2>{{ getTabTitle() }}</h2><p class="text-muted">{{ getTabSubtitle() }}</p></div>
+      <div class="header-meta"><span class="header-date">{{ today | date:'EEEE d MMMM yyyy' : '' : 'fr' }}</span></div>
     </div>
 
-    <!-- Statistics Cards -->
-    <div class="row mb-4">
-      <div class="col-md-3 mb-3">
-        <div class="stat-card stat-primary">
-          <div class="stat-icon">
-            <i class="bi bi-people"></i>
-          </div>
-          <div class="stat-details">
-            <h3>{{ globalStats.users?.byRole?.client || 0 }}</h3>
-            <p>Clients</p>
-          </div>
-        </div>
-      </div>
-
-      <div class="col-md-3 mb-3">
-        <div class="stat-card stat-success">
-          <div class="stat-icon">
-            <i class="bi bi-shop"></i>
-          </div>
-          <div class="stat-details">
-            <h3>{{ globalStats.businesses?.total || 0 }}</h3>
-            <p>Établissements</p>
-          </div>
-        </div>
-      </div>
-
-      <div class="col-md-3 mb-3">
-        <div class="stat-card stat-info">
-          <div class="stat-icon">
-            <i class="bi bi-cart"></i>
-          </div>
-          <div class="stat-details">
-            <h3>{{ globalStats.orders?.today || 0 }}</h3>
-            <p>Commandes aujourd'hui</p>
-          </div>
-        </div>
-      </div>
-
-      <div class="col-md-3 mb-3">
-        <div class="stat-card stat-warning">
-          <div class="stat-icon">
-            <i class="bi bi-currency-exchange"></i>
-          </div>
-          <div class="stat-details">
-            <h3>{{ globalStats.payments?.revenue?.today || 0 | number:'1.0-0' }}</h3>
-            <p>FCFA aujourd'hui</p>
-          </div>
-        </div>
-      </div>
+    <!-- KPI overview uniquement -->
+    <div class="row mb-4" *ngIf="activeTab === 'overview'">
+      <div class="col-6 col-md-3 mb-3"><div class="stat-card stat-primary"><div class="stat-icon"><i class="bi bi-people"></i></div><div class="stat-details"><h3>{{ globalStats.users?.byRole?.client || 0 }}</h3><p>Clients</p></div></div></div>
+      <div class="col-6 col-md-3 mb-3"><div class="stat-card stat-success"><div class="stat-icon"><i class="bi bi-shop"></i></div><div class="stat-details"><h3>{{ globalStats.businesses?.total || 0 }}</h3><p>Établissements</p></div></div></div>
+      <div class="col-6 col-md-3 mb-3"><div class="stat-card stat-info"><div class="stat-icon"><i class="bi bi-cart"></i></div><div class="stat-details"><h3>{{ globalStats.orders?.today || 0 }}</h3><p>Commandes auj.</p></div></div></div>
+      <div class="col-6 col-md-3 mb-3"><div class="stat-card stat-warning"><div class="stat-icon"><i class="bi bi-currency-exchange"></i></div><div class="stat-details"><h3>{{ globalStats.orders?.revenue?.today || 0 | number:'1.0-0' }}</h3><p>FCFA auj.</p></div></div></div>
     </div>
 
-    <!-- Tabs Navigation -->
-    <ul class="nav nav-tabs dashboard-tabs" role="tablist">
-      <li class="nav-item">
-        <button 
-          class="nav-link" 
-          [class.active]="activeTab === 'overview'"
-          (click)="activeTab = 'overview'">
-          <i class="bi bi-speedometer2"></i>
-          Aperçu
-        </button>
-      </li>
-      <li class="nav-item">
-        <button 
-          class="nav-link" 
-          [class.active]="activeTab === 'users'"
-          (click)="switchTab('users')">
-          <i class="bi bi-people"></i>
-          Clients
-        </button>
-      </li>
-      <li class="nav-item">
-        <button 
-          class="nav-link" 
-          [class.active]="activeTab === 'businesses'"
-          (click)="switchTab('businesses')">
-          <i class="bi bi-shop"></i>
-          Établissements
-        </button>
-      </li>
-      <li class="nav-item">
-        <button 
-          class="nav-link" 
-          [class.active]="activeTab === 'orders'"
-          (click)="switchTab('orders')">
-          <i class="bi bi-cart-check"></i>
-          Commandes
-        </button>
-      </li>
-      <li class="nav-item">
-        <button 
-          class="nav-link" 
-          [class.active]="activeTab === 'reservations'"
-          (click)="switchTab('reservations')">
-          <i class="bi bi-calendar-check"></i>
-          Réservations
-        </button>
-      </li>
-      <li class="nav-item">
-        <button 
-          class="nav-link" 
-          [class.active]="activeTab === 'payments'"
-          (click)="switchTab('payments')">
-          <i class="bi bi-credit-card"></i>
-          Paiements
-        </button>
-      </li>
-      <li class="nav-item">
-        <button
-          class="nav-link"
-          [class.active]="activeTab === 'commissions'"
-          (click)="switchTab('commissions')">
-          <i class="bi bi-percent"></i>
-          Commissions
-          <span class="badge bg-warning ms-2" *ngIf="getTotalPendingCommissions() > 0">
-            {{ formatAmount(getTotalPendingCommissions()) }} FCFA
-          </span>
-        </button>
-      </li>
-      <li class="nav-item">
-        <button 
-          class="nav-link" 
-          [class.active]="activeTab === 'support'"
-          (click)="switchTab('support')">
-          <i class="bi bi-headset"></i>
-          Support
-          <span class="badge bg-warning ms-2" *ngIf="premiumTicketsCount > 0">
-            {{ premiumTicketsCount }}
-          </span>
-        </button>
-      </li>
-      <li class="nav-item">
-        <button 
-          class="nav-link" 
-          [class.active]="activeTab === 'testimonials'"
-          (click)="switchTab('testimonials')">
-          <i class="bi bi-chat-quote"></i>
-          Témoignages
-          <span class="badge bg-warning ms-2" *ngIf="(testimonialStats?.pending?? 0) > 0">
-            {{ testimonialStats?.pending }}
-          </span>
-        </button>
-      </li>
-      <li class="nav-item">
-        <button
-          class="nav-link"
-          [class.active]="activeTab === 'subscriptions'"
-          (click)="switchTab('subscriptions')">
-          <i class="bi bi-credit-card-2-front"></i>
-          Abonnements
-          <span class="badge bg-danger ms-2" *ngIf="getExpiredCount() > 0">
-            {{ getExpiredCount() }}
-          </span>
-          <span class="badge bg-warning ms-1" *ngIf="getExpiringCount() > 0">
-            {{ getExpiringCount() }}
-          </span>
-        </button>
-      </li>
-    </ul>
-
-    <!-- Tab Content -->
     <div class="tab-content">
-      <!-- Overview Tab -->
+
+      <!-- OVERVIEW -->
       <div *ngIf="activeTab === 'overview'" class="tab-pane-custom">
         <div class="row">
-          <div class="col-md-6 mb-4">
-            <div class="info-card">
-              <h5>
-                <i class="bi bi-building"></i>
-                Répartition par type
-              </h5>
-              <div class="type-distribution">
-                <div class="type-item">
-                  <span class="type-label">Restaurants</span>
-                  <div class="type-bar">
-                    <div class="type-progress" [style.width.%]="getPercentage(globalStats.businesses?.byType?.restaurant, globalStats.businesses?.total)"></div>
-                  </div>
-                  <span class="type-value">{{ globalStats.businesses?.byType?.restaurant || 0 }}</span>
-                </div>
-                <div class="type-item">
-                  <span class="type-label">Traiteurs</span>
-                  <div class="type-bar">
-                    <div class="type-progress bg-success" [style.width.%]="getPercentage(globalStats.businesses?.byType?.traiteur, globalStats.businesses?.total)"></div>
-                  </div>
-                  <span class="type-value">{{ globalStats.businesses?.byType?.traiteur || 0 }}</span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div class="col-md-6 mb-4">
-            <div class="info-card">
-              <h5>
-                <i class="bi bi-cash-stack"></i>
-                Statuts des paiements
-              </h5>
-              <div class="payment-stats">
-                <div class="payment-item">
-                  <i class="bi bi-check-circle text-success"></i>
-                  <div>
-                    <strong>{{ globalStats.payments?.successful || 0 }}</strong>
-                    <small>Paiements réussis</small>
-                  </div>
-                </div>
-                <div class="payment-item">
-                  <i class="bi bi-clock-history text-warning"></i>
-                  <div>
-                    <strong>{{ globalStats.payments?.pending || 0 }}</strong>
-                    <small>En attente</small>
-                  </div>
-                </div>
-                <div class="payment-item">
-                  <i class="bi bi-x-circle text-danger"></i>
-                  <div>
-                    <strong>{{ globalStats.payments?.failed || 0 }}</strong>
-                    <small>Échoués</small>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div class="col-md-12 mb-4">
-            <div class="info-card">
-              <h5>
-                <i class="bi bi-graph-up"></i>
-                Activité récente
-              </h5>
-              <div class="activity-grid">
-                <div class="activity-item">
-                  <div class="activity-icon bg-primary">
-                    <i class="bi bi-cart"></i>
-                  </div>
-                  <div class="activity-content">
-                    <strong>{{ globalStats.orders?.total || 0 }}</strong>
-                    <p>Commandes totales</p>
-                  </div>
-                </div>
-                <div class="activity-item">
-                  <div class="activity-icon bg-success">
-                    <i class="bi bi-calendar-check"></i>
-                  </div>
-                  <div class="activity-content">
-                    <strong>{{ globalStats.reservations?.confirmed || 0 }}</strong>
-                    <p>Réservations confirmées</p>
-                  </div>
-                </div>
-                <div class="activity-item">
-                  <div class="activity-icon bg-info">
-                    <i class="bi bi-currency-exchange"></i>
-                  </div>
-                  <div class="activity-content">
-                    <strong>{{ globalStats.orders?.revenue?.total || 0 | number:'1.0-0' }} FCFA</strong>
-                    <p>Revenus totaux</p>
-                  </div>
-                </div>
-                <div class="activity-item">
-                  <div class="activity-icon bg-warning">
-                    <i class="bi bi-hourglass-split"></i>
-                  </div>
-                  <div class="activity-content">
-                    <strong>{{ globalStats.orders?.pending || 0 }}</strong>
-                    <p>Commandes en attente</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Accès rapide -->
-          <div class="col-md-12 mb-4">
-            <div class="info-card">
-              <h5>
-                <i class="bi bi-lightning-charge"></i>
-                Accès rapide aux modules de gestion
-              </h5>
-              <div class="row mt-3">
-                <div class="col-md-4 mb-3">
-                  <a routerLink="/admin/plans" class="quick-access-card">
-                    <div class="quick-access-icon bg-primary">
-                      <i class="bi bi-credit-card-2-front"></i>
-                    </div>
-                    <div class="quick-access-content">
-                      <h6>Gestion des Plans</h6>
-                      <p>Gérer les plans d'abonnement</p>
-                    </div>
-                    <i class="bi bi-arrow-right quick-access-arrow"></i>
-                  </a>
-                </div>
-                <div class="col-md-4 mb-3">
-                  <a routerLink="/admin/commissions" class="quick-access-card">
-                    <div class="quick-access-icon bg-success">
-                      <i class="bi bi-percent"></i>
-                    </div>
-                    <div class="quick-access-content">
-                      <h6>Gestion des Commissions</h6>
-                      <p>Suivre et gérer les commissions</p>
-                    </div>
-                    <i class="bi bi-arrow-right quick-access-arrow"></i>
-                  </a>
-                </div>
-                <div class="col-md-4 mb-3">
-                  <a routerLink="/admin/settings" class="quick-access-card">
-                    <div class="quick-access-icon bg-info">
-                      <i class="bi bi-gear"></i>
-                    </div>
-                    <div class="quick-access-content">
-                      <h6>Paramètres Plateforme</h6>
-                      <p>Configuration globale</p>
-                    </div>
-                    <i class="bi bi-arrow-right quick-access-arrow"></i>
-                  </a>
-                </div>
-              </div>
-            </div>
-          </div>
+          <div class="col-md-6 mb-4"><div class="info-card"><h5><i class="bi bi-building"></i> Répartition par type</h5><div class="type-distribution"><div class="type-item"><span class="type-label">Restaurants</span><div class="type-bar"><div class="type-progress" [style.width.%]="getPercentage(globalStats.businesses?.byType?.restaurant, globalStats.businesses?.total)"></div></div><span class="type-value">{{ globalStats.businesses?.byType?.restaurant || 0 }}</span></div><div class="type-item"><span class="type-label">Traiteurs</span><div class="type-bar"><div class="type-progress progress-green" [style.width.%]="getPercentage(globalStats.businesses?.byType?.traiteur, globalStats.businesses?.total)"></div></div><span class="type-value">{{ globalStats.businesses?.byType?.traiteur || 0 }}</span></div></div></div></div>
+          <div class="col-md-6 mb-4"><div class="info-card"><h5><i class="bi bi-cash-stack"></i> Statuts des paiements</h5><div class="payment-stats"><div class="payment-item"><i class="bi bi-check-circle" style="color: var(--rt-green)"></i><div><strong>{{ globalStats.payments?.successful || 0 }}</strong><small>Réussis</small></div></div><div class="payment-item"><i class="bi bi-clock-history" style="color: var(--rt-accent)"></i><div><strong>{{ globalStats.payments?.pending || 0 }}</strong><small>En attente</small></div></div><div class="payment-item"><i class="bi bi-x-circle" style="color: var(--rt-primary)"></i><div><strong>{{ globalStats.payments?.failed || 0 }}</strong><small>Échoués</small></div></div></div></div></div>
+          <div class="col-md-12 mb-4"><div class="info-card"><h5><i class="bi bi-graph-up"></i> Activité récente</h5><div class="activity-grid"><div class="activity-item"><div class="activity-icon" style="background: var(--rt-blue-s); color: var(--rt-blue)"><i class="bi bi-cart"></i></div><div class="activity-content"><strong>{{ globalStats.orders?.total || 0 }}</strong><p>Commandes totales</p></div></div><div class="activity-item"><div class="activity-icon" style="background: var(--rt-green-s); color: var(--rt-green)"><i class="bi bi-calendar-check"></i></div><div class="activity-content"><strong>{{ globalStats.reservations?.confirmed || 0 }}</strong><p>Réservations confirmées</p></div></div><div class="activity-item"><div class="activity-icon" style="background: var(--rt-accent-s); color: var(--rt-accent)"><i class="bi bi-currency-exchange"></i></div><div class="activity-content"><strong>{{ globalStats.orders?.revenue?.total || 0 | number:'1.0-0' }} FCFA</strong><p>Revenus totaux</p></div></div><div class="activity-item"><div class="activity-icon" style="background: var(--rt-secondary-s); color: var(--rt-secondary)"><i class="bi bi-hourglass-split"></i></div><div class="activity-content"><strong>{{ globalStats.orders?.pending || 0 }}</strong><p>Commandes en attente</p></div></div></div></div></div>
+          <div class="col-md-12 mb-4"><div class="info-card"><h5><i class="bi bi-lightning-charge"></i> Accès rapide</h5><div class="row mt-3"><div class="col-md-4 mb-3"><button class="quick-access-card" (click)="switchTab('plans')"><div class="quick-access-icon" style="background: var(--rt-blue-s); color: var(--rt-blue)"><i class="bi bi-credit-card-2-front"></i></div><div class="quick-access-content"><h6>Plans</h6><p>Gérer les plans d'abonnement</p></div><i class="bi bi-arrow-right quick-access-arrow"></i></button></div><div class="col-md-4 mb-3"><button class="quick-access-card" (click)="switchTab('commissions')"><div class="quick-access-icon" style="background: var(--rt-green-s); color: var(--rt-green)"><i class="bi bi-percent"></i></div><div class="quick-access-content"><h6>Commissions</h6><p>Suivre et gérer les commissions</p></div><i class="bi bi-arrow-right quick-access-arrow"></i></button></div><div class="col-md-4 mb-3"><button class="quick-access-card" (click)="switchTab('contacts')"><div class="quick-access-icon" style="background: var(--rt-primary-s); color: var(--rt-primary)"><i class="bi bi-envelope-fill"></i></div><div class="quick-access-content"><h6>Messages</h6><p>Messages du formulaire contact</p></div><i class="bi bi-arrow-right quick-access-arrow"></i><span class="nav-badge danger ms-1" *ngIf="unreadContactsCount > 0">{{ unreadContactsCount }}</span></button></div></div></div></div>
         </div>
       </div>
 
-      <!-- Users Tab -->
+      <!-- ══ USERS ══ -->
       <div *ngIf="activeTab === 'users'" class="tab-pane-custom">
-        <div class="content-header">
-          <h4>Gestion des clients</h4>
-        </div>
-
+        <div class="content-header"><h4>Gestion des clients</h4></div>
         <div class="table-responsive">
           <table class="table custom-table">
-            <thead>
-              <tr>
-                <th>ID</th>
-                <th>Nom</th>
-                <th>Email</th>
-                <th>Téléphone</th>
-                <th>Date inscription</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
+            <thead><tr>
+              <th class="d-none d-md-table-cell">ID</th>
+              <th class="d-table-cell d-md-none">Client</th>
+              <th class="d-none d-md-table-cell">Nom</th>
+              <th class="d-none d-md-table-cell">Email</th>
+              <th class="d-none d-md-table-cell">Téléphone</th>
+              <th class="d-none d-md-table-cell">Date inscription</th>
+              <th>Actions</th>
+            </tr></thead>
             <tbody>
               <tr *ngFor="let user of filteredUsers">
-                <td>#{{ user.id }}</td>
-                <td>{{ user.first_name }} {{ user.last_name }}</td>
-                <td>{{ user.email }}</td>
-                <td>{{ user.phone || 'Non renseigné' }}</td>
-                <td>{{ user.created_at | date:'dd/MM/yyyy à HH:mm' }}</td>
-                <td>
-                  <button 
-                    class="btn btn-sm btn-outline-danger"
-                    (click)="deleteUser(user.id!, user.first_name + ' ' + user.last_name)"
-                    title="Supprimer">
-                    <i class="bi bi-trash"></i>
-                  </button>
+                <td class="d-none d-md-table-cell">{{ user.id }}</td>
+                <td class="d-table-cell d-md-none">
+                  <strong>{{ user.first_name }} {{ user.last_name }}</strong>
+                  <small class="d-block text-muted">{{ user.email }}</small>
+                  <small class="d-block text-muted">{{ user.phone || '—' }}</small>
                 </td>
+                <td class="d-none d-md-table-cell">{{ user.first_name }} {{ user.last_name }}</td>
+                <td class="d-none d-md-table-cell">{{ user.email }}</td>
+                <td class="d-none d-md-table-cell">{{ user.phone || 'Non renseigné' }}</td>
+                <td class="d-none d-md-table-cell">{{ user.created_at | date:'dd/MM/yyyy à HH:mm' }}</td>
+                <td><button class="btn btn-sm btn-outline-danger" (click)="deleteUser(user.id!, user.first_name + ' ' + user.last_name)"><i class="bi bi-trash"></i></button></td>
               </tr>
-              <tr *ngIf="filteredUsers.length === 0">
-                <td colspan="6" class="text-center text-muted">Aucun client</td>
-              </tr>
+              <tr *ngIf="filteredUsers.length === 0"><td colspan="6" class="text-center text-muted">Aucun client</td></tr>
             </tbody>
           </table>
         </div>
       </div>
 
-      <!-- Businesses Tab -->
+      <!-- ══ BUSINESSES ══ -->
       <div *ngIf="activeTab === 'businesses'" class="tab-pane-custom">
-        <div class="content-header">
-          <h4>Gestion des établissements</h4>
-          <div class="filters">
-            <select class="form-select" [(ngModel)]="businessFilter" (change)="filterBusinesses()">
-              <option value="">Tous les types</option>
-              <option value="restaurant">Restaurants</option>
-              <option value="traiteur">Traiteurs</option>
-            </select>
-          </div>
-        </div>
-
+        <div class="content-header"><h4>Gestion des établissements</h4><div class="filters"><select class="form-select" [(ngModel)]="businessFilter" (change)="filterBusinesses()"><option value="">Tous les types</option><option value="restaurant">Restaurants</option><option value="traiteur">Traiteurs</option></select></div></div>
         <div class="table-responsive">
           <table class="table custom-table">
-            <thead>
-              <tr>
-                <th>ID</th>
-                <th>Nom</th>
-                <th>Type</th>
-                <th>Propriétaire</th>
-                <th>Email</th>
-                <th>Téléphone</th>
-                <th>Date création</th>
-                <th>Statut</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
+            <thead><tr>
+              <th class="d-none d-md-table-cell">ID</th>
+              <th class="d-table-cell d-md-none">Établissement</th>
+              <th class="d-none d-md-table-cell">Nom</th>
+              <th class="d-none d-md-table-cell">Type</th>
+              <th class="d-none d-md-table-cell">Propriétaire</th>
+              <th class="d-none d-lg-table-cell">Email</th>
+              <th class="d-none d-lg-table-cell">Téléphone</th>
+              <th class="d-none d-md-table-cell">Création</th>
+              <th>Statut</th>
+              <th>Actions</th>
+            </tr></thead>
             <tbody>
               <tr *ngFor="let business of filteredBusinesses">
-                <td>{{ business.id }}</td>
-                <td>{{ business.name }}</td>
-                <td>
-                  <span class="badge" [ngClass]="business.type === 'restaurant' ? 'bg-primary' : 'bg-success'">
-                    <i [class]="business.type === 'restaurant' ? 'bi bi-building' : 'bi bi-cake2'"></i>
-                    {{ business.type === 'restaurant' ? 'Restaurant' : 'Traiteur' }}
-                  </span>
+                <td class="d-none d-md-table-cell">{{ business.id }}</td>
+                <td class="d-table-cell d-md-none">
+                  <strong>{{ business.name }}</strong>
+                  <span class="stag ms-1" style="font-size:.62rem;" [ngClass]="business.type === 'restaurant' ? 'role-restaurant' : 'role-traiteur'">{{ business.type === 'restaurant' ? 'Restaurant' : 'Traiteur' }}</span>
+                  <small class="d-block text-muted mt-1">{{ business.owner?.first_name }} {{ business.owner?.last_name }}</small>
+                  <small class="d-block text-muted">{{ business.owner?.email }}</small>
                 </td>
-                <td>{{ business.owner?.first_name }} {{ business.owner?.last_name }}</td>
-                <td>
-                  <small class="text-primary">
-                    <i class="bi bi-envelope"></i>
-                    {{ business.owner?.email || 'Non renseigné' }}
-                  </small>
-                </td>
-                <td>{{ business.phone || business.owner?.phone || 'Non renseigné' }}</td>
-                <td>{{ business.created_at | date:'short' }}</td>
-                <td>
-                  <span class="badge" [ngClass]="business.is_active ? 'bg-success' : 'bg-danger'">
-                    {{ business.is_active ? 'Actif' : 'Inactif' }}
-                  </span>
-                </td>
-                <td>
-                  <div class="btn-group" role="group">
-                    <button 
-                      class="btn btn-sm btn-outline-primary"
-                      (click)="openEditBusinessModal(business)"
-                      title="Modifier">
-                      <i class="bi bi-pencil"></i>
-                    </button>
-                    <button 
-                      class="btn btn-sm"
-                      [ngClass]="business.is_active ? 'btn-outline-warning' : 'btn-outline-success'"
-                      (click)="toggleBusinessStatus(business.id!, !business.is_active)"
-                      title="{{ business.is_active ? 'Désactiver' : 'Activer' }}">
-                      <i [class]="business.is_active ? 'bi bi-pause-circle' : 'bi bi-play-circle'"></i>
-                    </button>
-                    <button 
-                      class="btn btn-sm btn-outline-danger"
-                      (click)="deleteBusiness(business.id!, business.name)"
-                      title="Supprimer">
-                      <i class="bi bi-trash"></i>
-                    </button>
-                  </div>
-                </td>
-              </tr>
-              <tr *ngIf="filteredBusinesses.length === 0">
-                <td colspan="9" class="text-center text-muted">Aucun établissement</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      <!-- Orders Tab -->
-      <div *ngIf="activeTab === 'orders'" class="tab-pane-custom">
-        <div class="content-header">
-          <h4>Gestion des commandes</h4>
-          <div class="filters">
-            <select class="form-select" [(ngModel)]="orderStatusFilter" (change)="filterOrders()">
-              <option value="">Tous les statuts</option>
-              <option value="pending">En attente</option>
-              <option value="confirmed">Confirmée</option>
-              <option value="preparing">En préparation</option>
-              <option value="ready">Prête</option>
-              <option value="delivered">Livrée</option>
-              <option value="cancelled">Annulée</option>
-            </select>
-            <select class="form-select ms-2" [(ngModel)]="orderPaymentFilter" (change)="filterOrders()">
-              <option value="">Tous les paiements</option>
-              <option value="pending">En attente</option>
-              <option value="paid">Payé</option>
-              <option value="failed">Échoué</option>
-            </select>
-          </div>
-        </div>
-
-        <div class="table-responsive">
-          <table class="table custom-table">
-            <thead>
-              <tr>
-                <th>ID</th>
-                <th>Établissement</th>
-                <th>Client</th>
-                <th>Téléphone</th>
-                <th>Montant</th>
-                <th>Articles</th>
-                <th>Statut</th>
-                <th>Paiement</th>
-                <th>Date</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr *ngFor="let order of filteredOrders">
-                <td>{{ order.id }}</td>
-                <td>
-                  <small>{{ order.business_name }}</small>
-                </td>
-                <td>{{ order.client_name }}</td>
-                <td>{{ order.client_phone }}</td>
-                <td class="fw-bold">{{ order.total_amount | number:'1.0-0' }} FCFA</td>
-                <td>{{ order.items_count }}</td>
-                <td>
-                  <span class="badge" [ngClass]="getOrderStatusClass(order.status)">
-                    {{ getOrderStatusLabel(order.status) }}
-                  </span>
-                </td>
-                <td>
-                  <span class="badge" [ngClass]="getPaymentStatusClass(order.payment_status)">
-                    {{ getPaymentStatusLabel(order.payment_status) }}
-                  </span>
-                </td>
-                <td>{{ order.created_at | date:'short' }}</td>
-                <td>
-                  <button 
-                    class="btn btn-sm btn-outline-info"
-                    (click)="viewOrderDetails(order)"
-                    title="Voir détails">
-                    <i class="bi bi-eye"></i>
-                  </button>
-                </td>
-              </tr>
-              <tr *ngIf="filteredOrders.length === 0">
-                <td colspan="10" class="text-center text-muted">Aucune commande</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      <!-- Reservations Tab -->
-      <div *ngIf="activeTab === 'reservations'" class="tab-pane-custom">
-        <div class="content-header">
-          <h4>Gestion des réservations</h4>
-          <div class="filters">
-            <select class="form-select" [(ngModel)]="reservationStatusFilter" (change)="filterReservations()">
-              <option value="">Tous les statuts</option>
-              <option value="pending">En attente</option>
-              <option value="confirmed">Confirmée</option>
-              <option value="cancelled">Annulée</option>
-            </select>
-          </div>
-        </div>
-
-        <div class="table-responsive">
-          <table class="table custom-table">
-            <thead>
-              <tr>
-                <th>ID</th>
-                <th>Restaurant</th>
-                <th>Client</th>
-                <th>Téléphone</th>
-                <th>Date</th>
-                <th>Heure</th>
-                <th>Personnes</th>
-                <th>Statut</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr *ngFor="let reservation of filteredReservations">
-                <td>{{ reservation.id }}</td>
-                <td>
-                  <small>{{ reservation.restaurant_name }}</small>
-                </td>
-                <td>{{ reservation.client_name }}</td>
-                <td>{{ reservation.client_phone }}</td>
-                <td>{{ reservation.reservation_date | date:'dd/MM/yyyy' }}</td>
-                <td>{{ reservation.time_slot }}</td>
-                <td>{{ reservation.number_of_people }}</td>
-                <td>
-                  <span class="badge" [ngClass]="getReservationStatusClass(reservation.status)">
-                    {{ getReservationStatusLabel(reservation.status) }}
-                  </span>
-                </td>
-                <td>
-                  <button 
-                    class="btn btn-sm btn-outline-info"
-                    (click)="viewReservationDetails(reservation)"
-                    title="Voir détails">
-                    <i class="bi bi-eye"></i>
-                  </button>
-                </td>
-              </tr>
-              <tr *ngIf="filteredReservations.length === 0">
-                <td colspan="9" class="text-center text-muted">Aucune réservation</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      <!-- Payments Tab -->
-      <div *ngIf="activeTab === 'payments'" class="tab-pane-custom">
-        <div class="content-header">
-          <h4>Suivi des paiements</h4>
-        </div>
-
-        <div class="table-responsive">
-          <table class="table custom-table">
-            <thead>
-              <tr>
-                <th>ID Paiement</th>
-                <th>Commande</th>
-                <th>Client</th>
-                <th>Montant</th>
-                <th>Méthode</th>
-                <th>Statut</th>
-                <th>Date</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr *ngFor="let payment of payments">
-                <td>{{ payment.payment_id | slice:0:15 }}...</td>
-                <td>{{ payment.order_id }}</td>
-                <td>{{ payment.client_name || 'N/A' }}</td>
-                <td class="fw-bold">{{ payment.amount }} {{ payment.currency }}</td>
-                <td>
-                  <span class="badge bg-info">
-                    {{ payment.payment_method?.toUpperCase() }}
-                  </span>
-                </td>
-                <td>
-                  <span class="badge" [ngClass]="getPaymentStatusClass(payment.status)">
-                    {{ getPaymentStatusLabel(payment.status) }}
-                  </span>
-                </td>
-                <td>{{ payment.created_at | date:'short' }}</td>
-              </tr>
-              <tr *ngIf="payments.length === 0">
-                <td colspan="7" class="text-center text-muted">Aucun paiement</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      <!-- Support Tab -->
-      <div *ngIf="activeTab === 'support'" class="tab-pane-custom">
-        <div class="content-header">
-          <h4><i class="bi bi-headset"></i> Gestion du Support</h4>
-          <div class="filters">
-            <select class="form-select" [(ngModel)]="supportStatusFilter" (change)="filterSupportTickets()">
-              <option value="">Tous les statuts</option>
-              <option value="open">Ouverts</option>
-              <option value="in_progress">En cours</option>
-              <option value="resolved">Résolus</option>
-              <option value="closed">Fermés</option>
-            </select>
-          </div>
-        </div>
-
-        <!-- Alerte tickets Premium -->
-        <div class="alert alert-info mb-3" *ngIf="premiumTicketsCount > 0">
-          <i class="bi bi-star-fill"></i>
-          <strong>{{ premiumTicketsCount }} ticket(s) Premium</strong> en attente de réponse prioritaire.
-        </div>
-
-        <div class="table-responsive">
-          <table class="table custom-table">
-            <thead>
-              <tr>
-                <th>ID</th>
-                <th>Établissement</th>
-                <th>Sujet</th>
-                <th>Priorité</th>
-                <th>Statut</th>
-                <th>Date</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr *ngFor="let ticket of filteredSupportTickets" 
-                  [class.table-warning]="ticket.is_premium && ticket.status === 'open'">
-                <td>
-                  <strong>#{{ ticket.id }}</strong>
-                  <span *ngIf="ticket.is_premium" class="badge bg-warning ms-1" title="Support Prioritaire">
-                    <i class="bi bi-star-fill"></i> Premium
-                  </span>
-                </td>
-                <td>
-                  <strong>{{ ticket.business_name }}</strong>
-                  <br>
-                  <small class="text-muted">
-                    <i class="bi bi-tag"></i> {{ ticket.plan_name || 'Gratuit' }}
-                  </small>
-                </td>
-                <td>
-                  <strong>{{ ticket.subject }}</strong>
-                  <br>
-                  <small class="text-muted">{{ ticket.message | slice:0:100 }}{{ ticket.message?.length > 100 ? '...' : '' }}</small>
-                </td>
-                <td>
-                  <span class="badge" [ngClass]="getSupportPriorityClass(ticket.priority)">
-                    {{ ticket.priority }}
-                  </span>
-                </td>
-                <td>
-                  <span class="badge" [ngClass]="getSupportStatusClass(ticket.status)">
-                    {{ getSupportStatusLabel(ticket.status) }}
-                  </span>
-                </td>
-                <td>
-                  <small>{{ ticket.created_at | date:'dd/MM/yyyy' }}</small>
-                  <br>
-                  <small class="text-muted">{{ ticket.created_at | date:'HH:mm' }}</small>
-                </td>
+                <td class="d-none d-md-table-cell">{{ business.name }}</td>
+                <td class="d-none d-md-table-cell"><span class="stag" [ngClass]="business.type === 'restaurant' ? 'role-restaurant' : 'role-traiteur'"><i [class]="business.type === 'restaurant' ? 'bi bi-building' : 'bi bi-cake2'"></i> {{ business.type === 'restaurant' ? 'Restaurant' : 'Traiteur' }}</span></td>
+                <td class="d-none d-md-table-cell">{{ business.owner?.first_name }} {{ business.owner?.last_name }}</td>
+                <td class="d-none d-lg-table-cell"><small>{{ business.owner?.email || '—' }}</small></td>
+                <td class="d-none d-lg-table-cell">{{ business.phone || business.owner?.phone || '—' }}</td>
+                <td class="d-none d-md-table-cell">{{ business.created_at | date:'dd/MM/yy' }}</td>
+                <td><span class="stag" [ngClass]="business.is_active ? 'b-active' : 'b-inactive'">{{ business.is_active ? 'Actif' : 'Inactif' }}</span></td>
                 <td>
                   <div class="btn-group btn-group-sm">
-                    <button 
-                      class="btn btn-outline-info" 
-                      (click)="viewTicket(ticket)"
-                      title="Voir détails">
-                      <i class="bi bi-eye"></i>
-                    </button>
-                    <button 
-                      class="btn btn-outline-success"
-                      *ngIf="ticket.status === 'open'"
-                      (click)="respondToTicket(ticket)"
-                      title="Répondre et résoudre">
-                      <i class="bi bi-reply"></i>
-                    </button>
+                    <button class="btn btn-sm btn-outline-primary" (click)="openEditBusinessModal(business)"><i class="bi bi-pencil"></i></button>
+                    <button class="btn btn-sm" [ngClass]="business.is_active ? 'btn-outline-warning' : 'btn-outline-success'" (click)="toggleBusinessStatus(business.id!, !business.is_active)"><i [class]="business.is_active ? 'bi bi-pause-circle' : 'bi bi-play-circle'"></i></button>
+                    <button class="btn btn-sm btn-outline-danger" (click)="deleteBusiness(business.id!, business.name)"><i class="bi bi-trash"></i></button>
                   </div>
                 </td>
               </tr>
-              <tr *ngIf="filteredSupportTickets.length === 0">
-                <td colspan="7" class="text-center text-muted py-4">
-                  <i class="bi bi-inbox fs-1"></i>
-                  <p class="mt-2">Aucun ticket de support</p>
-                </td>
-              </tr>
+              <tr *ngIf="filteredBusinesses.length === 0"><td colspan="10" class="text-center text-muted">Aucun établissement</td></tr>
             </tbody>
           </table>
         </div>
-
-        <!-- Statistiques rapides -->
-        <div class="row mt-4" *ngIf="supportTickets.length > 0">
-          <div class="col-md-3">
-            <div class="stat-card">
-              <div class="stat-icon bg-warning">
-                <i class="bi bi-inbox"></i>
-              </div>
-              <div class="stat-details">
-                <h4>{{ getOpenTicketsCount() }}</h4>
-                <p>Ouverts</p>
-              </div>
-            </div>
-          </div>
-          <div class="col-md-3">
-            <div class="stat-card">
-              <div class="stat-icon bg-primary">
-                <i class="bi bi-hourglass-split"></i>
-              </div>
-              <div class="stat-details">
-                <h4>{{ getInProgressTicketsCount() }}</h4>
-                <p>En cours</p>
-              </div>
-            </div>
-          </div>
-          <div class="col-md-3">
-            <div class="stat-card">
-              <div class="stat-icon bg-success">
-                <i class="bi bi-check-circle"></i>
-              </div>
-              <div class="stat-details">
-                <h4>{{ getResolvedTicketsCount() }}</h4>
-                <p>Résolus</p>
-              </div>
-            </div>
-          </div>
-          <div class="col-md-3">
-            <div class="stat-card">
-              <div class="stat-icon" style="background: linear-gradient(135deg, #ffd700, #ffed4e);">
-                <i class="bi bi-star-fill"></i>
-              </div>
-              <div class="stat-details">
-                <h4>{{ getPremiumTicketsCount() }}</h4>
-                <p>Premium</p>
-              </div>
-            </div>
-          </div>
-        </div>
       </div>
 
-      <!-- Testimonials Tab Content -->
-      <div *ngIf="activeTab === 'testimonials'" class="tab-pane-custom">
-        <div class="content-header">
-          <h4><i class="bi bi-chat-quote-fill"></i> Gestion des Témoignages</h4>
-          <div class="filters">
-            <select class="form-select" [(ngModel)]="testimonialStatusFilter" (change)="filterTestimonials()">
-              <option value="">Tous les statuts</option>
-              <option value="pending">En attente</option>
-              <option value="approved">Approuvés</option>
-              <option value="rejected">Rejetés</option>
-            </select>
-          </div>
-        </div>
-
-        <!-- Statistiques Rapides -->
-        <div class="row mb-4" *ngIf="testimonialStats">
-          <div class="col-md-3 col-sm-6 mb-3">
-            <div class="stat-card">
-              <div class="stat-icon bg-warning">
-                <i class="bi bi-hourglass-split"></i>
-              </div>
-              <div class="stat-details">
-                <h3>{{ testimonialStats.pending }}</h3>
-                <p>En attente</p>
-              </div>
-            </div>
-          </div>
-          <div class="col-md-3 col-sm-6 mb-3">
-            <div class="stat-card">
-              <div class="stat-icon bg-success">
-                <i class="bi bi-check-circle"></i>
-              </div>
-              <div class="stat-details">
-                <h3>{{ testimonialStats.approved }}</h3>
-                <p>Approuvés</p>
-              </div>
-            </div>
-          </div>
-          <div class="col-md-3 col-sm-6 mb-3">
-            <div class="stat-card">
-              <div class="stat-icon bg-danger">
-                <i class="bi bi-x-circle"></i>
-              </div>
-              <div class="stat-details">
-                <h3>{{ testimonialStats.rejected }}</h3>
-                <p>Rejetés</p>
-              </div>
-            </div>
-          </div>
-          <div class="col-md-3 col-sm-6 mb-3">
-            <div class="stat-card">
-              <div class="stat-icon" style="background: linear-gradient(135deg, #ffd700, #ffed4e);">
-                <i class="bi bi-star-fill"></i>
-              </div>
-              <div class="stat-details">
-                <h3>{{ testimonialStats.featured }}</h3>
-                <p>En vedette</p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Note moyenne -->
-        <div class="alert alert-info mb-4" *ngIf="testimonialStats && testimonialStats.total > 0">
-          <i class="bi bi-star-fill"></i>
-          <strong>Note moyenne : {{ testimonialStats.average_rating | number:'1.1-1' }} / 5</strong>
-          sur {{ testimonialStats.total }} témoignage{{ testimonialStats.total > 1 ? 's' : '' }}
-        </div>
-
-        <!-- Table Testimonials -->
+      <!-- ══ ORDERS ══ -->
+      <div *ngIf="activeTab === 'orders'" class="tab-pane-custom">
+        <div class="content-header"><h4>Gestion des commandes</h4><div class="filters"><select class="form-select" [(ngModel)]="orderStatusFilter" (change)="filterOrders()"><option value="">Tous les statuts</option><option value="pending">En attente</option><option value="confirmed">Confirmée</option><option value="preparing">En préparation</option><option value="ready">Prête</option><option value="delivered">Livrée</option><option value="cancelled">Annulée</option></select><select class="form-select" [(ngModel)]="orderPaymentFilter" (change)="filterOrders()"><option value="">Tous les paiements</option><option value="pending">En attente</option><option value="paid">Payé</option><option value="failed">Échoué</option></select></div></div>
         <div class="table-responsive">
           <table class="table custom-table">
-            <thead>
-              <tr>
-                <th>ID</th>
-                <th>Client</th>
-                <th>Note</th>
-                <th>Commentaire</th>
-                <th>Statut</th>
-                <th>Vedette</th>
-                <th>Date</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
+            <thead><tr>
+              <th class="d-none d-md-table-cell">ID</th>
+              <th class="d-table-cell d-md-none">Client</th>
+              <th class="d-none d-md-table-cell">Établissement</th>
+              <th class="d-none d-md-table-cell">Client</th>
+              <th class="d-none d-md-table-cell">Téléphone</th>
+              <th>Montant</th>
+              <th class="d-none d-md-table-cell">Articles</th>
+              <th>Statut</th>
+              <th class="d-none d-md-table-cell">Paiement</th>
+              <th class="d-none d-md-table-cell">Type</th>
+              <th class="d-none d-md-table-cell">Date</th>
+              <th>Actions</th>
+            </tr></thead>
             <tbody>
-              <tr *ngFor="let testimonial of filteredTestimonials" 
-                  [class.table-warning]="testimonial.status === 'pending'">
-                <td><strong>#{{ testimonial.id }}</strong></td>
-                <td>
-                  <div class="d-flex align-items-center gap-2">
-                    <img 
-                      [src]="testimonial.user?.photo || 'assets/images/default-avatar.png'" 
-                      alt="{{ testimonial.user?.first_name }}"
-                      style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 2px solid #667eea;"
-                      (error)="onAvatarError($event)">
-                    <div>
-                      <strong>{{ testimonial.user?.first_name }} {{ testimonial.user?.last_name }}</strong>
-                      <br>
-                      <small class="text-muted">{{ testimonial.user?.email }}</small>
-                    </div>
-                  </div>
-                  <div *ngIf="testimonial.display_name" class="mt-1">
-                    <small class="badge bg-info">
-                      <i class="bi bi-eye"></i> Affiché comme "{{ testimonial.display_name }}"
-                    </small>
-                  </div>
+              <tr *ngFor="let order of filteredOrders">
+                <td class="d-none d-md-table-cell">{{ order.id }}</td>
+                <td class="d-table-cell d-md-none">
+                  <strong>{{ order.client_name }}</strong>
+                  <small class="d-block text-muted">{{ order.client_phone }}</small>
+                  <small class="d-block text-muted">{{ order.business_name }}</small>
+                  <small class="d-block text-muted">{{ order.created_at | date:'dd/MM HH:mm' }}</small>
                 </td>
+                <td class="d-none d-md-table-cell"><small>{{ order.business_name }}</small></td>
+                <td class="d-none d-md-table-cell">{{ order.client_name }}</td>
+                <td class="d-none d-md-table-cell">{{ order.client_phone }}</td>
+                <td class="fw-bold">{{ order.total_amount | number:'1.0-0' }} FCFA</td>
+                <td class="d-none d-md-table-cell">{{ order.items_count }}</td>
+                <td><span class="stag" [ngClass]="'s-' + order.status">{{ getOrderStatusLabel(order.status) }}</span></td>
+                <td class="d-none d-md-table-cell"><span class="stag" [ngClass]="'p-' + order.payment_status">{{ getPaymentStatusLabel(order.payment_status) }}</span></td>
+                <td class="d-none d-md-table-cell"><span class="stag" [ngClass]="order.payment_type === 'cod' ? 's-pending' : 's-confirmed'"><i class="bi" [ngClass]="order.payment_type === 'cod' ? 'bi-cash-coin' : 'bi-credit-card'"></i> {{ order.payment_type === 'cod' ? 'COD' : 'Online' }}</span></td>
+                <td class="d-none d-md-table-cell">{{ order.created_at | date:'dd/MM HH:mm' }}</td>
                 <td>
                   <div class="d-flex gap-1">
-                    <i class="bi bi-star-fill" 
-                      *ngFor="let star of [1,2,3,4,5]" 
-                      [style.color]="star <= testimonial.rating ? '#ffc107' : '#dee2e6'">
-                    </i>
-                  </div>
-                  <small class="text-muted">{{ testimonial.rating }}/5</small>
-                </td>
-                <td>
-                  <div style="max-width: 400px;">
-                    <p class="mb-0">{{ testimonial.comment }}</p>
-                    <small class="text-muted">{{ testimonial.comment.length }} caractères</small>
-                  </div>
-                </td>
-                <td>
-                  <span class="badge" [ngClass]="getTestimonialStatusClass(testimonial.status)">
-                    {{ getTestimonialStatusLabel(testimonial.status) }}
-                  </span>
-                  <div *ngIf="testimonial.status === 'rejected' && testimonial.rejection_reason" class="mt-1">
-                    <small class="text-danger">
-                      <i class="bi bi-info-circle"></i> {{ testimonial.rejection_reason }}
-                    </small>
-                  </div>
-                </td>
-                <td>
-                  <span *ngIf="testimonial.is_featured" class="badge" 
-                        style="background: linear-gradient(135deg, #ffd700, #ffed4e); color: #212529;">
-                    <i class="bi bi-star-fill"></i> Vedette
-                  </span>
-                  <span *ngIf="!testimonial.is_featured" class="text-muted">
-                    <i class="bi bi-star"></i> Normal
-                  </span>
-                </td>
-                <td>
-                  <small>{{ testimonial.created_at | date:'dd/MM/yyyy' }}</small>
-                  <br>
-                  <small class="text-muted">{{ testimonial.created_at | date:'HH:mm' }}</small>
-                </td>
-                <td>
-                  <div class="btn-group-vertical btn-group-sm" role="group">
-                    <!-- Actions selon statut -->
-                    <ng-container *ngIf="testimonial.status === 'pending'">
-                      <button 
-                        class="btn btn-success"
-                        (click)="approveTestimonial(testimonial, false)"
-                        title="Approuver">
-                        <i class="bi bi-check-circle"></i> Approuver
-                      </button>
-                      <button 
-                        class="btn btn-primary"
-                        (click)="approveTestimonial(testimonial, true)"
-                        title="Approuver et mettre en vedette">
-                        <i class="bi bi-star-fill"></i> Approuver & Vedette
-                      </button>
-                      <button 
-                        class="btn btn-warning"
-                        (click)="rejectTestimonial(testimonial)"
-                        title="Rejeter">
-                        <i class="bi bi-x-circle"></i> Rejeter
-                      </button>
-                    </ng-container>
-
-                    <ng-container *ngIf="testimonial.status === 'approved'">
-                      <button 
-                        class="btn btn-info"
-                        (click)="toggleFeaturedTestimonial(testimonial)"
-                        title="{{ testimonial.is_featured ? 'Retirer de la vedette' : 'Mettre en vedette' }}">
-                        <i [class]="testimonial.is_featured ? 'bi bi-star' : 'bi bi-star-fill'"></i>
-                        {{ testimonial.is_featured ? 'Retirer vedette' : 'Mettre en vedette' }}
-                      </button>
-                    </ng-container>
-
-                    <ng-container *ngIf="testimonial.status === 'rejected'">
-                      <button 
-                        class="btn btn-success"
-                        (click)="approveTestimonial(testimonial, false)"
-                        title="Approuver quand même">
-                        <i class="bi bi-check-circle"></i> Approuver
-                      </button>
-                    </ng-container>
-
-                    <!-- Toujours afficher supprimer -->
-                    <button 
-                      class="btn btn-danger"
-                      (click)="deleteTestimonial(testimonial)"
-                      title="Supprimer définitivement">
-                      <i class="bi bi-trash"></i> Supprimer
-                    </button>
+                    <button class="btn btn-sm btn-outline-info" (click)="viewOrderDetails(order)"><i class="bi bi-eye"></i></button>
+                    <button *ngIf="order.payment_type === 'cod' && order.payment_status === 'cod_pending'" class="btn btn-sm btn-outline-success" (click)="confirmCodPaymentAdmin(order.id, order.business_name, order.total_amount)"><i class="bi bi-cash-coin"></i></button>
+                    <span *ngIf="order.payment_type === 'cod' && order.payment_status === 'cod_received'" class="stag s-ready" style="font-size:.65rem;"><i class="bi bi-check-circle"></i> COD</span>
                   </div>
                 </td>
               </tr>
-              <tr *ngIf="filteredTestimonials.length === 0">
-                <td colspan="8" class="text-center text-muted py-5">
-                  <i class="bi bi-inbox fs-1 d-block mb-3"></i>
-                  <p class="mb-0">Aucun témoignage</p>
-                  <small>Les témoignages soumis par les clients apparaîtront ici</small>
-                </td>
-              </tr>
+              <tr *ngIf="filteredOrders.length === 0"><td colspan="12" class="text-center text-muted">Aucune commande</td></tr>
             </tbody>
           </table>
-        </div>
-
-        <!-- Info Box -->
-        <div class="alert alert-info mt-4">
-          <i class="bi bi-info-circle"></i>
-          <div>
-            <strong>Critères d'éligibilité pour soumettre un témoignage :</strong>
-            <ul class="mb-0 mt-2">
-              <li>Minimum 3 commandes livrées avec succès</li>
-              <li>Compte actif depuis au moins 30 jours</li>
-              <li>Commentaire entre 50 et 500 caractères</li>
-              <li>Note obligatoire de 1 à 5 étoiles</li>
-              <li>Un seul témoignage par utilisateur</li>
-            </ul>
-          </div>
         </div>
       </div>
 
-      <!-- Subscriptions Tab -->
-      <div *ngIf="activeTab === 'subscriptions'" class="tab-pane-custom">
-
-        <!-- Header + Contrôles -->
-        <div class="content-header align-items-start">
-          <div>
-            <h4><i class="bi bi-credit-card-2-front"></i> Abonnements & Rappels</h4>
-            <small class="text-muted">
-              Le cron job envoie automatiquement les rappels chaque jour à 09h00.
-              Utilisez les boutons ci-dessous pour des actions manuelles.
-            </small>
-          </div>
-          <div class="d-flex gap-2">
-            <button
-              class="btn btn-info btn-sm"
-              (click)="loadRemindersHistory()"
-              [disabled]="loadingReminders">
-              <span *ngIf="loadingReminders" class="spinner-border spinner-border-sm me-1"></span>
-              <i class="bi bi-clock-history" *ngIf="!loadingReminders"></i>
-              Historique
-            </button>
-            <button
-              class="btn btn-warning btn-sm"
-              (click)="triggerReminders()"
-              [disabled]="triggeringReminders">
-              <span *ngIf="triggeringReminders" class="spinner-border spinner-border-sm me-1"></span>
-              <i class="bi bi-send" *ngIf="!triggeringReminders"></i>
-              {{ triggeringReminders ? 'Envoi en cours...' : 'Déclencher rappels maintenant' }}
-            </button>
-          </div>
-        </div>
-
-        <!-- Bannière cron automatique -->
-        <div class="alert alert-success d-flex align-items-center gap-3 mb-4">
-          <i class="bi bi-check-circle-fill fs-4"></i>
-          <div>
-            <strong>✅ Rappels automatiques actifs</strong> — Le cron s'exécute chaque jour à <strong>09:00</strong> (heure de Lomé)
-            et envoie les rappels aux abonnés expirant dans <strong>7j</strong>, <strong>3j</strong>, <strong>1j</strong>
-            et aux abonnements <strong>expirés</strong>.
-          </div>
-        </div>
-
-        <!-- Résumé compteurs -->
-        <div class="row mb-4">
-          <div class="col-md-3 col-sm-6 mb-3">
-            <div class="stat-card">
-              <div class="stat-icon bg-success">
-                <i class="bi bi-shield-check"></i>
-              </div>
-              <div class="stat-details">
-                <h3>{{ subscriptions.length }}</h3>
-                <p>Abonnements payants</p>
-              </div>
-            </div>
-          </div>
-          <div class="col-md-3 col-sm-6 mb-3">
-            <div class="stat-card">
-              <div class="stat-icon bg-info">
-                <i class="bi bi-calendar-range"></i>
-              </div>
-              <div class="stat-details">
-                <h3>{{ subscriptions.length - getExpiringCount() - getExpiredCount() }}</h3>
-                <p>Actifs (OK)</p>
-              </div>
-            </div>
-          </div>
-          <div class="col-md-3 col-sm-6 mb-3">
-            <div class="stat-card">
-              <div class="stat-icon bg-warning">
-                <i class="bi bi-exclamation-triangle"></i>
-              </div>
-              <div class="stat-details">
-                <h3>{{ getExpiringCount() }}</h3>
-                <p>Expirent bientôt (≤7j)</p>
-              </div>
-            </div>
-          </div>
-          <div class="col-md-3 col-sm-6 mb-3">
-            <div class="stat-card">
-              <div class="stat-icon bg-danger">
-                <i class="bi bi-x-circle"></i>
-              </div>
-              <div class="stat-details">
-                <h3>{{ getExpiredCount() }}</h3>
-                <p>Expirés</p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Filtre -->
-        <div class="filters mb-3">
-          <select class="form-select w-auto" [(ngModel)]="subscriptionFilter" (change)="loadSubscriptions()">
-            <option value="all">Tous les abonnements</option>
-            <option value="expiring_soon">Expirant dans 7 jours</option>
-          </select>
-        </div>
-
-        <!-- Table Abonnements -->
+      <!-- ══ RESERVATIONS ══ -->
+      <div *ngIf="activeTab === 'reservations'" class="tab-pane-custom">
+        <div class="content-header"><h4>Gestion des réservations</h4><div class="filters"><select class="form-select" [(ngModel)]="reservationStatusFilter" (change)="filterReservations()"><option value="">Tous les statuts</option><option value="pending">En attente</option><option value="confirmed">Confirmée</option><option value="cancelled">Annulée</option></select></div></div>
         <div class="table-responsive">
           <table class="table custom-table">
-            <thead>
-              <tr>
-                <th>Établissement</th>
-                <th>Plan</th>
-                <th>Propriétaire</th>
-                <th>Expiration</th>
-                <th>Statut</th>
-                <th>Rappels envoyés</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
+            <thead><tr>
+              <th class="d-none d-md-table-cell">ID</th>
+              <th class="d-table-cell d-md-none">Client</th>
+              <th class="d-none d-md-table-cell">Restaurant</th>
+              <th class="d-none d-md-table-cell">Client</th>
+              <th class="d-none d-md-table-cell">Téléphone</th>
+              <th class="d-none d-sm-table-cell">Date</th>
+              <th class="d-none d-md-table-cell">Heure</th>
+              <th class="d-none d-md-table-cell">Personnes</th>
+              <th>Statut</th>
+              <th>Actions</th>
+            </tr></thead>
             <tbody>
-              <tr *ngFor="let sub of subscriptions"
-                  [class.table-danger]="sub.days_remaining < 0"
-                  [class.table-warning]="sub.days_remaining >= 0 && sub.days_remaining <= 3">
-                <td>
-                  <strong>{{ sub.business_name }}</strong>
-                  <br>
-                  <span class="badge bg-secondary">{{ sub.business_type }}</span>
+              <tr *ngFor="let reservation of filteredReservations">
+                <td class="d-none d-md-table-cell">{{ reservation.id }}</td>
+                <td class="d-table-cell d-md-none">
+                  <strong>{{ reservation.client_name }}</strong>
+                  <small class="d-block text-muted">{{ reservation.client_phone }}</small>
+                  <small class="d-block text-muted">{{ reservation.restaurant_name }}</small>
+                  <small class="d-block text-muted">{{ reservation.reservation_date | date:'dd/MM/yyyy' }} · {{ reservation.time_slot }}</small>
                 </td>
-                <td>
-                  <span class="badge bg-primary">{{ sub.plan_name }}</span>
-                  <br>
-                  <small class="text-muted">{{ sub.plan_price | number:'1.0-0' }} FCFA/mois</small>
-                </td>
-                <td>
-                  <small>{{ sub.owner_first_name }} {{ sub.owner_last_name }}</small>
-                  <br>
-                  <small class="text-muted">{{ sub.owner_email }}</small>
-                  <br>
-                  <small *ngIf="sub.owner_phone" class="text-muted">{{ sub.owner_phone }}</small>
-                </td>
-                <td>
-                  <small>{{ sub.end_date | date:'dd/MM/yyyy' }}</small>
-                </td>
-                <td>
-                  <span class="badge" [ngClass]="getSubscriptionUrgencyClass(sub.days_remaining)">
-                    {{ getSubscriptionUrgencyLabel(sub.days_remaining) }}
-                  </span>
-                </td>
-                <td>
-                  <ng-container *ngIf="sub.reminders_sent && sub.reminders_sent.length > 0; else noReminders">
-                    <div *ngFor="let r of sub.reminders_sent" class="mb-1">
-                      <span class="badge bg-secondary">J-{{ r.days_before }}</span>
-                      <small class="text-muted ms-1">{{ r.channels }} · {{ r.sent_at | date:'dd/MM HH:mm' }}</small>
-                    </div>
-                  </ng-container>
-                  <ng-template #noReminders>
-                    <small class="text-muted">Aucun</small>
-                  </ng-template>
-                </td>
-                <td>
-                  <div class="btn-group-vertical btn-group-sm">
-                    <button
-                      class="btn btn-outline-primary"
-                      (click)="sendManualReminder(sub, 'email')"
-                      title="Envoyer rappel email">
-                      <i class="bi bi-envelope"></i> Email
-                    </button>
-                    <button
-                      class="btn btn-outline-success"
-                      (click)="sendManualReminder(sub, 'sms')"
-                      title="Envoyer rappel SMS"
-                      *ngIf="sub.owner_phone">
-                      <i class="bi bi-phone"></i> SMS
-                    </button>
-                    <button
-                      class="btn btn-outline-warning"
-                      (click)="sendManualReminder(sub, 'both')"
-                      title="Email + SMS"
-                      *ngIf="sub.owner_phone">
-                      <i class="bi bi-broadcast"></i> Les deux
-                    </button>
-                  </div>
-                </td>
+                <td class="d-none d-md-table-cell"><small>{{ reservation.restaurant_name }}</small></td>
+                <td class="d-none d-md-table-cell">{{ reservation.client_name }}</td>
+                <td class="d-none d-md-table-cell">{{ reservation.client_phone }}</td>
+                <td class="d-none d-sm-table-cell">{{ reservation.reservation_date | date:'dd/MM/yyyy' }}</td>
+                <td class="d-none d-md-table-cell">{{ reservation.time_slot }}</td>
+                <td class="d-none d-md-table-cell">{{ reservation.number_of_people }}</td>
+                <td><span class="stag" [ngClass]="'r-' + reservation.status">{{ getReservationStatusLabel(reservation.status) }}</span></td>
+                <td><button class="btn btn-sm btn-outline-info" (click)="viewReservationDetails(reservation)"><i class="bi bi-eye"></i></button></td>
               </tr>
-              <tr *ngIf="subscriptions.length === 0">
-                <td colspan="7" class="text-center text-muted py-5">
-                  <i class="bi bi-inbox fs-1 d-block mb-3"></i>
-                  <p>Aucun abonnement payant actif</p>
-                </td>
-              </tr>
+              <tr *ngIf="filteredReservations.length === 0"><td colspan="10" class="text-center text-muted">Aucune réservation</td></tr>
             </tbody>
           </table>
         </div>
+      </div>
 
-        <!-- Historique des rappels -->
+      <!-- ══ PAYMENTS ══ -->
+      <div *ngIf="activeTab === 'payments'" class="tab-pane-custom">
+        <div class="content-header"><h4>Suivi des paiements</h4></div>
+        <div class="table-responsive">
+          <table class="table custom-table">
+            <thead><tr>
+              <th class="d-none d-md-table-cell">ID Paiement</th>
+              <th class="d-table-cell d-md-none">Paiement</th>
+              <th class="d-none d-md-table-cell">Commande</th>
+              <th class="d-none d-md-table-cell">Client</th>
+              <th>Montant</th>
+              <th class="d-none d-md-table-cell">Méthode</th>
+              <th>Statut</th>
+              <th class="d-none d-md-table-cell">Date</th>
+            </tr></thead>
+            <tbody>
+              <tr *ngFor="let payment of payments">
+                <td class="d-none d-md-table-cell"><code>{{ payment.payment_id | slice:0:12 }}…</code></td>
+                <td class="d-table-cell d-md-none">
+                  <strong>{{ payment.client_name || 'N/A' }}</strong>
+                  <small class="d-block text-muted">Cmd. {{ payment.order_id }}</small>
+                  <small class="d-block text-muted">{{ payment.created_at | date:'dd/MM/yy HH:mm' }}</small>
+                </td>
+                <td class="d-none d-md-table-cell">{{ payment.order_id }}</td>
+                <td class="d-none d-md-table-cell">{{ payment.client_name || 'N/A' }}</td>
+                <td class="fw-bold">{{ payment.amount }} {{ payment.currency }}</td>
+                <td class="d-none d-md-table-cell"><span class="stag s-confirmed">{{ payment.payment_method?.toUpperCase() }}</span></td>
+                <td><span class="stag" [ngClass]="'p-' + payment.status">{{ getPaymentStatusLabel(payment.status) }}</span></td>
+                <td class="d-none d-md-table-cell">{{ payment.created_at | date:'dd/MM/yy HH:mm' }}</td>
+              </tr>
+              <tr *ngIf="payments.length === 0"><td colspan="8" class="text-center text-muted">Aucun paiement</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ══ SUPPORT ══ -->
+      <div *ngIf="activeTab === 'support'" class="tab-pane-custom">
+        <div class="content-header"><h4><i class="bi bi-headset"></i> Gestion du Support</h4><div class="filters"><select class="form-select" [(ngModel)]="supportStatusFilter" (change)="filterSupportTickets()"><option value="">Tous les statuts</option><option value="open">Ouverts</option><option value="in_progress">En cours</option><option value="resolved">Résolus</option><option value="closed">Fermés</option></select></div></div>
+        <div class="alert alert-info mb-3" *ngIf="premiumTicketsCount > 0"><i class="bi bi-star-fill"></i> <strong>{{ premiumTicketsCount }} ticket(s) Premium</strong> en attente de réponse prioritaire.</div>
+        <div class="table-responsive">
+          <table class="table custom-table">
+            <thead><tr>
+              <th class="d-none d-md-table-cell">ID</th>
+              <th class="d-table-cell d-md-none">Ticket</th>
+              <th class="d-none d-md-table-cell">Établissement</th>
+              <th class="d-none d-md-table-cell">Sujet</th>
+              <th class="d-none d-md-table-cell">Priorité</th>
+              <th>Statut</th>
+              <th class="d-none d-md-table-cell">Date</th>
+              <th>Actions</th>
+            </tr></thead>
+            <tbody>
+              <tr *ngFor="let ticket of filteredSupportTickets" [class.row-warning]="ticket.is_premium && ticket.status === 'open'">
+                <td class="d-none d-md-table-cell"><strong>{{ ticket.id }}</strong><span *ngIf="ticket.is_premium" class="stag t-approved ms-1" style="font-size:.62rem;"><i class="bi bi-star-fill"></i> Premium</span></td>
+                <td class="d-table-cell d-md-none">
+                  <strong>{{ ticket.business_name }}</strong>
+                  <span *ngIf="ticket.is_premium" class="stag t-approved ms-1" style="font-size:.6rem;"><i class="bi bi-star-fill"></i></span>
+                  <small class="d-block text-muted mt-1">{{ ticket.subject }}</small>
+                  <small class="d-block text-muted">{{ ticket.message | slice:0:60 }}…</small>
+                </td>
+                <td class="d-none d-md-table-cell"><strong>{{ ticket.business_name }}</strong><br><small class="text-muted">{{ ticket.plan_name || 'Gratuit' }}</small></td>
+                <td class="d-none d-md-table-cell"><strong>{{ ticket.subject }}</strong><br><small class="text-muted">{{ ticket.message | slice:0:80 }}{{ ticket.message?.length > 80 ? '…' : '' }}</small></td>
+                <td class="d-none d-md-table-cell"><span class="stag" [ngClass]="getSupportPriorityClass(ticket.priority)">{{ ticket.priority }}</span></td>
+                <td><span class="stag" [ngClass]="'sup-' + ticket.status">{{ getSupportStatusLabel(ticket.status) }}</span></td>
+                <td class="d-none d-md-table-cell"><small>{{ ticket.created_at | date:'dd/MM/yyyy HH:mm' }}</small></td>
+                <td><div class="btn-group btn-group-sm"><button class="btn btn-outline-info" (click)="viewTicket(ticket)"><i class="bi bi-eye"></i></button><button class="btn btn-outline-success" *ngIf="ticket.status === 'open'" (click)="respondToTicket(ticket)"><i class="bi bi-reply"></i></button></div></td>
+              </tr>
+              <tr *ngIf="filteredSupportTickets.length === 0"><td colspan="8" class="text-center text-muted py-4"><i class="bi bi-inbox fs-1 d-block mb-2"></i>Aucun ticket</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ══ TESTIMONIALS ══ -->
+      <div *ngIf="activeTab === 'testimonials'" class="tab-pane-custom">
+        <div class="content-header"><h4><i class="bi bi-chat-quote-fill"></i> Gestion des Témoignages</h4><div class="filters"><select class="form-select" [(ngModel)]="testimonialStatusFilter" (change)="filterTestimonials()"><option value="">Tous les statuts</option><option value="pending">En attente</option><option value="approved">Approuvés</option><option value="rejected">Rejetés</option></select></div></div>
+        <div class="row mb-4" *ngIf="testimonialStats">
+          <div class="col-6 col-md-3 mb-3"><div class="stat-card"><div class="stat-icon" style="background:var(--rt-accent-s);color:var(--rt-accent)"><i class="bi bi-hourglass-split"></i></div><div class="stat-details"><h3>{{ testimonialStats.pending }}</h3><p>En attente</p></div></div></div>
+          <div class="col-6 col-md-3 mb-3"><div class="stat-card"><div class="stat-icon" style="background:var(--rt-green-s);color:var(--rt-green)"><i class="bi bi-check-circle"></i></div><div class="stat-details"><h3>{{ testimonialStats.approved }}</h3><p>Approuvés</p></div></div></div>
+          <div class="col-6 col-md-3 mb-3"><div class="stat-card"><div class="stat-icon" style="background:var(--rt-primary-s);color:var(--rt-primary)"><i class="bi bi-x-circle"></i></div><div class="stat-details"><h3>{{ testimonialStats.rejected }}</h3><p>Rejetés</p></div></div></div>
+          <div class="col-6 col-md-3 mb-3"><div class="stat-card"><div class="stat-icon" style="background:var(--rt-accent-s);color:var(--rt-accent)"><i class="bi bi-star-fill"></i></div><div class="stat-details"><h3>{{ testimonialStats.featured }}</h3><p>En vedette</p></div></div></div>
+        </div>
+        <div class="table-responsive">
+          <table class="table custom-table">
+            <thead><tr>
+              <th class="d-none d-md-table-cell">ID</th>
+              <th class="d-table-cell d-md-none">Client</th>
+              <th class="d-none d-md-table-cell">Client</th>
+              <th class="d-none d-md-table-cell">Note</th>
+              <th>Commentaire</th>
+              <th>Statut</th>
+              <th class="d-none d-md-table-cell">Vedette</th>
+              <th class="d-none d-md-table-cell">Date</th>
+              <th>Actions</th>
+            </tr></thead>
+            <tbody>
+              <tr *ngFor="let testimonial of filteredTestimonials" [class.row-warning]="testimonial.status === 'pending'">
+                <td class="d-none d-md-table-cell"><strong>{{ testimonial.id }}</strong></td>
+                <td class="d-table-cell d-md-none">
+                  <div class="d-flex align-items-center gap-2">
+                    <img [src]="testimonial.user?.photo || 'assets/images/default-avatar.png'" alt="" class="avatar-sm" (error)="onAvatarError($event)">
+                    <div><strong style="font-size:.82rem;">{{ testimonial.user?.first_name }} {{ testimonial.user?.last_name }}</strong><div class="stars mt-1"><i class="bi bi-star-fill" *ngFor="let star of [1,2,3,4,5]" [class.active]="star <= testimonial.rating"></i></div></div>
+                  </div>
+                </td>
+                <td class="d-none d-md-table-cell"><div class="d-flex align-items-center gap-2"><img [src]="testimonial.user?.photo || 'assets/images/default-avatar.png'" alt="" class="avatar-sm" (error)="onAvatarError($event)"><div><strong>{{ testimonial.user?.first_name }} {{ testimonial.user?.last_name }}</strong><br><small class="text-muted">{{ testimonial.user?.email }}</small></div></div></td>
+                <td class="d-none d-md-table-cell"><div class="stars"><i class="bi bi-star-fill" *ngFor="let star of [1,2,3,4,5]" [class.active]="star <= testimonial.rating"></i></div><small class="text-muted">{{ testimonial.rating }}/5</small></td>
+                <td><div class="comment-cell">{{ testimonial.comment }}</div></td>
+                <td><span class="stag" [ngClass]="'t-' + testimonial.status">{{ getTestimonialStatusLabel(testimonial.status) }}</span></td>
+                <td class="d-none d-md-table-cell"><span *ngIf="testimonial.is_featured" class="stag t-approved"><i class="bi bi-star-fill"></i> Vedette</span><span *ngIf="!testimonial.is_featured" class="text-muted"><i class="bi bi-star"></i></span></td>
+                <td class="d-none d-md-table-cell"><small>{{ testimonial.created_at | date:'dd/MM/yyyy' }}</small></td>
+                <td>
+                  <div class="btn-group-vertical btn-group-sm">
+                    <ng-container *ngIf="testimonial.status === 'pending'"><button class="btn btn-success btn-sm" (click)="approveTestimonial(testimonial, false)"><i class="bi bi-check-circle"></i> <span class="d-none d-sm-inline">Approuver</span></button><button class="btn btn-primary btn-sm" (click)="approveTestimonial(testimonial, true)"><i class="bi bi-star-fill"></i> <span class="d-none d-sm-inline">Vedette</span></button><button class="btn btn-warning btn-sm" (click)="rejectTestimonial(testimonial)"><i class="bi bi-x-circle"></i> <span class="d-none d-sm-inline">Rejeter</span></button></ng-container>
+                    <ng-container *ngIf="testimonial.status === 'approved'"><button class="btn btn-info btn-sm" (click)="toggleFeaturedTestimonial(testimonial)"><i [class]="testimonial.is_featured ? 'bi bi-star' : 'bi bi-star-fill'"></i> <span class="d-none d-sm-inline">{{ testimonial.is_featured ? 'Retirer' : 'Vedette' }}</span></button></ng-container>
+                    <ng-container *ngIf="testimonial.status === 'rejected'"><button class="btn btn-success btn-sm" (click)="approveTestimonial(testimonial, false)"><i class="bi bi-check-circle"></i> <span class="d-none d-sm-inline">Approuver</span></button></ng-container>
+                    <button class="btn btn-danger btn-sm" (click)="deleteTestimonial(testimonial)"><i class="bi bi-trash"></i></button>
+                  </div>
+                </td>
+              </tr>
+              <tr *ngIf="filteredTestimonials.length === 0"><td colspan="9" class="text-center text-muted py-5"><i class="bi bi-inbox fs-1 d-block mb-3"></i>Aucun témoignage</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ══ SUBSCRIPTIONS ══ -->
+      <div *ngIf="activeTab === 'subscriptions'" class="tab-pane-custom">
+        <div class="content-header align-items-start"><div><h4><i class="bi bi-credit-card-2-front"></i> Abonnements & Rappels</h4><small class="text-muted">Cron automatique chaque jour à 09h00.</small></div><div class="d-flex gap-2"><button class="btn btn-info btn-sm" (click)="loadRemindersHistory()" [disabled]="loadingReminders"><span *ngIf="loadingReminders" class="spinner-border spinner-border-sm me-1"></span><i class="bi bi-clock-history" *ngIf="!loadingReminders"></i> Historique</button><button class="btn btn-warning btn-sm" (click)="triggerReminders()" [disabled]="triggeringReminders"><span *ngIf="triggeringReminders" class="spinner-border spinner-border-sm me-1"></span><i class="bi bi-send" *ngIf="!triggeringReminders"></i> {{ triggeringReminders ? 'Envoi…' : 'Déclencher rappels' }}</button></div></div>
+        <div class="alert alert-info d-flex align-items-center gap-3 mb-4"><i class="bi bi-check-circle-fill fs-4"></i><div><strong>Rappels automatiques actifs</strong> — J-7, J-3, J-1 et à expiration.</div></div>
+        <div class="row mb-4">
+          <div class="col-6 col-md-3 mb-3"><div class="stat-card"><div class="stat-icon" style="background:var(--rt-green-s);color:var(--rt-green)"><i class="bi bi-shield-check"></i></div><div class="stat-details"><h3>{{ subscriptions.length }}</h3><p>Abonnements payants</p></div></div></div>
+          <div class="col-6 col-md-3 mb-3"><div class="stat-card"><div class="stat-icon" style="background:var(--rt-blue-s);color:var(--rt-blue)"><i class="bi bi-calendar-range"></i></div><div class="stat-details"><h3>{{ subscriptions.length - getExpiringCount() - getExpiredCount() }}</h3><p>Actifs (OK)</p></div></div></div>
+          <div class="col-6 col-md-3 mb-3"><div class="stat-card"><div class="stat-icon" style="background:var(--rt-accent-s);color:var(--rt-accent)"><i class="bi bi-exclamation-triangle"></i></div><div class="stat-details"><h3>{{ getExpiringCount() }}</h3><p>Expirent bientôt</p></div></div></div>
+          <div class="col-6 col-md-3 mb-3"><div class="stat-card"><div class="stat-icon" style="background:var(--rt-primary-s);color:var(--rt-primary)"><i class="bi bi-x-circle"></i></div><div class="stat-details"><h3>{{ getExpiredCount() }}</h3><p>Expirés</p></div></div></div>
+        </div>
+        <div class="filters mb-3"><select class="form-select w-auto" [(ngModel)]="subscriptionFilter" (change)="loadSubscriptions()"><option value="all">Tous les abonnements</option><option value="expiring_soon">Expirant dans 7 jours</option></select></div>
+        <div class="table-responsive">
+          <table class="table custom-table">
+            <thead><tr>
+              <th class="d-table-cell d-md-none">Abonnement</th>
+              <th class="d-none d-md-table-cell">Établissement</th>
+              <th class="d-none d-md-table-cell">Plan</th>
+              <th class="d-none d-md-table-cell">Propriétaire</th>
+              <th class="d-none d-sm-table-cell">Expiration</th>
+              <th>Statut</th>
+              <th class="d-none d-lg-table-cell">Rappels</th>
+              <th>Actions</th>
+            </tr></thead>
+            <tbody>
+              <tr *ngFor="let sub of subscriptions" [class.row-danger]="sub.days_remaining < 0" [class.row-warning]="sub.days_remaining >= 0 && sub.days_remaining <= 3">
+                <td class="d-table-cell d-md-none">
+                  <strong>{{ sub.business_name }}</strong>
+                  <span class="stag role-client ms-1" style="font-size:.62rem;">{{ sub.business_type }}</span>
+                  <small class="d-block text-muted mt-1"><span class="stag s-confirmed" style="font-size:.65rem;">{{ sub.plan_name }}</span> · {{ sub.end_date | date:'dd/MM/yyyy' }}</small>
+                </td>
+                <td class="d-none d-md-table-cell"><strong>{{ sub.business_name }}</strong><br><span class="stag role-client" style="font-size:.65rem;">{{ sub.business_type }}</span></td>
+                <td class="d-none d-md-table-cell"><span class="stag s-confirmed">{{ sub.plan_name }}</span><br><small class="text-muted">{{ sub.plan_price | number:'1.0-0' }} FCFA/mois</small></td>
+                <td class="d-none d-md-table-cell"><small>{{ sub.owner_first_name }} {{ sub.owner_last_name }}</small><br><small class="text-muted">{{ sub.owner_email }}</small></td>
+                <td class="d-none d-sm-table-cell"><small>{{ sub.end_date | date:'dd/MM/yyyy' }}</small></td>
+                <td><span class="stag" [ngClass]="getSubscriptionUrgencyClass(sub.days_remaining)">{{ getSubscriptionUrgencyLabel(sub.days_remaining) }}</span></td>
+                <td class="d-none d-lg-table-cell"><ng-container *ngIf="sub.reminders_sent && sub.reminders_sent.length > 0; else noReminders"><div *ngFor="let r of sub.reminders_sent" class="mb-1"><span class="stag s-delivered" style="font-size:.65rem;">J-{{ r.days_before }}</span></div></ng-container><ng-template #noReminders><small class="text-muted">Aucun</small></ng-template></td>
+                <td><div class="btn-group-vertical btn-group-sm"><button class="btn btn-outline-primary btn-sm" (click)="sendManualReminder(sub, 'email')"><i class="bi bi-envelope"></i></button><button class="btn btn-outline-success btn-sm" (click)="sendManualReminder(sub, 'sms')" *ngIf="sub.owner_phone"><i class="bi bi-phone"></i></button><button class="btn btn-outline-warning btn-sm" (click)="sendManualReminder(sub, 'both')" *ngIf="sub.owner_phone"><i class="bi bi-broadcast"></i></button></div></td>
+              </tr>
+              <tr *ngIf="subscriptions.length === 0"><td colspan="8" class="text-center text-muted py-5"><i class="bi bi-inbox fs-1 d-block mb-3"></i>Aucun abonnement</td></tr>
+            </tbody>
+          </table>
+        </div>
         <div class="mt-5" *ngIf="remindersHistory.length > 0">
-          <h5><i class="bi bi-clock-history"></i> Historique des rappels envoyés</h5>
+          <h5 class="mb-3"><i class="bi bi-clock-history"></i> Historique des rappels</h5>
+          <div class="table-responsive"><table class="table custom-table table-sm"><thead><tr><th class="d-none d-md-table-cell">Établissement</th><th class="d-table-cell d-md-none">Rappel</th><th class="d-none d-md-table-cell">Email</th><th>Rappel</th><th class="d-none d-md-table-cell">Canal</th><th class="d-none d-md-table-cell">Envoyé le</th></tr></thead><tbody><tr *ngFor="let r of remindersHistory"><td class="d-none d-md-table-cell">{{ r.business_name }}</td><td class="d-table-cell d-md-none"><strong>{{ r.business_name }}</strong><small class="d-block text-muted">{{ r.sent_at | date:'dd/MM HH:mm' }}</small></td><td class="d-none d-md-table-cell"><small>{{ r.owner_email }}</small></td><td><span class="stag" style="font-size:.65rem;" [ngClass]="r.days_before === 0 ? 's-cancelled' : r.days_before <= 1 ? 's-cancelled' : r.days_before <= 3 ? 's-pending' : 's-confirmed'">{{ r.days_before === 0 ? 'Expiré' : 'J-' + r.days_before }}</span></td><td class="d-none d-md-table-cell"><small>{{ r.channels }}</small></td><td class="d-none d-md-table-cell"><small>{{ r.sent_at | date:'dd/MM/yyyy HH:mm' }}</small></td></tr></tbody></table></div>
+        </div>
+      </div>
+
+      <!-- ══ COMMISSIONS ══ -->
+      <div *ngIf="activeTab === 'commissions'" class="tab-pane-custom">
+        <div class="content-header align-items-start mb-3"><div><h4><i class="bi bi-percent"></i> Commissions de la plateforme</h4><small class="text-muted">Revenus générés par les transactions.</small></div><div class="d-flex align-items-center gap-2"><span class="stag s-pending" *ngIf="isSandbox" style="font-size:.72rem;"><i class="bi bi-shield-fill-check"></i> Sandbox</span><button class="btn btn-sm btn-outline-primary" (click)="loadCommissions()"><i class="bi bi-arrow-clockwise"></i> Actualiser</button></div></div>
+        <div class="text-center py-4" *ngIf="commissionLoading"><div class="spinner-border" style="color: var(--rt-primary)"></div><p class="mt-2 text-muted">Chargement…</p></div>
+        <ng-container *ngIf="!commissionLoading">
+          <div class="row mb-4">
+            <div class="col-6 col-md-3 mb-3"><div class="stat-card"><div class="stat-icon" style="background:var(--rt-accent-s);color:var(--rt-accent)"><i class="bi bi-hourglass-split"></i></div><div class="stat-details"><h3>{{ formatAmount(getTotalPendingCommissions()) }}</h3><p>FCFA en attente</p></div></div></div>
+            <div class="col-6 col-md-3 mb-3"><div class="stat-card"><div class="stat-icon" style="background:var(--rt-green-s);color:var(--rt-green)"><i class="bi bi-check-circle"></i></div><div class="stat-details"><h3>{{ formatAmount(getTotalCollectedCommissions()) }}</h3><p>FCFA collectés</p></div></div></div>
+            <div class="col-6 col-md-3 mb-3"><div class="stat-card"><div class="stat-icon" style="background:var(--rt-primary-s);color:var(--rt-primary)"><i class="bi bi-list-check"></i></div><div class="stat-details"><h3>{{ commissions.length }}</h3><p>Total</p></div></div></div>
+            <div class="col-6 col-md-3 mb-3"><div class="stat-card"><div class="stat-icon" style="background:var(--rt-blue-s);color:var(--rt-blue)"><i class="bi bi-clock-history"></i></div><div class="stat-details"><h3>{{ getPendingCommissionsCount() }}</h3><p>En attente</p></div></div></div>
+          </div>
+          <div class="filters mb-3"><select class="form-select w-auto" [(ngModel)]="commissionStatusFilter" (change)="filterCommissions()"><option value="">Tous les statuts</option><option value="pending">En attente</option><option value="collected">Collectées</option><option value="paid">Payées</option></select></div>
           <div class="table-responsive">
-            <table class="table table-sm">
-              <thead>
-                <tr>
-                  <th>Établissement</th>
-                  <th>Email</th>
-                  <th>Rappel</th>
-                  <th>Canal</th>
-                  <th>Envoyé le</th>
-                </tr>
-              </thead>
+            <table class="table custom-table">
+              <thead><tr>
+                <th class="d-none d-md-table-cell">ID</th>
+                <th class="d-table-cell d-md-none">Commission</th>
+                <th class="d-none d-md-table-cell">Établissement</th>
+                <th class="d-none d-md-table-cell">Commande</th>
+                <th class="d-none d-md-table-cell">Montant</th>
+                <th class="d-none d-md-table-cell">Taux</th>
+                <th>Commission</th>
+                <th>Statut</th>
+                <th class="d-none d-md-table-cell">Date</th>
+                <th>Actions</th>
+              </tr></thead>
               <tbody>
-                <tr *ngFor="let r of remindersHistory">
-                  <td>{{ r.business_name }}</td>
-                  <td><small>{{ r.owner_email }}</small></td>
-                  <td>
-                    <span class="badge"
-                          [ngClass]="r.days_before === 0 ? 'bg-dark' : r.days_before <= 1 ? 'bg-danger' : r.days_before <= 3 ? 'bg-warning' : 'bg-info'">
-                      {{ r.days_before === 0 ? 'Expiré' : 'J-' + r.days_before }}
-                    </span>
+                <tr *ngFor="let c of filteredCommissions">
+                  <td class="d-none d-md-table-cell"><code>{{ c.id }}</code></td>
+                  <td class="d-table-cell d-md-none">
+                    <strong>{{ c.business_name }}</strong>
+                    <small class="d-block text-muted"><span *ngIf="c.order_id">Cmd. {{ c.order_id }}</span><span *ngIf="c.special_order_id">Sp. {{ c.special_order_id }}</span></small>
+                    <small class="d-block text-muted">{{ c.created_at | date:'dd/MM/yyyy' }}</small>
                   </td>
-                  <td><small>{{ r.channels }}</small></td>
-                  <td><small>{{ r.sent_at | date:'dd/MM/yyyy HH:mm' }}</small></td>
+                  <td class="d-none d-md-table-cell"><strong>{{ c.business_name }}</strong><br><small class="text-muted">{{ c.business_type || '—' }}</small></td>
+                  <td class="d-none d-md-table-cell"><span *ngIf="c.order_id">Cmd. {{ c.order_id }}</span><span *ngIf="c.special_order_id">Sp. {{ c.special_order_id }}</span></td>
+                  <td class="d-none d-md-table-cell">{{ formatAmount(c.order_amount) }} FCFA</td>
+                  <td class="d-none d-md-table-cell"><span class="stag s-confirmed">{{ c.commission_rate }}%</span></td>
+                  <td class="fw-bold" style="color:var(--rt-green)">{{ formatAmount(c.commission_amount) }} FCFA</td>
+                  <td><span class="stag" [ngClass]="getCommissionStatusClass(c.status)">{{ getCommissionStatusLabel(c.status) }}</span></td>
+                  <td class="d-none d-md-table-cell"><small>{{ c.created_at | date:'dd/MM/yyyy' }}</small></td>
+                  <td><button *ngIf="c.status === 'pending'" class="btn btn-sm btn-success" (click)="collectCommission(c.id, c.business_name, c.commission_amount)"><i class="bi bi-check-circle"></i> <span class="d-none d-sm-inline">Collecter</span></button><span *ngIf="c.status !== 'pending'" class="text-muted">—</span></td>
                 </tr>
+                <tr *ngIf="filteredCommissions.length === 0"><td colspan="10" class="text-center text-muted py-5"><i class="bi bi-inbox fs-1 d-block mb-3"></i>Aucune commission</td></tr>
               </tbody>
             </table>
           </div>
-        </div>
-
-        <div class="mt-3" *ngIf="remindersHistory.length === 0 && !loadingReminders">
-          <p class="text-muted text-center">
-            <i class="bi bi-info-circle"></i>
-            Cliquez sur <strong>Historique</strong> pour voir les rappels déjà envoyés.
-          </p>
-        </div>
-
+        </ng-container>
       </div>
 
-<div *ngIf="activeTab === 'commissions'" class="tab-pane-custom">
+      <!-- ══ PLANS / SETTINGS / ANALYTICS ══ -->
+      <div *ngIf="activeTab === 'plans'" class="tab-pane-custom"><app-plans-management></app-plans-management></div>
+      <div *ngIf="activeTab === 'settings'" class="tab-pane-custom"><app-platform-settings></app-platform-settings></div>
+      <div *ngIf="activeTab === 'analytics'" class="tab-pane-custom"><app-admin-analytics></app-admin-analytics></div>
+      <div *ngIf="activeTab === 'payment-accounts'" class="tab-pane-custom">
+        <app-payment-accounts-admin></app-payment-accounts-admin>
+      </div>
+      <!-- ══ CONTACTS ═══════════════════════════════════════════ -->
+      <div *ngIf="activeTab === 'contacts'" class="tab-pane-custom">
 
-  <!-- Header -->
-  <div class="content-header align-items-start mb-3">
-    <div>
-      <h4><i class="bi bi-percent"></i> Commissions de la plateforme</h4>
-      <small class="text-muted">
-        Revenus générés par les transactions des restaurants et traiteurs.
-      </small>
-    </div>
-    <div class="d-flex align-items-center gap-2">
-      <!-- Badge sandbox -->
-      <span class="badge bg-warning" *ngIf="isSandbox">
-        <i class="bi bi-shield-fill-check"></i> Mode Sandbox
-      </span>
-      <button class="btn btn-sm btn-outline-primary" (click)="loadCommissions()">
-        <i class="bi bi-arrow-clockwise"></i> Actualiser
-      </button>
-    </div>
-  </div>
-
-  <!-- Loader -->
-  <div class="text-center py-4" *ngIf="commissionLoading">
-    <div class="spinner-border text-primary"></div>
-    <p class="mt-2 text-muted">Chargement des commissions...</p>
-  </div>
-
-  <ng-container *ngIf="!commissionLoading">
-
-    <!-- Statistiques résumé -->
-    <div class="row mb-4">
-      <div class="col-md-3 mb-3">
-        <div class="stat-card stat-warning">
-          <div class="stat-icon"><i class="bi bi-hourglass-split"></i></div>
-          <div class="stat-details">
-            <h3>{{ formatAmount(getTotalPendingCommissions()) }}</h3>
-            <p>FCFA en attente de collecte</p>
+        <!-- Filtre + refresh -->
+        <div class="content-header">
+          <h4><i class="bi bi-envelope-fill"></i> Messages de contact</h4>
+          <div class="filters">
+            <select class="form-select" [(ngModel)]="contactFilter" (change)="filterContacts()">
+              <option value="">Tous</option>
+              <option value="unread">Non lus</option>
+              <option value="read">Lus</option>
+              <option value="replied">Répondus</option>
+              <option value="archived">Archivés</option>
+            </select>
+            <button class="btn btn-sm btn-outline-primary" (click)="loadContacts()">
+              <i class="bi bi-arrow-clockwise"></i>
+            </button>
           </div>
         </div>
-      </div>
-      <div class="col-md-3 mb-3">
-        <div class="stat-card stat-success">
-          <div class="stat-icon"><i class="bi bi-check-circle"></i></div>
-          <div class="stat-details">
-            <h3>{{ formatAmount(getTotalCollectedCommissions()) }}</h3>
-            <p>FCFA collectés au total</p>
-          </div>
-        </div>
-      </div>
-      <div class="col-md-3 mb-3">
-        <div class="stat-card stat-primary">
-          <div class="stat-icon"><i class="bi bi-list-check"></i></div>
-          <div class="stat-details">
-            <h3>{{ commissions.length }}</h3>
-            <p>Commissions totales</p>
-          </div>
-        </div>
-      </div>
-      <div class="col-md-3 mb-3">
-        <div class="stat-card stat-info">
-          <div class="stat-icon"><i class="bi bi-clock-history"></i></div>
-          <div class="stat-details">
-            <h3>{{ getPendingCommissionsCount() }}</h3>
-            <p>En attente de collecte</p>
-          </div>
-        </div>
-      </div>
-    </div>
 
-    <!-- Filtre -->
-    <div class="filters mb-3">
-      <select class="form-select w-auto" [(ngModel)]="commissionStatusFilter" (change)="filterCommissions()">
-        <option value="">Tous les statuts</option>
-        <option value="pending">En attente</option>
-        <option value="collected">Collectées</option>
-        <option value="paid">Payées</option>
-      </select>
-    </div>
+        <!-- Loader -->
+        <div class="text-center py-5" *ngIf="contactsLoading">
+          <div class="spinner-border" style="color:var(--rt-primary)"></div>
+          <p class="mt-2 text-muted">Chargement…</p>
+        </div>
 
-    <!-- Table -->
-    <div class="table-responsive">
-      <table class="table custom-table">
-        <thead>
-          <tr>
-            <th></th>
-            <th>Établissement</th>
-            <th>Commande</th>
-            <th>Montant commande</th>
-            <th>Taux</th>
-            <th>Commission</th>
-            <th>Statut</th>
-            <th>Sandbox</th>
-            <th>Date</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr *ngFor="let c of filteredCommissions">
-            <td><code>{{ c.id }}</code></td>
-            <td>
-              <strong>{{ c.business_name }}</strong>
-              <br>
-              <small class="text-muted badge bg-light text-dark">{{ c.business_type || '—' }}</small>
-            </td>
-            <td>
-              <span *ngIf="c.order_id">Commande #{{ c.order_id }}</span>
-              <span *ngIf="c.special_order_id">Commande spéciale #{{ c.special_order_id }}</span>
-            </td>
-            <td>{{ formatAmount(c.order_amount) }} FCFA</td>
-            <td>
-              <span class="badge bg-info">{{ c.commission_rate }}%</span>
-            </td>
-            <td class="fw-bold text-success">
-              {{ formatAmount(c.commission_amount) }} FCFA
-            </td>
-            <td>
-              <span class="badge" [ngClass]="getCommissionStatusClass(c.status)">
-                {{ getCommissionStatusLabel(c.status) }}
-              </span>
-              <br>
-              <small class="text-muted" *ngIf="c.collected_at">
-                {{ c.collected_at | date:'dd/MM/yyyy' }}
-              </small>
-            </td>
-            <td>
-              <span class="badge bg-warning" *ngIf="c.order_id?.toString().startsWith('SANDBOX') || c.payment_id?.startsWith?.('SANDBOX')">
-                Sandbox
-              </span>
-              <span class="text-muted" *ngIf="!c.order_id?.toString().startsWith('SANDBOX')">—</span>
-            </td>
-            <td>
-              <small>{{ c.created_at | date:'dd/MM/yyyy' }}</small>
-              <br>
-              <small class="text-muted">{{ c.created_at | date:'HH:mm' }}</small>
-            </td>
-            <td>
-              <button
-                *ngIf="c.status === 'pending'"
-                class="btn btn-sm btn-success"
-                (click)="collectCommission(c.id, c.business_name, c.commission_amount)"
-                title="Marquer comme collectée">
-                <i class="bi bi-check-circle"></i> Collecter
+        <ng-container *ngIf="!contactsLoading">
+
+          <!-- ── Liste ────────────────────────────────────────── -->
+          <div *ngIf="!selectedContact">
+            <div class="table-responsive">
+              <table class="table custom-table">
+                <thead><tr>
+                  <th class="d-table-cell d-md-none">Message</th>
+                  <th class="d-none d-md-table-cell">Nom</th>
+                  <th class="d-none d-md-table-cell">Email</th>
+                  <th class="d-none d-md-table-cell">Sujet</th>
+                  <th>Statut</th>
+                  <th class="d-none d-md-table-cell">Date</th>
+                  <th>Actions</th>
+                </tr></thead>
+                <tbody>
+                  <tr *ngFor="let msg of filteredContacts"
+                      [class.row-warning]="msg.status === 'unread'"
+                      style="cursor:pointer" (click)="openContact(msg)">
+                    <!-- Mobile -->
+                    <td class="d-table-cell d-md-none">
+                      <strong>{{ msg.name }}</strong>
+                      <small class="d-block text-muted">{{ msg.email }}</small>
+                      <small class="d-block text-muted">{{ getContactSubjectLabel(msg.subject) }}</small>
+                    </td>
+                    <!-- Desktop -->
+                    <td class="d-none d-md-table-cell"><strong>{{ msg.name }}</strong></td>
+                    <td class="d-none d-md-table-cell"><small>{{ msg.email }}</small></td>
+                    <td class="d-none d-md-table-cell">
+                      <span class="stag role-restaurant" style="font-size:.68rem;">{{ getContactSubjectLabel(msg.subject) }}</span>
+                    </td>
+                    <td>
+                      <span class="stag" [ngClass]="getContactStatusClass(msg.status)">
+                        {{ getContactStatusLabel(msg.status) }}
+                      </span>
+                    </td>
+                    <td class="d-none d-md-table-cell">
+                      <small class="text-muted">{{ msg.created_at | date:'dd/MM/yyyy HH:mm' }}</small>
+                    </td>
+                    <td>
+                      <div class="d-flex gap-1" (click)="$event.stopPropagation()">
+                        <button class="btn btn-sm btn-outline-info" title="Lire" (click)="openContact(msg)">
+                          <i class="bi bi-eye"></i>
+                        </button>
+                        <button class="btn btn-sm btn-outline-warning" title="Archiver"
+                          *ngIf="msg.status !== 'archived'" (click)="archiveContact(msg.id)">
+                          <i class="bi bi-archive-fill"></i>
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                  <tr *ngIf="filteredContacts.length === 0">
+                    <td colspan="7" class="text-center text-muted py-5">
+                      <i class="bi bi-envelope-slash fs-1 d-block mb-3" style="opacity:.3"></i>
+                      Aucun message
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- ── Détail + réponse ────────────────────────────── -->
+          <div *ngIf="selectedContact" class="contact-detail">
+
+            <!-- En-tête -->
+            <div class="cd-header">
+              <button class="btn btn-sm btn-outline-primary" (click)="selectedContact = null">
+                <i class="bi bi-arrow-left"></i> Retour
               </button>
-              <span *ngIf="c.status !== 'pending'" class="text-muted">—</span>
-            </td>
-          </tr>
-          <tr *ngIf="filteredCommissions.length === 0">
-            <td colspan="10" class="text-center text-muted py-5">
-              <i class="bi bi-inbox fs-1 d-block mb-3"></i>
-              <p>Aucune commission trouvée</p>
-              <small>Les commissions sont générées automatiquement après chaque paiement.</small>
-            </td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
+              <div class="d-flex align-items-center gap-2">
+                <span class="stag" [ngClass]="getContactStatusClass(selectedContact.status)">
+                  {{ getContactStatusLabel(selectedContact.status) }}
+                </span>
+                <button class="btn btn-sm btn-outline-warning"
+                  *ngIf="selectedContact.status !== 'archived'"
+                  (click)="archiveContact(selectedContact.id)">
+                  <i class="bi bi-archive-fill"></i> Archiver
+                </button>
+              </div>
+            </div>
 
-  </ng-container>
-</div>
-    </div>
+            <!-- Infos expéditeur -->
+            <div class="cd-sender">
+              <div class="cd-avatar"><i class="bi bi-person-fill"></i></div>
+              <div class="cd-sender-info">
+                <div class="cd-name">{{ selectedContact.name }}</div>
+                <div class="cd-meta">
+                  <a [href]="'mailto:' + selectedContact.email" class="cd-link">
+                    <i class="bi bi-envelope"></i> {{ selectedContact.email }}
+                  </a>
+                  <a [href]="'tel:' + selectedContact.phone" class="cd-link">
+                    <i class="bi bi-telephone"></i> {{ selectedContact.phone }}
+                  </a>
+                </div>
+              </div>
+              <div class="cd-date">{{ selectedContact.created_at | date:'dd/MM/yyyy HH:mm' }}</div>
+            </div>
+
+            <!-- Sujet -->
+            <div class="cd-subject">
+              <span class="stag role-restaurant">{{ getContactSubjectLabel(selectedContact.subject) }}</span>
+            </div>
+
+            <!-- Message original -->
+            <div class="cd-message-box">{{ selectedContact.message }}</div>
+
+            <!-- Réponse existante -->
+            <div class="cd-reply-existing" *ngIf="selectedContact.reply">
+              <div class="cd-reply-header">
+                <i class="bi bi-reply-fill"></i> Votre réponse
+                <small>({{ selectedContact.replied_at | date:'dd/MM/yyyy HH:mm' }})</small>
+              </div>
+              <div class="cd-reply-body">{{ selectedContact.reply }}</div>
+            </div>
+
+            <!-- Formulaire de réponse -->
+            <div class="cd-reply-form" *ngIf="selectedContact.status !== 'archived'">
+              <label class="form-label" style="font-weight:600; font-size:.83rem;">
+                <i class="bi bi-reply-fill" style="color:var(--rt-primary)"></i>
+                {{ selectedContact.reply ? 'Modifier la réponse' : 'Répondre par email' }}
+              </label>
+              <textarea class="form-control" rows="5" [(ngModel)]="contactReplyText"
+                [placeholder]="'Rédigez votre réponse... Elle sera envoyée à ' + selectedContact.email">
+              </textarea>
+              <div class="cd-reply-actions">
+                <small class="text-muted">
+                  <i class="bi bi-info-circle"></i>
+                  Envoyé automatiquement à <strong>{{ selectedContact.email }}</strong>
+                </small>
+                <button class="btn btn-primary"
+                  [disabled]="!contactReplyText.trim() || contactReplying"
+                  (click)="sendContactReply(selectedContact.id)">
+                  <span *ngIf="contactReplying" class="spinner-border spinner-border-sm me-1"></span>
+                  <i class="bi bi-send-fill" *ngIf="!contactReplying"></i>
+                  {{ contactReplying ? 'Envoi…' : 'Envoyer la réponse' }}
+                </button>
+              </div>
+            </div>
+
+          </div><!-- /selectedContact -->
+        </ng-container>
+      </div><!-- /contacts tab -->
+
+    </div><!-- /tab-content -->
+  </main>
+
+  <!-- BOTTOM NAV MOBILE -->
+  <div class="mobile-more-overlay" [class.open]="mobileMoreOpen" (click)="mobileMoreOpen = false"></div>
+  <div class="mobile-more-drawer" [class.open]="mobileMoreOpen">
+    <p class="mmd-section-label">Transactions</p>
+    <button class="mmd-item" [class.active]="activeTab==='reservations'" (click)="switchTab('reservations')"><i class="bi bi-calendar-check"></i><span>Réservations</span></button>
+    <button class="mmd-item" [class.active]="activeTab==='payments'" (click)="switchTab('payments')"><i class="bi bi-credit-card"></i><span>Paiements</span></button>
+    <button class="mmd-item" [class.active]="activeTab==='commissions'" (click)="switchTab('commissions')"><i class="bi bi-percent"></i><span>Commissions</span></button>
+    <p class="mmd-section-label">Gestion</p>
+    <button class="mmd-item" [class.active]="activeTab==='subscriptions'" (click)="switchTab('subscriptions')"><i class="bi bi-credit-card-2-front"></i><span>Abonnements</span><span class="mmd-badge danger" *ngIf="getExpiredCount() > 0">{{ getExpiredCount() }}</span><span class="mmd-badge warning" *ngIf="getExpiringCount() > 0 && getExpiredCount() === 0">{{ getExpiringCount() }}</span></button>
+    <button class="mmd-item" [class.active]="activeTab==='support'" (click)="switchTab('support')"><i class="bi bi-headset"></i><span>Support</span><span class="mmd-badge warning" *ngIf="premiumTicketsCount > 0">{{ premiumTicketsCount }}</span></button>
+    <button class="mmd-item" [class.active]="activeTab==='testimonials'" (click)="switchTab('testimonials')"><i class="bi bi-chat-quote"></i><span>Témoignages</span><span class="mmd-badge warning" *ngIf="(testimonialStats?.pending ?? 0) > 0">{{ testimonialStats?.pending }}</span></button>
+    <!-- ✅ CONTACTS dans le drawer -->
+    <button class="mmd-item" [class.active]="activeTab==='contacts'" (click)="switchTab('contacts')">
+      <i class="bi bi-envelope-fill"></i><span>Messages</span>
+      <span class="mmd-badge danger" *ngIf="unreadContactsCount > 0">{{ unreadContactsCount }}</span>
+    </button>
+    <button class="mmd-item" [class.active]="activeTab==='analytics'" (click)="switchTab('analytics')"><i class="bi bi-graph-up-arrow"></i><span>Analytics</span></button>
+    <p class="mmd-section-label">Modules</p>
+    <button class="mmd-item" [class.active]="activeTab==='plans'" (click)="switchTab('plans')"><i class="bi bi-layers"></i><span>Plans</span></button>
+    <button class="mmd-item" [class.active]="activeTab==='settings'" (click)="switchTab('settings')"><i class="bi bi-gear"></i><span>Paramètres</span></button>
+    <button class="mmd-item" [class.active]="activeTab==='payment-accounts'" (click)="switchTab('payment-accounts')">
+      <i class="bi bi-bank2"></i><span>Comptes paiement</span>
+      <span class="mmd-badge warning" *ngIf="pendingPaymentAccountsCount > 0">{{ pendingPaymentAccountsCount }}</span>
+    </button>
   </div>
+  <nav class="mobile-bottom-nav">
+    <button class="mbn-item" [class.active]="activeTab==='overview'" (click)="switchTab('overview')"><i class="bi bi-speedometer2"></i><span>Aperçu</span></button>
+    <button class="mbn-item" [class.active]="activeTab==='users'" (click)="switchTab('users')"><i class="bi bi-people-fill"></i><span>Clients</span></button>
+    <button class="mbn-item" [class.active]="activeTab==='businesses'" (click)="switchTab('businesses')"><i class="bi bi-shop"></i><span>Établ.</span></button>
+    <button class="mbn-item" [class.active]="activeTab==='orders'" (click)="switchTab('orders')"><i class="bi bi-cart-check-fill"></i><span>Cmds</span></button>
+    <button class="mbn-item mbn-more" [class.active]="mobileMoreOpen" (click)="mobileMoreOpen = !mobileMoreOpen"><i class="bi bi-grid-3x3-gap-fill"></i><span>Plus</span></button>
+  </nav>
 </div>
 
-<!-- Modal Edit Business -->
-<div class="modal" [class.show]="showEditBusinessModal" *ngIf="showEditBusinessModal" (click)="closeEditBusinessModal()">
+<!-- MODALS -->
+<div class="modal" [class.show]="showEditBusinessModal" [style.display]="showEditBusinessModal ? 'block' : 'none'" (click)="closeEditBusinessModal()">
   <div class="modal-dialog modal-lg modal-dialog-scrollable" (click)="$event.stopPropagation()">
     <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title">
-          <i class="bi bi-pencil"></i>
-          Modifier l'établissement
-        </h5>
-        <button type="button" class="btn-close" (click)="closeEditBusinessModal()"></button>
-      </div>
+      <div class="modal-header"><h5 class="modal-title"><i class="bi bi-pencil"></i> Modifier l'établissement</h5><button type="button" class="btn-close" (click)="closeEditBusinessModal()"></button></div>
       <div class="modal-body">
-        <form #businessForm="ngForm">
-          <div class="row">
-            <div class="col-md-6 mb-3">
-              <label class="form-label">Nom de l'établissement *</label>
-              <input 
-                type="text" 
-                class="form-control" 
-                [(ngModel)]="businessFormData.name" 
-                name="name"
-                required>
+        <div class="row"><div class="col-md-6 mb-3"><label class="form-label">Nom *</label><input type="text" class="form-control" [(ngModel)]="businessFormData.name" name="name"></div><div class="col-md-6 mb-3"><label class="form-label">Téléphone</label><input type="text" class="form-control" [(ngModel)]="businessFormData.phone" name="phone"></div></div>
+        <div class="mb-3"><label class="form-label">Description</label><textarea class="form-control" rows="3" [(ngModel)]="businessFormData.description" name="description"></textarea></div>
+        <div class="mb-3"><label class="form-label">Adresse</label><input type="text" class="form-control" [(ngModel)]="businessFormData.address" name="address"></div>
+        
+        <!-- Dans la modal admin, après le champ adresse -->
+        <div class="mb-3">
+          <label class="form-label">
+            <i class="bi bi-geo-alt-fill" style="color:var(--rt-green)"></i>
+            Coordonnées GPS
+            <small class="text-muted ms-1">(pour la géolocalisation)</small>
+          </label>
+          <div class="row g-2">
+            <div class="col-6">
+              <input type="number" class="form-control" [(ngModel)]="businessFormData.latitude"
+                name="latitude" placeholder="Ex: 6.1375" step="0.000001"
+                min="-90" max="90">
+              <small class="text-muted" style="font-size:.7rem;">Latitude</small>
             </div>
-            <div class="col-md-6 mb-3">
-              <label class="form-label">Téléphone</label>
-              <input 
-                type="text" 
-                class="form-control" 
-                [(ngModel)]="businessFormData.phone" 
-                name="phone"
-                placeholder="Ex: 90478814">
+            <div class="col-6">
+              <input type="number" class="form-control" [(ngModel)]="businessFormData.longitude"
+                name="longitude" placeholder="Ex: 1.2123" step="0.000001"
+                min="-180" max="180">
+              <small class="text-muted" style="font-size:.7rem;">Longitude</small>
             </div>
-          </div>
-          <div class="mb-3">
-            <label class="form-label">Description</label>
-            <textarea 
-              class="form-control" 
-              rows="3" 
-              [(ngModel)]="businessFormData.description" 
-              name="description"
-              placeholder="Décrivez votre établissement..."></textarea>
-          </div>
-          <div class="mb-3">
-            <label class="form-label">Adresse</label>
-            <input 
-              type="text" 
-              class="form-control" 
-              [(ngModel)]="businessFormData.address" 
-              name="address"
-              placeholder="Adresse complète">
-          </div>
-          <div class="row" *ngIf="selectedBusiness?.type === 'restaurant'">
-            <div class="col-md-6 mb-3">
-              <label class="form-label">Heure d'ouverture</label>
-              <input 
-                type="time" 
-                class="form-control" 
-                [(ngModel)]="businessFormData.opening_hour" 
-                name="opening_hour">
-            </div>
-            <div class="col-md-6 mb-3">
-              <label class="form-label">Heure de fermeture</label>
-              <input 
-                type="time" 
-                class="form-control" 
-                [(ngModel)]="businessFormData.closing_hour" 
-                name="closing_hour">
-            </div>
-          </div>
-          <div class="row" *ngIf="selectedBusiness?.type === 'traiteur'">
-            <div class="col-md-6 mb-3">
-              <label class="form-label">Disponibilité début</label>
-              <input 
-                type="time" 
-                class="form-control" 
-                [(ngModel)]="businessFormData.availability_start" 
-                name="availability_start">
-            </div>
-            <div class="col-md-6 mb-3">
-              <label class="form-label">Disponibilité fin</label>
-              <input 
-                type="time" 
-                class="form-control" 
-                [(ngModel)]="businessFormData.availability_end" 
-                name="availability_end">
-            </div>
-          </div>
-        </form>
-      </div>
-      <div class="modal-footer">
-        <button 
-          type="button" 
-          class="btn btn-secondary" 
-          (click)="closeEditBusinessModal()">
-          <i class="bi bi-x-circle"></i>
-          Annuler
-        </button>
-        <button 
-          type="button" 
-          class="btn btn-primary" 
-          (click)="saveBusinessChanges()"
-          [disabled]="!businessFormData.name || loadingBusinessUpdate">
-          <span *ngIf="loadingBusinessUpdate" class="spinner-border spinner-border-sm me-2"></span>
-          <i class="bi bi-check-circle" *ngIf="!loadingBusinessUpdate"></i>
-          {{ loadingBusinessUpdate ? 'Enregistrement...' : 'Enregistrer' }}
-        </button>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- Modal Order Details -->
-<div class="modal" [class.show]="showOrderDetailsModal" *ngIf="showOrderDetailsModal" (click)="closeOrderDetailsModal()">
-  <div class="modal-dialog modal-lg modal-dialog-scrollable" (click)="$event.stopPropagation()">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title">
-          <i class="bi bi-cart-check"></i>
-          Détails de la commande #{{ selectedOrder?.id }}
-        </h5>
-        <button type="button" class="btn-close" (click)="closeOrderDetailsModal()"></button>
-      </div>
-      <div class="modal-body" *ngIf="selectedOrder">
-        <div class="row mb-3">
-          <div class="col-md-6">
-            <h6><i class="bi bi-shop"></i> Établissement</h6>
-            <p class="mb-1"><strong>{{ selectedOrder.business_name }}</strong></p>
-            <p class="text-muted mb-0"><small>{{ selectedOrder.business_address }}</small></p>
-          </div>
-          <div class="col-md-6">
-            <h6><i class="bi bi-person"></i> Client</h6>
-            <p class="mb-1"><strong>{{ selectedOrder.client_name }}</strong></p>
-            <p class="mb-1"><i class="bi bi-telephone"></i> {{ selectedOrder.client_phone }}</p>
-            <p class="mb-0" *ngIf="selectedOrder.client_email"><i class="bi bi-envelope"></i> {{ selectedOrder.client_email }}</p>
           </div>
         </div>
 
-        <hr>
-
-        <h6><i class="bi bi-list-ul"></i> Articles commandés</h6>
-        <div class="table-responsive">
-          <table class="table table-sm">
-            <thead>
-              <tr>
-                <th>Article</th>
-                <th>Quantité</th>
-                <th>Prix unitaire</th>
-                <th>Sous-total</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr *ngFor="let item of selectedOrder.items">
-                <td>
-                  <strong>{{ item.item_name }}</strong>
-                  <br><small class="text-muted">{{ item.item_description }}</small>
-                </td>
-                <td>{{ item.quantity }}</td>
-                <td>{{ item.unit_price | number:'1.0-0' }} FCFA
-                  </td>
-                <td>{{ item.subtotal | number:'1.0-0' }} FCFA</td>
-              </tr>
-            </tbody>
-            <tfoot>
-              <tr>
-                <td colspan="3" class="text-end"><strong>Total :</strong></td>
-                <td><strong>{{ selectedOrder.total_amount | number:'1.0-0' }} FCFA</strong></td>
-              </tr>
-            </tfoot>
-          </table>
-        </div>
-        <hr>
-
-    <div class="row">
-      <div class="col-md-6">
-        <h6>Statut de la commande</h6>
-        <span class="badge" [ngClass]="getOrderStatusClass(selectedOrder.status)">
-          {{ getOrderStatusLabel(selectedOrder.status) }}
-        </span>
-      </div>
-      <div class="col-md-6">
-        <h6>Statut du paiement</h6>
-        <span class="badge" [ngClass]="getPaymentStatusClass(selectedOrder.payment_status)">
-          {{ getPaymentStatusLabel(selectedOrder.payment_status) }}
-        </span>
-      </div>
-    </div>
-
-    <div class="mt-3" *ngIf="selectedOrder.notes">
-      <h6><i class="bi bi-sticky"></i> Notes</h6>
-      <p>{{ selectedOrder.notes }}</p>
-    </div>
-  </div>
-  <div class="modal-footer">
-    <button 
-      type="button" 
-      class="btn btn-secondary" 
-      (click)="closeOrderDetailsModal()">
-      Fermer
-    </button>
-    <div class="btn-group" *ngIf="selectedOrder && selectedOrder.status !== 'cancelled' && selectedOrder.status !== 'delivered'">
-      <button 
-        type="button" 
-        class="btn btn-success"
-        *ngIf="selectedOrder.status === 'pending'"
-        (click)="updateOrderStatus(selectedOrder.id, 'confirmed')"
-        [disabled]="loadingOrderUpdate">
-        <span *ngIf="loadingOrderUpdate" class="spinner-border spinner-border-sm me-2"></span>
-        <i class="bi bi-check-circle" *ngIf="!loadingOrderUpdate"></i>
-        Confirmer
-      </button>
-      <button 
-        type="button" 
-        class="btn btn-primary"
-        *ngIf="selectedOrder.status === 'confirmed'"
-        (click)="updateOrderStatus(selectedOrder.id, 'preparing')"
-        [disabled]="loadingOrderUpdate">
-        <span *ngIf="loadingOrderUpdate" class="spinner-border spinner-border-sm me-2"></span>
-        <i class="bi bi-hourglass-split" *ngIf="!loadingOrderUpdate"></i>
-        En préparation
-      </button>
-      <button 
-        type="button" 
-        class="btn btn-info"
-        *ngIf="selectedOrder.status === 'preparing'"
-        (click)="updateOrderStatus(selectedOrder.id, 'ready')"
-        [disabled]="loadingOrderUpdate">
-        <span *ngIf="loadingOrderUpdate" class="spinner-border spinner-border-sm me-2"></span>
-        <i class="bi bi-check2-circle" *ngIf="!loadingOrderUpdate"></i>
-        Prête
-      </button>
-      <button 
-        type="button" 
-        class="btn btn-dark"
-        *ngIf="selectedOrder.status === 'ready'"
-        (click)="updateOrderStatus(selectedOrder.id, 'delivered')"
-        [disabled]="loadingOrderUpdate">
-        <span *ngIf="loadingOrderUpdate" class="spinner-border spinner-border-sm me-2"></span>
-        <i class="bi bi-truck" *ngIf="!loadingOrderUpdate"></i>
-        Livrée
-      </button>
-      <button 
-        type="button" 
-        class="btn btn-danger"
-        (click)="updateOrderStatus(selectedOrder.id, 'cancelled')"
-        [disabled]="loadingOrderUpdate">
-        <span *ngIf="loadingOrderUpdate" class="spinner-border spinner-border-sm me-2"></span>
-        <i class="bi bi-x-circle" *ngIf="!loadingOrderUpdate"></i>
-        Annuler
-      </button>
-    </div>
-  </div>
-</div>
-</div>
-</div>
-<!-- Modal Reservation Details -->
-<div class="modal" [class.show]="showReservationDetailsModal" *ngIf="showReservationDetailsModal" (click)="closeReservationDetailsModal()">
-  <div class="modal-dialog modal-lg modal-dialog-scrollable" (click)="$event.stopPropagation()">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title">
-          <i class="bi bi-calendar-check"></i>
-          Détails de la réservation #{{ selectedReservation?.id }}
-        </h5>
-        <button type="button" class="btn-close" (click)="closeReservationDetailsModal()"></button>
-      </div>
-      <div class="modal-body" *ngIf="selectedReservation">
-        <div class="row mb-3">
-          <div class="col-md-6">
-            <h6><i class="bi bi-building"></i> Restaurant</h6>
-            <p class="mb-1"><strong>{{ selectedReservation.restaurant_name }}</strong></p>
-            <p class="text-muted mb-1"><small>{{ selectedReservation.restaurant_address }}</small></p>
-            <p class="mb-0"><i class="bi bi-telephone"></i> {{ selectedReservation.restaurant_phone }}</p>
-          </div>
-          <div class="col-md-6">
-            <h6><i class="bi bi-person"></i> Client</h6>
-            <p class="mb-1"><strong>{{ selectedReservation.client_name }}</strong></p>
-            <p class="mb-1"><i class="bi bi-telephone"></i> {{ selectedReservation.client_phone }}</p>
-            <p class="mb-0" *ngIf="selectedReservation.client_email">
-              <i class="bi bi-envelope"></i> {{ selectedReservation.client_email }}
-            </p>
-          </div>
+        <div class="mb-3">
+          <label class="form-label">
+            <i class="bi bi-map-fill" style="color:var(--rt-blue)"></i>
+            Quartier
+          </label>
+          <select class="form-select" [(ngModel)]="businessFormData.district" name="district">
+            <option value="">-- Sélectionner un quartier --</option>
+            <option value="Lomé Centre">Lomé Centre</option>
+            <option value="Adidogomé">Adidogomé</option>
+            <option value="Agoè">Agoè</option>
+            <option value="Bè">Bè</option>
+            <option value="Tokoin">Tokoin</option>
+            <option value="Hédzranawoé">Hédzranawoé</option>
+            <option value="Baguida">Baguida</option>
+            <option value="Kodjoviakopé">Kodjoviakopé</option>
+            <option value="Nukafu">Nukafu</option>
+            <option value="Djidjolé">Djidjolé</option>
+            <option value="Légos Beach">Légos Beach</option>
+            <option value="Nyékonakpoè">Nyékonakpoè</option>
+          </select>
         </div>
 
-        <hr>
+        <!-- Bouton d'aide pour récupérer les coordonnées -->
+        <div class="mb-3" *ngIf="businessFormData.address">
+          <button type="button" class="btn btn-sm btn-outline-info"
+            (click)="geocodeAddress(businessFormData.address)">
+            <span *ngIf="geocodingLoading" class="spinner-border spinner-border-sm me-1"></span>
+            <i class="bi bi-crosshair" *ngIf="!geocodingLoading"></i>
+            {{ geocodingLoading ? 'Recherche...' : 'Obtenir les coordonnées depuis l\'adresse' }}
+          </button>
+          <small class="d-block text-muted mt-1" style="font-size:.7rem;">
+            Utilise OpenStreetMap Nominatim (gratuit)
+          </small>
+        </div>
 
-    <div class="row mb-3">
-      <div class="col-md-4">
-        <h6><i class="bi bi-calendar"></i> Date</h6>
-        <p>{{ selectedReservation.reservation_date | date:'fullDate' }}</p>
+        <div class="row" *ngIf="selectedBusiness?.type === 'restaurant'"><div class="col-md-6 mb-3"><label class="form-label">Heure d'ouverture</label><input type="time" class="form-control" [(ngModel)]="businessFormData.opening_hour" name="opening_hour"></div><div class="col-md-6 mb-3"><label class="form-label">Heure de fermeture</label><input type="time" class="form-control" [(ngModel)]="businessFormData.closing_hour" name="closing_hour"></div></div>
+        <div class="row" *ngIf="selectedBusiness?.type === 'traiteur'"><div class="col-md-6 mb-3"><label class="form-label">Disponibilité début</label><input type="time" class="form-control" [(ngModel)]="businessFormData.availability_start" name="availability_start"></div><div class="col-md-6 mb-3"><label class="form-label">Disponibilité fin</label><input type="time" class="form-control" [(ngModel)]="businessFormData.availability_end" name="availability_end"></div></div>
       </div>
-      <div class="col-md-4">
-        <h6><i class="bi bi-clock"></i> Heure</h6>
-        <p>{{ selectedReservation.time_slot }}</p>
-      </div>
-      <div class="col-md-4">
-        <h6><i class="bi bi-people"></i> Nombre de personnes</h6>
-        <p>{{ selectedReservation.number_of_people }} personne(s)</p>
-      </div>
-    </div>
-
-    <hr>
-
-    <div class="mb-3">
-      <h6>Statut de la réservation</h6>
-      <span class="badge" [ngClass]="getReservationStatusClass(selectedReservation.status)">
-        {{ getReservationStatusLabel(selectedReservation.status) }}
-      </span>
-    </div>
-
-    <div class="mt-3" *ngIf="selectedReservation.special_requests">
-      <h6><i class="bi bi-chat-square-text"></i> Demandes spéciales</h6>
-      <p>{{ selectedReservation.special_requests }}</p>
-    </div>
-
-    <div class="mt-3">
-      <h6><i class="bi bi-info-circle"></i> Informations</h6>
-      <p class="mb-1">
-        <small class="text-muted">
-          Créée le : {{ selectedReservation.created_at | date:'dd/MM/yyyy à HH:mm' }}
-        </small>
-      </p>
-      <p class="mb-0">
-        <small class="text-muted">
-          Dernière mise à jour : {{ selectedReservation.updated_at | date:'dd/MM/yyyy à HH:mm' }}
-        </small>
-      </p>
+      <div class="modal-footer"><button type="button" class="btn btn-secondary" (click)="closeEditBusinessModal()">Annuler</button><button type="button" class="btn btn-primary" (click)="saveBusinessChanges()" [disabled]="!businessFormData.name || loadingBusinessUpdate"><span *ngIf="loadingBusinessUpdate" class="spinner-border spinner-border-sm me-2"></span>{{ loadingBusinessUpdate ? 'Enregistrement…' : 'Enregistrer' }}</button></div>
     </div>
   </div>
-  <div class="modal-footer">
-    <button 
-      type="button" 
-      class="btn btn-secondary" 
-      (click)="closeReservationDetailsModal()">
-      Fermer
-    </button>
-    <div class="btn-group" *ngIf="selectedReservation && selectedReservation.status === 'pending'">
-      <button 
-        type="button" 
-        class="btn btn-success"
-        (click)="updateReservationStatus(selectedReservation.id, 'confirmed')"
-        [disabled]="loadingReservationUpdate">
-        <span *ngIf="loadingReservationUpdate" class="spinner-border spinner-border-sm me-2"></span>
-        <i class="bi bi-check-circle" *ngIf="!loadingReservationUpdate"></i>
-        Confirmer
-      </button>
-      <button 
-        type="button" 
-        class="btn btn-danger"
-        (click)="updateReservationStatus(selectedReservation.id, 'cancelled')"
-        [disabled]="loadingReservationUpdate">
-        <span *ngIf="loadingReservationUpdate" class="spinner-border spinner-border-sm me-2"></span>
-        <i class="bi bi-x-circle" *ngIf="!loadingReservationUpdate"></i>
-        Annuler
-      </button>
-    </div>
-    <button 
-      type="button" 
-      class="btn btn-warning"
-      *ngIf="selectedReservation && selectedReservation.status === 'confirmed'"
-      (click)="updateReservationStatus(selectedReservation.id, 'cancelled')"
-      [disabled]="loadingReservationUpdate">
-      <span *ngIf="loadingReservationUpdate" class="spinner-border spinner-border-sm me-2"></span>
-      <i class="bi bi-x-circle" *ngIf="!loadingReservationUpdate"></i>
-      Annuler la réservation
-    </button>
-  </div>
 </div>
-</div>
-</div>
+<div class="modal-backdrop fade show" *ngIf="showEditBusinessModal"></div>
+<app-order-details-modal [order]="selectedOrder" [show]="showOrderModal" [loading]="loadingOrderUpdate" (closed)="onOrderModalClosed()" (statusChanged)="onOrderStatusChanged($event)"></app-order-details-modal>
+<app-reservation-details-modal [reservation]="selectedReservation" [show]="showReservationModal" [loading]="loadingReservationUpdate" (closed)="onReservationModalClosed()" (statusChanged)="onReservationStatusChanged($event)"></app-reservation-details-modal>

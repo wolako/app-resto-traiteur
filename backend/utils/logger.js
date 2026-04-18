@@ -1,7 +1,6 @@
 const winston = require('winston');
 const path = require('path');
 
-// Configuration des niveaux de log
 const logLevels = {
   error: 0,
   warn: 1,
@@ -10,7 +9,6 @@ const logLevels = {
   debug: 4,
 };
 
-// Couleurs pour la console
 const logColors = {
   error: 'red',
   warn: 'yellow',
@@ -21,7 +19,6 @@ const logColors = {
 
 winston.addColors(logColors);
 
-// Format pour la console
 const consoleFormat = winston.format.combine(
   winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
   winston.format.colorize({ all: true }),
@@ -34,40 +31,32 @@ const consoleFormat = winston.format.combine(
   })
 );
 
-// Format pour les fichiers
 const fileFormat = winston.format.combine(
   winston.format.timestamp(),
   winston.format.errors({ stack: true }),
   winston.format.json()
 );
 
-// Configuration des transports
 const transports = [
-  // Console (développement)
   new winston.transports.Console({
     level: process.env.NODE_ENV === 'production' ? 'warn' : 'debug',
     format: consoleFormat,
   }),
-
-  // Fichiers d'erreur
   new winston.transports.File({
     filename: path.join(process.cwd(), 'logs', 'error.log'),
     level: 'error',
     format: fileFormat,
-    maxsize: 5242880, // 5MB
+    maxsize: 5242880,
     maxFiles: 5,
   }),
-
-  // Fichier combiné
   new winston.transports.File({
     filename: path.join(process.cwd(), 'logs', 'combined.log'),
     format: fileFormat,
-    maxsize: 5242880, // 5MB
+    maxsize: 5242880,
     maxFiles: 5,
   }),
 ];
 
-// Créer le logger
 const logger = winston.createLogger({
   level: process.env.LOG_LEVEL || 'info',
   levels: logLevels,
@@ -75,14 +64,23 @@ const logger = winston.createLogger({
   exitOnError: false,
 });
 
-// Créer le dossier logs s'il n'existe pas
 const fs = require('fs');
 const logsDir = path.join(process.cwd(), 'logs');
 if (!fs.existsSync(logsDir)) {
   fs.mkdirSync(logsDir, { recursive: true });
 }
 
-// Middleware pour logger les requêtes HTTP
+// ✅ Routes de polling silencieuses en console (loggées quand même dans les fichiers)
+const SILENT_ROUTES = [
+  '/api/settings/maintenance/status',
+  '/api/notifications/unread-count',
+  '/maintenance/status',
+  '/unread-count',
+];
+
+const isSilentRoute = (url) =>
+  SILENT_ROUTES.some(route => url === route || url.startsWith(route + '?'));
+
 const httpLogger = (req, res, next) => {
   const start = Date.now();
 
@@ -92,13 +90,26 @@ const httpLogger = (req, res, next) => {
     const { statusCode } = res;
     const userAgent = req.get('User-Agent');
 
-    logger.http(`${method} ${url}`, {
+    const meta = {
       statusCode,
       duration: `${duration}ms`,
       ip,
       userAgent,
       userId: req.user?.id,
-    });
+    };
+
+    // ✅ Routes de polling : loggées dans les fichiers mais pas en console
+    if (isSilentRoute(url)) {
+      // Uniquement si erreur (4xx/5xx) → on affiche quand même en console
+      if (statusCode >= 400) {
+        logger.http(`${method} ${url}`, meta);
+      }
+      // Sinon : écriture fichier seulement via le transport File
+      // (on n'appelle pas logger.http pour éviter la console)
+      return;
+    }
+
+    logger.http(`${method} ${url}`, meta);
   });
 
   next();
@@ -109,9 +120,8 @@ module.exports = {
   httpLogger,
 };
 
-// Export des méthodes de logging pour usage direct
 module.exports.error = logger.error.bind(logger);
-module.exports.warn = logger.warn.bind(logger);
-module.exports.info = logger.info.bind(logger);
-module.exports.http = logger.http.bind(logger);
+module.exports.warn  = logger.warn.bind(logger);
+module.exports.info  = logger.info.bind(logger);
+module.exports.http  = logger.http.bind(logger);
 module.exports.debug = logger.debug.bind(logger);

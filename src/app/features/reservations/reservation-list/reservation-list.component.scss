@@ -1,72 +1,195 @@
-.reservation-list {
-  .table-responsive {
-    border-radius: 12px;
-    overflow: hidden;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+// ════════════════════════════════════════════════════════════
+// RESERVATION LIST — RestoTraiteur
+// ════════════════════════════════════════════════════════════
+
+.rl-container {
+  width: 100%;
+}
+
+// ─── EMPTY STATE ──────────────────────────────────────────────
+.rl-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 52px 20px;
+  text-align: center;
+  gap: 8px;
+
+  .rl-empty-icon {
+    width: 60px; height: 60px;
+    border-radius: 16px;
+    background: var(--rt-raised);
+    border: 1px solid var(--rt-bdr);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.6rem; color: var(--rt-t4);
+    margin-bottom: 4px;
   }
 
-  .table {
-    margin-bottom: 0;
-    background: white;
-
-    thead {
-      background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
-      
-      th {
-        color: white;
-        font-weight: 700;
-        border: none;
-        padding: 15px;
-        font-size: 0.9rem;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-      }
-    }
-
-    tbody {
-      tr {
-        transition: all 0.2s ease;
-
-        &:hover {
-          background: #f8f9fa;
-          transform: scale(1.01);
-        }
-
-        td {
-          padding: 15px;
-          vertical-align: middle;
-          border-top: 1px solid #e9ecef;
-          font-size: 0.95rem;
-        }
-      }
-    }
-
-    .badge {
-      padding: 6px 12px;
-      font-weight: 600;
-      border-radius: 6px;
-      font-size: 0.85rem;
-
-      &.bg-warning {
-        color: #212529;
-      }
-    }
+  h5 {
+    font-family: 'Playfair Display', serif;
+    font-size: .98rem; font-weight: 600;
+    color: var(--rt-t1); margin: 0;
   }
 
-  .empty-state {
-    text-align: center;
-    padding: 60px 20px;
-    color: #6c757d;
-
-    i {
-      font-size: 4rem;
-      margin-bottom: 15px;
-      opacity: 0.5;
-    }
-
-    p {
-      font-size: 1.1rem;
-      margin: 0;
-    }
+  p {
+    font-size: .82rem; color: var(--rt-t3); margin: 0;
   }
+}
+
+// ─── TABLE WRAPPER ────────────────────────────────────────────
+.rl-table-wrap {
+  overflow-x: auto;
+  border-radius: var(--rt-r);
+  border: 1px solid var(--rt-bdr);
+  scrollbar-width: thin;
+  scrollbar-color: rgba(180,100,60,.15) transparent;
+  &::-webkit-scrollbar { height: 4px; }
+  &::-webkit-scrollbar-thumb { background: rgba(180,100,60,.15); border-radius: 2px; }
+}
+
+// ─── TABLE ────────────────────────────────────────────────────
+.rl-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: 'DM Sans', sans-serif;
+  font-size: .84rem;
+
+  // Header
+  thead tr {
+    background: var(--rt-raised);
+    border-bottom: 1px solid var(--rt-bdr);
+  }
+
+  th {
+    padding: 11px 14px;
+    text-align: left;
+    font-size: .73rem;
+    font-weight: 700;
+    color: var(--rt-t3);
+    text-transform: uppercase;
+    letter-spacing: .5px;
+    white-space: nowrap;
+  }
+
+  // Body
+  tbody tr {
+    border-bottom: 1px solid var(--rt-bdr);
+    transition: background .15s;
+
+    &:last-child { border-bottom: none; }
+    &:hover { background: var(--rt-raised); }
+  }
+
+  td {
+    padding: 12px 14px;
+    color: var(--rt-t2);
+    vertical-align: middle;
+  }
+}
+
+// ─── CELLULES ─────────────────────────────────────────────────
+
+.rl-id {
+  font-family: monospace;
+  font-size: .8rem;
+  background: var(--rt-primary-s);
+  color: var(--rt-primary);
+  padding: 2px 7px;
+  border-radius: 5px;
+}
+
+.rl-client {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+
+  .rl-avatar {
+    width: 30px; height: 30px;
+    border-radius: 50%;
+    background: var(--g-primary);
+    color: #fff;
+    display: flex; align-items: center; justify-content: center;
+    font-size: .75rem; font-weight: 700;
+    flex-shrink: 0;
+  }
+
+  span {
+    font-weight: 500;
+    color: var(--rt-t1);
+    white-space: nowrap;
+  }
+}
+
+.rl-date, .rl-time, .rl-people {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+
+  i {
+    font-size: .8rem;
+    color: var(--rt-t4);
+    flex-shrink: 0;
+  }
+}
+
+// ─── BADGES STATUT ────────────────────────────────────────────
+.rl-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: .73rem;
+  font-weight: 600;
+  white-space: nowrap;
+
+  .rl-badge-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  // success → confirmé
+  &--success {
+    background: var(--rt-green-s);
+    color: var(--rt-green);
+    .rl-badge-dot { background: var(--rt-green); }
+  }
+
+  // danger → annulé
+  &--danger {
+    background: var(--rt-primary-s);
+    color: var(--rt-primary);
+    .rl-badge-dot { background: var(--rt-primary); }
+  }
+
+  // warning → en attente
+  &--warning {
+    background: var(--rt-accent-s);
+    color: #8A6010;
+    .rl-badge-dot { background: var(--rt-accent); }
+  }
+
+  // info → en cours
+  &--info {
+    background: var(--rt-blue-s);
+    color: var(--rt-blue);
+    .rl-badge-dot { background: var(--rt-blue); }
+  }
+
+  // secondary → autres
+  &--secondary {
+    background: var(--rt-raised);
+    color: var(--rt-t3);
+    border: 1px solid var(--rt-bdr);
+    .rl-badge-dot { background: var(--rt-t4); }
+  }
+}
+
+// ─── RESPONSIVE ───────────────────────────────────────────────
+@media (max-width: 640px) {
+  .rl-table th, .rl-table td { padding: 10px 10px; }
+  .rl-client .rl-avatar { width: 26px; height: 26px; font-size: .68rem; }
 }

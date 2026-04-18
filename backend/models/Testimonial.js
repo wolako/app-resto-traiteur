@@ -1,8 +1,3 @@
-// ========================================
-// OPTION 1 : AVEC SEQUELIZE
-// ========================================
-// backend/models/testimonial.model.js
-
 const { DataTypes } = require('sequelize');
 
 module.exports = (sequelize) => {

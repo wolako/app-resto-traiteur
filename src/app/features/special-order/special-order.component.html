@@ -1,56 +1,46 @@
-<!-- special-order.component.html -->
 <div class="special-order-container">
   <div class="container">
     <div class="row justify-content-center">
       <div class="col-lg-8">
-        <!-- Header -->
+
+        <!-- ── PAGE HEADER ── -->
         <div class="order-header">
-          <button class="btn btn-outline-secondary mb-3" (click)="navigateBack()">
+          <button class="btn-back" (click)="navigateBack()">
             <i class="bi bi-arrow-left"></i>
             Retour
           </button>
           <h2>
             <i class="bi bi-cake2"></i>
-            Commande Spéciale pour Événement
+            Commande spéciale pour événement
           </h2>
-          <p class="text-muted" *ngIf="traiteur">Chez {{ traiteur.name }}</p>
+          <p class="traiteur-name" *ngIf="traiteur">
+            Chez <span>{{ traiteur.name }}</span>
+          </p>
         </div>
 
-        <!-- Success Message -->
-        <div #successSection *ngIf="success" class="success-message">
-          <div class="success-icon">
-            <i class="bi bi-check-circle"></i>
+        <!-- Badge Sandbox -->
+        <div *ngIf="isSandbox" class="alert alert-warning mb-4">
+          <i class="bi bi-shield-fill-check"></i>
+          <div>
+            <strong>Mode Sandbox actif</strong>
+            — Paiements acceptés sans débit réel.
           </div>
-          <h3>Demande envoyée avec succès !</h3>
-          <p>Votre demande de commande spéciale a été envoyée avec succès ! Le traiteur vous contactera dans les plus brefs délais pour discuter des détails de votre événement.</p>
-          <button class="btn btn-primary" (click)="navigateBack()">
-            <i class="bi bi-house"></i>
-            Retour à l'accueil
-          </button>
-          <button class="btn btn-outline-primary me-2" (click)="makeNewOrder()">
-            <i class="bi bi-plus-circle"></i>
-            Nouvelle commande
-          </button>
         </div>
 
-        <!-- Form (caché en cas de succès) -->
-        <div class="order-card" *ngIf="!success">
-          <!-- ... le reste de votre formulaire actuel ... -->
+        <!-- ════════════════════════════════════════════════
+             ÉTAPE 1 — FORMULAIRE DE DEMANDE
+        ════════════════════════════════════════════════ -->
+        <div class="order-card" *ngIf="step === 'form'">
           <form [formGroup]="orderForm" (ngSubmit)="onSubmit()">
-            
-            <!-- Section 1: Informations Client -->
+
+            <!-- ── Section 1 : Informations client ── -->
             <div class="form-section">
-              <h4>
-                <i class="bi bi-person"></i>
-                Vos informations
-              </h4>
-              
+              <h4><i class="bi bi-person-circle"></i> Vos informations</h4>
+
               <div class="row">
-                <div class="col-md-12 mb-3">
+                <div class="col-12 mb-3">
                   <label class="form-label">Nom complet *</label>
-                  <input 
-                    type="text" 
-                    class="form-control" 
+                  <input type="text" class="form-control"
                     formControlName="client_name"
                     placeholder="Jean Dupont"
                     [class.is-invalid]="isFieldInvalid('client_name')">
@@ -59,40 +49,32 @@
 
                 <div class="col-md-6 mb-3">
                   <label class="form-label">Email *</label>
-                  <input 
-                    type="email" 
-                    class="form-control" 
+                  <input type="email" class="form-control"
                     formControlName="client_email"
-                    placeholder="jean@example.com"
+                    placeholder="vous@email.com"
                     [class.is-invalid]="isFieldInvalid('client_email')">
                   <div class="invalid-feedback">{{ getFieldError('client_email') }}</div>
                 </div>
 
                 <div class="col-md-6 mb-3">
                   <label class="form-label">Téléphone *</label>
-                  <input 
-                    type="tel" 
-                    class="form-control" 
+                  <input type="tel" class="form-control"
                     formControlName="client_phone"
-                    placeholder="90123456"
+                    placeholder="+228 90 12 34 56"
                     [class.is-invalid]="isFieldInvalid('client_phone')">
                   <div class="invalid-feedback">{{ getFieldError('client_phone') }}</div>
                 </div>
               </div>
             </div>
 
-            <!-- Section 2: Détails de l'événement -->
+            <!-- ── Section 2 : Détails de l'événement ── -->
             <div class="form-section">
-              <h4>
-                <i class="bi bi-calendar-event"></i>
-                Détails de l'événement
-              </h4>
-              
+              <h4><i class="bi bi-calendar-event"></i> Détails de l'événement</h4>
+
               <div class="row">
                 <div class="col-md-6 mb-3">
                   <label class="form-label">Type d'événement *</label>
-                  <select 
-                    class="form-select" 
+                  <select class="form-select"
                     formControlName="event_type"
                     [class.is-invalid]="isFieldInvalid('event_type')">
                     <option value="">Sélectionner un type</option>
@@ -105,9 +87,7 @@
 
                 <div class="col-md-6 mb-3">
                   <label class="form-label">Nombre d'invités *</label>
-                  <input 
-                    type="number" 
-                    class="form-control" 
+                  <input type="number" class="form-control"
                     formControlName="number_of_guests"
                     placeholder="50"
                     min="1"
@@ -117,9 +97,7 @@
 
                 <div class="col-md-6 mb-3">
                   <label class="form-label">Date de l'événement *</label>
-                  <input 
-                    type="date" 
-                    class="form-control" 
+                  <input type="date" class="form-control"
                     formControlName="event_date"
                     [min]="minDate"
                     [class.is-invalid]="isFieldInvalid('event_date')">
@@ -128,9 +106,7 @@
 
                 <div class="col-md-6 mb-3">
                   <label class="form-label">Heure de l'événement *</label>
-                  <input 
-                    type="time" 
-                    class="form-control" 
+                  <input type="time" class="form-control"
                     formControlName="event_time"
                     [class.is-invalid]="isFieldInvalid('event_time')">
                   <div class="invalid-feedback">{{ getFieldError('event_time') }}</div>
@@ -138,30 +114,23 @@
               </div>
             </div>
 
-            <!-- Section 3: Adresse de livraison -->
+            <!-- ── Section 3 : Lieu de livraison ── -->
             <div class="form-section">
-              <h4>
-                <i class="bi bi-geo-alt"></i>
-                Lieu de livraison
-              </h4>
-              
+              <h4><i class="bi bi-geo-alt-fill"></i> Lieu de livraison</h4>
+
               <div class="row">
                 <div class="col-md-8 mb-3">
                   <label class="form-label">Adresse complète *</label>
-                  <input 
-                    type="text" 
-                    class="form-control" 
+                  <input type="text" class="form-control"
                     formControlName="delivery_address"
-                    placeholder="123 Rue de la République"
+                    placeholder="123 Rue Exemple, Quartier"
                     [class.is-invalid]="isFieldInvalid('delivery_address')">
                   <div class="invalid-feedback">{{ getFieldError('delivery_address') }}</div>
                 </div>
 
                 <div class="col-md-4 mb-3">
                   <label class="form-label">Ville *</label>
-                  <input 
-                    type="text" 
-                    class="form-control" 
+                  <input type="text" class="form-control"
                     formControlName="city"
                     placeholder="Lomé"
                     [class.is-invalid]="isFieldInvalid('city')">
@@ -170,86 +139,231 @@
               </div>
             </div>
 
-            <!-- Section 4: Préférences du menu -->
+            <!-- ── Section 4 : Préférences du menu ── -->
             <div class="form-section">
-              <h4>
-                <i class="bi bi-card-checklist"></i>
-                Préférences du menu
-              </h4>
-              
+              <h4><i class="bi bi-card-checklist"></i> Préférences du menu</h4>
+
               <div class="mb-3">
                 <label class="form-label">Décrivez le menu souhaité *</label>
-                <textarea 
-                  class="form-control" 
+                <textarea class="form-control"
                   formControlName="menu_preferences"
                   rows="4"
-                  placeholder="Ex: Menu buffet avec entrée, plat principal (poulet et poisson), accompagnements variés, desserts..."
+                  placeholder="Ex: Menu traditionnel africain, entrée + plat principal + dessert, avec spécialités locales…"
                   [class.is-invalid]="isFieldInvalid('menu_preferences')"></textarea>
                 <div class="invalid-feedback">{{ getFieldError('menu_preferences') }}</div>
-                <small class="form-text text-muted">
-                  Soyez aussi détaillé que possible pour que le traiteur puisse vous faire la meilleure proposition
-                </small>
               </div>
 
               <div class="mb-3">
-                <label class="form-label">Restrictions alimentaires ou allergies</label>
-                <textarea 
-                  class="form-control" 
+                <label class="form-label">
+                  Restrictions alimentaires
+                  <span style="font-weight:400;color:var(--rt-t4);">(optionnel)</span>
+                </label>
+                <textarea class="form-control"
                   formControlName="dietary_restrictions"
                   rows="2"
-                  placeholder="Ex: Végétarien, sans gluten, allergie aux fruits de mer..."></textarea>
+                  placeholder="Ex: végétarien, sans gluten, allergie aux arachides…"></textarea>
               </div>
 
               <div class="mb-3">
-                <label class="form-label">Demandes spéciales</label>
-                <textarea 
-                  class="form-control" 
+                <label class="form-label">
+                  Demandes spéciales
+                  <span style="font-weight:400;color:var(--rt-t4);">(optionnel)</span>
+                </label>
+                <textarea class="form-control"
                   formControlName="special_requests"
                   rows="3"
-                  placeholder="Ex: Décoration de table, service à l'assiette, emballages biodégradables..."></textarea>
+                  placeholder="Décoration, gâteau personnalisé, service à table…"></textarea>
               </div>
 
-              <div class="mb-3">
-                <label class="form-label">Budget estimé (FCFA)</label>
-                <input 
-                  type="number" 
-                  class="form-control" 
+              <div class="mb-0">
+                <label class="form-label">
+                  Budget estimé (FCFA)
+                  <span style="font-weight:400;color:var(--rt-t4);">(optionnel)</span>
+                </label>
+                <input type="number" class="form-control"
                   formControlName="estimated_budget"
-                  placeholder="500000"
+                  placeholder="150 000"
                   min="0">
-                <small class="form-text text-muted">
-                  Optionnel - Cela aidera le traiteur à adapter sa proposition
-                </small>
               </div>
             </div>
 
-            <!-- Info Box -->
-            <div class="info-box">
-              <i class="bi bi-info-circle"></i>
-              <div>
-                <strong>Comment ça marche ?</strong>
-                <p>
-                  1. Remplissez ce formulaire avec tous les détails de votre événement<br>
-                  2. Le traiteur recevra votre demande et vous contactera dans les 24-48h<br>
-                  3. Vous discuterez ensemble des détails et recevrez un devis personnalisé<br>
-                  4. Une fois d'accord, confirmez la commande et effectuez le paiement
-                </p>
-              </div>
-            </div>
-
-            <!-- Submit Button -->
+            <!-- ── Actions ── -->
             <div class="form-actions">
-              <button 
-                type="submit" 
-                class="btn btn-primary btn-lg"
+              <button type="submit" class="btn btn-primary"
                 [disabled]="orderForm.invalid || loading">
-                <span *ngIf="loading" class="spinner-border spinner-border-sm me-2"></span>
-                <i class="bi bi-send" *ngIf="!loading"></i>
-                {{ loading ? 'Envoi en cours...' : 'Envoyer la demande' }}
+                <span *ngIf="loading" class="spinner-border"></span>
+                <i class="bi bi-send-fill" *ngIf="!loading"></i>
+                {{ loading ? 'Envoi en cours…' : 'Envoyer la demande' }}
               </button>
             </div>
+
           </form>
         </div>
+
+        <!-- ════════════════════════════════════════════════
+             ÉTAPE 2 — ATTENTE DU DEVIS
+        ════════════════════════════════════════════════ -->
+        <div *ngIf="step === 'waiting_quote'" class="waiting-card">
+          <div class="waiting-icon">
+            <i class="bi bi-hourglass-split"></i>
+          </div>
+          <h3>Demande envoyée !</h3>
+          <p>
+            Votre demande a bien été transmise à <strong>{{ traiteur?.name }}</strong>.<br>
+            Le traiteur vous enverra un devis détaillé sous <strong>24–48h</strong>.
+          </p>
+          <div class="waiting-actions">
+            <button class="btn btn-outline-primary" (click)="loadQuote()">
+              <i class="bi bi-arrow-clockwise"></i>
+              Vérifier si le devis est arrivé
+            </button>
+            <button class="btn btn-outline-secondary" (click)="navigateBack()">
+              <i class="bi bi-house"></i>
+              Retour à l'accueil
+            </button>
+          </div>
+        </div>
+
+        <!-- ════════════════════════════════════════════════
+             ÉTAPE 3 — DEVIS REÇU
+        ════════════════════════════════════════════════ -->
+        <div *ngIf="step === 'quote_received' && quote" class="quote-card">
+
+          <!-- Header devis -->
+          <div class="quote-header">
+            <div class="alert alert-success mb-0">
+              <i class="bi bi-check-circle-fill"></i>
+              <div>
+                <strong>Devis reçu !</strong>
+                <small>{{ traiteur?.name }} a envoyé sa proposition. Vérifiez les détails ci-dessous.</small>
+              </div>
+            </div>
+          </div>
+
+          <!-- Tableau des montants -->
+          <div class="quote-details-card">
+            <div class="quote-details-header">
+              <i class="bi bi-receipt"></i>
+              <h4>Détail du devis</h4>
+            </div>
+            <div class="quote-details-body">
+
+              <div class="quote-row">
+                <span>Montant prestation</span>
+                <strong>{{ quote.quoted_amount | number:'1.0-0' }} FCFA</strong>
+              </div>
+
+              <div class="quote-row" *ngIf="quote.transport_fee > 0">
+                <span><i class="bi bi-truck me-1"></i>Frais de transport</span>
+                <strong>{{ quote.transport_fee | number:'1.0-0' }} FCFA</strong>
+              </div>
+
+              <div class="quote-row">
+                <span>
+                  <i class="bi bi-percent me-1"></i>Acompte requis
+                  <small style="display:block;font-size:0.7rem;color:var(--rt-t4);margin-top:2px;">
+                    {{ quote.deposit_percentage }}% — Solde le jour de l'événement
+                  </small>
+                </span>
+                <strong style="color:var(--rt-primary);">
+                  {{ quote.deposit_amount | number:'1.0-0' }} FCFA
+                </strong>
+              </div>
+
+              <div class="quote-row total-quote-row">
+                <span>Total prestation</span>
+                <strong>{{ quote.final_amount | number:'1.0-0' }} FCFA</strong>
+              </div>
+
+            </div>
+          </div>
+
+          <!-- Notes du traiteur -->
+          <div *ngIf="quote.quote_notes" class="quote-notes-block">
+            <strong><i class="bi bi-chat-quote me-1"></i>Note du traiteur</strong>
+            {{ quote.quote_notes }}
+          </div>
+
+          <!-- Paiement acompte -->
+          <div class="payment-section-quote">
+            <h5>
+              <i class="bi bi-credit-card-2-front"></i>
+              Mode de paiement de l'acompte *
+            </h5>
+
+            <div class="payment-methods-grid">
+              <div *ngFor="let method of paymentMethods"
+                class="payment-method-card"
+                [class.selected]="selectedPaymentMethod === method.value"
+                (click)="selectPaymentMethod(method.value)">
+                <span class="method-icon">{{ method.icon }}</span>
+                <span class="method-label">{{ method.label }}</span>
+                <span *ngIf="selectedPaymentMethod === method.value" class="check-icon">
+                  <i class="bi bi-check-circle-fill"></i>
+                </span>
+              </div>
+            </div>
+
+            <!-- Récapitulatif -->
+            <div *ngIf="selectedPaymentMethod" class="deposit-summary">
+              <div class="d-flex justify-content-between mb-2">
+                <span>Acompte</span>
+                <strong>{{ quote.deposit_amount | number:'1.0-0' }} FCFA</strong>
+              </div>
+              <div *ngIf="depositFee > 0" class="d-flex justify-content-between mb-2">
+                <span>Frais de transaction</span>
+                <span class="text-warning">+{{ depositFee | number:'1.0-0' }} FCFA</span>
+              </div>
+              <hr>
+              <div class="d-flex justify-content-between">
+                <strong>Total à payer maintenant</strong>
+                <strong class="text-primary">{{ totalDeposit | number:'1.0-0' }} FCFA</strong>
+              </div>
+            </div>
+          </div>
+
+          <!-- Actions -->
+          <div class="form-actions" style="margin-top:24px;">
+            <button class="btn btn-success"
+              [disabled]="!selectedPaymentMethod || loading"
+              (click)="acceptQuoteAndPay()">
+              <span *ngIf="loading" class="spinner-border"></span>
+              <i class="bi bi-check-circle-fill" *ngIf="!loading"></i>
+              {{ loading ? 'Traitement…' : "Accepter et payer l'acompte" }}
+            </button>
+          </div>
+
+        </div>
+
+        <!-- ════════════════════════════════════════════════
+             ÉTAPE 4 — CONFIRMATION FINALE
+        ════════════════════════════════════════════════ -->
+        <div *ngIf="step === 'confirmed'" #successSection class="success-card">
+          <div class="success-icon">
+            <i class="bi bi-check-circle-fill"></i>
+          </div>
+          <h3>Commande confirmée !</h3>
+          <p *ngIf="selectedPaymentMethod === 'cod'">
+            Votre commande est enregistrée. Acompte de
+            <strong>{{ totalDeposit | number:'1.0-0' }} FCFA</strong>
+            à régler directement chez le traiteur.
+          </p>
+          <p *ngIf="selectedPaymentMethod !== 'cod'">
+            Votre paiement a été validé avec succès.
+            Le traiteur vous contactera pour finaliser les derniers détails.
+          </p>
+          <div class="success-actions">
+            <button class="btn btn-primary" (click)="navigateBack()">
+              <i class="bi bi-house-fill"></i>
+              Retour à l'accueil
+            </button>
+            <button class="btn btn-outline-primary" (click)="makeNewOrder()">
+              <i class="bi bi-plus-circle"></i>
+              Nouvelle commande
+            </button>
+          </div>
+        </div>
+
       </div>
     </div>
   </div>

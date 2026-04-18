@@ -28,18 +28,16 @@ export class OrderService {
   }
 
   getOrderStatistics(businessId?: number): Observable<any> {
-    const url = businessId 
+    const url = businessId
       ? `${environment.apiUrl}/orders/statistics?business_id=${businessId}`
       : `${environment.apiUrl}/orders/statistics`;
     return this.http.get<any>(url);
   }
 
-  // ✅ CORRECTION: Commandes spéciales pour traiteurs
   createSpecialOrder(orderData: any): Observable<any> {
     return this.http.post<any>(`${environment.apiUrl}/orders/special`, orderData);
   }
 
-  // ✅ CORRECTION: Route corrigée pour récupérer les commandes spéciales
   getSpecialOrders(businessId: number): Observable<any> {
     return this.http.get<any>(`${environment.apiUrl}/orders/businesses/${businessId}/special-orders`);
   }
@@ -48,8 +46,28 @@ export class OrderService {
     return this.http.get<any>(`${environment.apiUrl}/orders/special/${orderId}`);
   }
 
-  // ✅ CORRECTION: Route corrigée pour mettre à jour le statut
   updateSpecialOrderStatus(orderId: number, status: string): Observable<any> {
     return this.http.patch<any>(`${environment.apiUrl}/orders/special/${orderId}/status`, { status });
+  }
+
+  getOrderDetails(orderId: number): Observable<any> {
+    return this.http.get(`${environment.apiUrl}/orders/${orderId}`);
+  }
+
+  acceptSpecialOrderQuote(specialOrderId: number, data: { deposit_payment_method: string }): Observable<any> {
+    return this.http.post<any>(`${environment.apiUrl}/orders/special/${specialOrderId}/accept-quote`, data);
+  }
+
+  // ✅ AJOUT MANQUANT — envoi du devis par le traiteur
+  sendSpecialOrderQuote(specialOrderId: number, quoteData: {
+    quoted_amount: number;
+    deposit_percentage: number;
+    transport_fee?: number;
+    quote_notes?: string;
+  }): Observable<any> {
+    return this.http.post<any>(
+      `${environment.apiUrl}/orders/special/${specialOrderId}/send-quote`,
+      quoteData
+    );
   }
 }

@@ -1,0 +1,359 @@
+// ════════════════════════════════════════════════════════════
+// BUSINESS LOGIN — Espace Établissement RestoTraiteur
+// Couleur dominante : --rt-green (professionnel / cuisine)
+// ════════════════════════════════════════════════════════════
+
+:host {
+  display: block;
+  min-height: 100vh;
+}
+
+// ─── Variables locales ────────────────────────────────────────
+// On réutilise --rt-green comme couleur primaire de cette page
+$blp-primary:      var(--rt-green);
+$blp-primary-dark: var(--rt-green-dark);
+$blp-primary-s:    var(--rt-green-s);
+$blp-focus:        0 0 0 3px rgba(42,157,92,0.15);
+$blp-gradient:     var(--g-green);
+
+// ─── LAYOUT ───────────────────────────────────────────────────
+.business-login-page {
+  min-height: calc(100vh - var(--rt-navbar-h));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 16px;
+  background:
+    radial-gradient(ellipse 800px 500px at 75% 15%, rgba(42,157,92,0.06) 0%, transparent 65%),
+    radial-gradient(ellipse 500px 400px at 10% 80%, rgba(42,157,92,0.04) 0%, transparent 60%),
+    var(--rt-bg);
+}
+
+// ─── CARD ─────────────────────────────────────────────────────
+.blp-card {
+  width: 100%;
+  max-width: 440px;
+  background: var(--rt-sfc);
+  border: 1px solid var(--rt-bdr);
+  border-radius: var(--rt-rl);
+  box-shadow: 0 8px 40px rgba(42,157,92,0.08), 0 2px 8px rgba(92,61,46,0.06);
+  overflow: hidden;
+
+  // Filet vert en haut de la carte
+  &::before {
+    content: '';
+    display: block;
+    height: 3px;
+    background: $blp-gradient;
+  }
+}
+
+// ─── HEADER ───────────────────────────────────────────────────
+.blp-header {
+  padding: 28px 32px 22px;
+  text-align: center;
+  border-bottom: 1px solid var(--rt-bdr);
+  background: var(--rt-raised);
+
+  .blp-brand-mark {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 52px; height: 52px;
+    background: $blp-gradient;
+    border-radius: 14px;
+    margin-bottom: 12px;
+    box-shadow: 0 4px 16px rgba(42,157,92,0.30);
+    i { font-size: 1.4rem; color: #fff; }
+  }
+
+  .blp-badge {
+    display: inline-block;
+    padding: 3px 12px;
+    background: $blp-primary-s;
+    border: 1px solid rgba(42,157,92,0.20);
+    border-radius: 20px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: var(--rt-green);
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+  }
+
+  h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: var(--rt-t1);
+    margin: 0 0 5px;
+  }
+
+  p {
+    font-size: 0.82rem;
+    color: var(--rt-t3);
+    margin: 0;
+  }
+}
+
+// ─── BODY ─────────────────────────────────────────────────────
+.blp-body {
+  padding: 26px 32px 28px;
+}
+
+// ─── ERREUR ───────────────────────────────────────────────────
+.blp-error {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 11px 13px;
+  background: var(--rt-primary-s);
+  border: 1px solid rgba(201,64,64,0.20);
+  border-radius: var(--rt-rs);
+  margin-bottom: 20px;
+
+  i { color: var(--rt-primary); font-size: 0.93rem; flex-shrink: 0; margin-top: 1px; }
+  span { font-size: 0.82rem; color: var(--rt-primary); line-height: 1.5; }
+}
+
+// ─── FORM ─────────────────────────────────────────────────────
+.blp-form-group {
+  margin-bottom: 17px;
+}
+
+.blp-label {
+  display: block;
+  font-size: 0.81rem;
+  font-weight: 600;
+  color: var(--rt-t2);
+  margin-bottom: 6px;
+}
+
+.blp-label-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 6px;
+
+  .blp-label { margin-bottom: 0; }
+}
+
+.blp-forgot {
+  font-size: 0.77rem;
+  color: var(--rt-green);
+  text-decoration: none;
+  transition: opacity 0.2s;
+  &:hover { opacity: 0.75; text-decoration: underline; }
+}
+
+// ─── INPUT ────────────────────────────────────────────────────
+.blp-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+
+  > i {
+    position: absolute;
+    left: 12px;
+    color: var(--rt-t4);
+    font-size: 0.88rem;
+    pointer-events: none;
+    z-index: 1;
+    transition: color 0.2s;
+  }
+
+  .blp-input {
+    width: 100%;
+    padding: 10px 13px 10px 36px;
+    background: var(--rt-bg);
+    border: 1px solid var(--rt-bdr);
+    border-radius: var(--rt-rs);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.875rem;
+    color: var(--rt-t1);
+    outline: none;
+    transition: var(--rt-tr);
+
+    &::placeholder { color: var(--rt-t4); }
+
+    &:focus {
+      background: #fff;
+      border-color: var(--rt-green);
+      box-shadow: $blp-focus;
+    }
+
+    &.is-invalid {
+      border-color: var(--rt-primary);
+      background: var(--rt-primary-s);
+    }
+
+    &.toggle-present { padding-right: 38px; }
+  }
+
+  &:focus-within > i { color: var(--rt-green); }
+
+  .blp-toggle-pw {
+    position: absolute; right: 10px;
+    background: none; border: none;
+    color: var(--rt-t4); cursor: pointer;
+    padding: 4px; border-radius: 6px;
+    font-size: 0.93rem;
+    display: flex; align-items: center;
+    transition: color 0.2s;
+    &:hover { color: var(--rt-t2); }
+  }
+}
+
+.blp-invalid {
+  font-size: 0.76rem;
+  color: var(--rt-primary);
+  margin-top: 5px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  &::before {
+    content: '\F33A';
+    font-family: 'bootstrap-icons';
+    font-size: 0.74rem;
+  }
+}
+
+// ─── BOUTON SUBMIT ────────────────────────────────────────────
+.blp-submit {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 11px 20px;
+  background: $blp-gradient;
+  color: #fff;
+  border: none;
+  border-radius: var(--rt-rs);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--rt-tr);
+  box-shadow: 0 4px 14px rgba(42,157,92,0.28);
+  margin-top: 4px;
+
+  &:hover:not(:disabled) {
+    box-shadow: 0 6px 20px rgba(42,157,92,0.40);
+    transform: translateY(-1px);
+  }
+  &:active:not(:disabled) { transform: translateY(0); }
+  &:disabled {
+    opacity: 0.5; cursor: not-allowed;
+    transform: none; box-shadow: none;
+  }
+  .spinner-border { width: 16px; height: 16px; border-width: 2px; }
+}
+
+// ─── SÉPARATEUR ───────────────────────────────────────────────
+.blp-divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 22px 0 16px;
+
+  &::before, &::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--rt-bdr);
+  }
+
+  span {
+    font-size: 0.77rem;
+    color: var(--rt-t4);
+    white-space: nowrap;
+  }
+}
+
+// ─── CTA INSCRIPTION ─────────────────────────────────────────
+.blp-register-cta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 13px 15px;
+  background: $blp-primary-s;
+  border: 1px solid rgba(42,157,92,0.18);
+  border-radius: var(--rt-r);
+  text-decoration: none;
+  transition: var(--rt-tr);
+
+  &:hover {
+    border-color: rgba(42,157,92,0.35);
+    background: rgba(42,157,92,0.12);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 14px rgba(42,157,92,0.12);
+  }
+
+  .blp-cta-icon {
+    width: 36px; height: 36px;
+    background: var(--g-green);
+    border-radius: 9px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+    box-shadow: 0 3px 8px rgba(42,157,92,0.25);
+    i { font-size: 1rem; color: #fff; }
+  }
+
+  .blp-cta-text {
+    flex: 1;
+    strong {
+      display: block;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--rt-t1);
+      margin-bottom: 1px;
+    }
+    small {
+      font-size: 0.73rem;
+      color: var(--rt-t3);
+    }
+  }
+
+  .blp-cta-arrow {
+    color: var(--rt-green);
+    font-size: 0.9rem;
+    flex-shrink: 0;
+    transition: transform 0.2s;
+  }
+
+  &:hover .blp-cta-arrow { transform: translateX(3px); }
+}
+
+// ─── FOOTER ───────────────────────────────────────────────────
+.blp-footer {
+  padding: 14px 32px;
+  border-top: 1px solid var(--rt-bdr);
+  background: var(--rt-raised);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+
+  span {
+    font-size: 0.8rem;
+    color: var(--rt-t3);
+  }
+
+  a {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--rt-primary);
+    text-decoration: none;
+    transition: opacity 0.2s;
+    &:hover { opacity: 0.75; text-decoration: underline; }
+  }
+}
+
+// ─── RESPONSIVE ───────────────────────────────────────────────
+@media (max-width: 480px) {
+  .business-login-page { padding: 20px 12px; align-items: flex-start; padding-top: 28px; }
+  .blp-header { padding: 22px 20px 18px; }
+  .blp-body { padding: 20px 20px 24px; }
+  .blp-footer { padding: 12px 20px; }
+}

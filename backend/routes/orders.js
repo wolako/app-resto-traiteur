@@ -1,4 +1,3 @@
-// routes/orders.js - AVEC VÉRIFICATIONS DES LIMITES
 const express = require('express');
 const orderController = require('../controllers/orderController');
 const { authenticateToken, requireRole, attachBusiness } = require('../middleware/auth');
@@ -6,93 +5,126 @@ const { validate, validateNumericParam } = require('../middleware/validation');
 const { generalLimiter } = require('../middleware/rateLimiter');
 const { USER_ROLES } = require('../config/constants');
 const { authenticateTokenOptional } = require('../middleware/auth');
-const { 
+const {
   checkMonthlyOrdersLimit,
   checkOnlineOrdersAllowed,
-  checkSpecialOrdersAllowed 
-} = require('../middleware/subscriptionLimits'); // ✅ AJOUTÉ
+  checkSpecialOrdersAllowed
+} = require('../middleware/subscriptionLimits');
 
 const router = express.Router();
 
-// ⚠️ IMPORTANT: Les routes spécifiques DOIVENT être avant les routes génériques
-
-// ✅ Routes pour commandes spéciales (AVEC VÉRIFICATION)
-router.post('/special', 
-  generalLimiter,
-  authenticateTokenOptional,
-  checkSpecialOrdersAllowed, // ✅ NOUVEAU: Vérifier si autorisé
-  validate('createSpecialOrder'),
-  orderController.createSpecialOrder
-);
-
-router.get('/special/:id', 
-  validateNumericParam('id'), 
-  orderController.getSpecialOrderById
-);
-
-router.patch('/special/:id/status', 
-  authenticateToken,
-  requireRole(USER_ROLES.TRAITEUR, USER_ROLES.CATERER, USER_ROLES.SUPER_ADMIN),
-  validateNumericParam('id'), 
-  orderController.updateSpecialOrderStatus
-);
-
-router.get('/special-statistics', 
-  authenticateToken,
-  attachBusiness,
-  orderController.getSpecialOrderStatistics
-);
-
-// ✅ Route pour les commandes spéciales d'un business
-router.get('/businesses/:businessId/special-orders',
-  authenticateToken,
-  requireRole(USER_ROLES.TRAITEUR, USER_ROLES.CATERER, USER_ROLES.SUPER_ADMIN),
-  validateNumericParam('businessId'),
-  orderController.getBusinessSpecialOrders
-);
-
-// ✅ Route pour les commandes d'un business (AVANT /:id)
-router.get('/businesses/:businessId',
-  authenticateToken,
-  requireRole(USER_ROLES.RESTAURANT, USER_ROLES.TRAITEUR, USER_ROLES.CATERER, USER_ROLES.SUPER_ADMIN),
-  validateNumericParam('businessId'),
-  orderController.getBusinessOrders
-);
-
-// Routes pour statistiques
+// ── Statistiques (avant /:id) ────────────────────────────────────
 router.get('/statistics',
   authenticateToken,
   attachBusiness,
   orderController.getOrderStatistics
 );
 
-// ✅ Route publique pour créer une commande normale (AVEC VÉRIFICATIONS)
+router.get('/special-statistics',
+  authenticateToken,
+  attachBusiness,
+  orderController.getSpecialOrderStatistics
+);
+
+// ── Commandes spéciales /special/* ──────────────────────────────
+router.post('/special',
+  generalLimiter,
+  authenticateTokenOptional,
+  checkSpecialOrdersAllowed,
+  validate('createSpecialOrder'),
+  orderController.createSpecialOrder
+);
+
+// ✅ CORRIGÉ : USER_ROLES.CATERER supprimé (n'existe pas dans constants.js)
+router.post('/special/:specialOrderId/send-quote',
+  authenticateToken,
+  requireRole(USER_ROLES.TRAITEUR, USER_ROLES.SUPER_ADMIN),
+  validateNumericParam('specialOrderId'),
+  orderController.sendSpecialOrderQuote
+);
+
+router.post('/special/:specialOrderId/accept-quote',
+  generalLimiter,
+  validateNumericParam('specialOrderId'),
+  orderController.acceptSpecialOrderQuote
+);
+
+router.post('/special/:specialOrderId/confirm-deposit-cod',
+  authenticateToken,
+  requireRole(USER_ROLES.TRAITEUR, USER_ROLES.SUPER_ADMIN),
+  validateNumericParam('specialOrderId'),
+  orderController.confirmSpecialOrderDepositCOD
+);
+
+// ✅ CORRIGÉ
+router.patch('/special/:id/status',
+  authenticateToken,
+  requireRole(USER_ROLES.TRAITEUR, USER_ROLES.SUPER_ADMIN),
+  validateNumericParam('id'),
+  orderController.updateSpecialOrderStatus
+);
+
+router.get('/special/:id',
+  validateNumericParam('id'),
+  orderController.getSpecialOrderById
+);
+
+// ── Routes par business ──────────────────────────────────────────
+// ✅ CORRIGÉ
+router.get('/businesses/:businessId/special-orders',
+  authenticateToken,
+  requireRole(USER_ROLES.TRAITEUR, USER_ROLES.SUPER_ADMIN),
+  validateNumericParam('businessId'),
+  orderController.getBusinessSpecialOrders
+);
+
+// ✅ CORRIGÉ
+router.get('/businesses/:businessId',
+  authenticateToken,
+  requireRole(USER_ROLES.RESTAURANT, USER_ROLES.TRAITEUR, USER_ROLES.SUPER_ADMIN),
+  validateNumericParam('businessId'),
+  orderController.getBusinessOrders
+);
+
+router.get('/business/:businessId/cod-stats',
+  authenticateToken,
+  requireRole(USER_ROLES.RESTAURANT, USER_ROLES.TRAITEUR, USER_ROLES.SUPER_ADMIN),
+  validateNumericParam('businessId'),
+  orderController.getCodStats
+);
+
+// ── Routes racine ────────────────────────────────────────────────
 router.post('/',
   generalLimiter,
   authenticateTokenOptional,
-  checkOnlineOrdersAllowed,  // ✅ NOUVEAU: Vérifier si commandes en ligne autorisées
-  checkMonthlyOrdersLimit,   // ✅ NOUVEAU: Vérifier limite mensuelle
+  checkOnlineOrdersAllowed,
+  checkMonthlyOrdersLimit,
   validate('createOrder'),
   orderController.createOrder
 );
 
-// Routes protégées pour toutes les commandes (admin uniquement)
 router.get('/',
   authenticateToken,
   requireRole(USER_ROLES.SUPER_ADMIN),
   orderController.getAllOrders
 );
 
-// Mise à jour du statut d'une commande
+// ── Routes avec /:id (toujours en dernier) ───────────────────────
+router.post('/:orderId/confirm-cod-payment',
+  authenticateToken,
+  requireRole(USER_ROLES.RESTAURANT, USER_ROLES.TRAITEUR, USER_ROLES.SUPER_ADMIN),
+  orderController.confirmCodPayment
+);
+
+// ✅ CORRIGÉ
 router.patch('/:id/status',
   authenticateToken,
-  requireRole(USER_ROLES.RESTAURANT, USER_ROLES.TRAITEUR, USER_ROLES.CATERER),
+  requireRole(USER_ROLES.RESTAURANT, USER_ROLES.TRAITEUR),
   validateNumericParam('id'),
   validate('updateOrderStatus'),
   orderController.updateOrderStatus
 );
 
-// Après la route updateOrderStatus
 router.patch('/:id/payment-status',
   authenticateToken,
   requireRole(USER_ROLES.RESTAURANT, USER_ROLES.TRAITEUR, USER_ROLES.SUPER_ADMIN),
@@ -100,7 +132,7 @@ router.patch('/:id/payment-status',
   orderController.updatePaymentStatus
 );
 
-// ⚠️ Cette route DOIT être en dernier car elle capture tout /:id
+// ⚠️ Toujours en dernier
 router.get('/:id',
   validateNumericParam('id'),
   orderController.getOrderById

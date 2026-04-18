@@ -1,130 +1,134 @@
-<!-- Ne rien afficher pour les super admins ET sur la page home (sauf si le chat est ouvert) -->
+<!-- chat-widget.component.html -->
 <ng-container *ngIf="currentUser?.role !== 'superadmin' && (!isHomePage || isOpen)">
-  
-  <!-- Bouton flottant -->
-  <div class="chat-widget-button" (click)="toggleChat()" *ngIf="!isOpen">
-    <i class="bi bi-chat-dots"></i>
-    <span class="chat-badge" *ngIf="unreadCount > 0">{{ unreadCount > 99 ? '99+' : unreadCount }}</span>
-  </div>
 
-  <!-- Widget de chat -->
-  <div class="chat-widget-container" *ngIf="isOpen" [@slideInUp]>
+  <!-- ── BOUTON FLOTTANT ────────────────────────────────────── -->
+  <button class="cw-fab" (click)="toggleChat()" *ngIf="!isOpen" aria-label="Ouvrir le chat">
+    <i class="bi bi-chat-dots-fill"></i>
+    <span class="cw-fab-badge" *ngIf="unreadCount > 0">
+      {{ unreadCount > 99 ? '99+' : unreadCount }}
+    </span>
+  </button>
 
-    <!-- Header -->
-    <div class="chat-widget-header">
-      <button class="back-button" *ngIf="!showConversationList" (click)="backToList()">
+  <!-- ── WIDGET PRINCIPAL ───────────────────────────────────── -->
+  <div class="cw-widget" *ngIf="isOpen" [@slideInUp]>
+
+    <!-- HEADER -->
+    <div class="cw-header">
+      <button class="cw-back" *ngIf="!showConversationList" (click)="backToList()" aria-label="Retour">
         <i class="bi bi-arrow-left"></i>
       </button>
-      
-      <div class="header-info">
-        <h5 *ngIf="showConversationList">
-          <i class="bi bi-chat-dots me-2"></i>
-          Mes conversations
-        </h5>
-        <h5 *ngIf="!showConversationList && selectedConversation">
-          <span class="avatar-emoji">{{ getConversationAvatar(selectedConversation) }}</span>
-          <div class="conversation-header-info">
-            <span class="conversation-name">{{ getConversationName(selectedConversation) }}</span>
-            <span class="conversation-status" *ngIf="getConversationStatus(selectedConversation)" 
-                  [ngClass]="getConversationStatusClass(selectedConversation)">
+
+      <div class="cw-header-info">
+        <!-- Liste des conversations -->
+        <ng-container *ngIf="showConversationList">
+          <div class="cw-header-avatar list">
+            <i class="bi bi-chat-dots-fill"></i>
+          </div>
+          <div>
+            <span class="cw-header-title">Mes conversations</span>
+          </div>
+        </ng-container>
+
+        <!-- Conversation active -->
+        <ng-container *ngIf="!showConversationList && selectedConversation">
+          <div class="cw-header-avatar conv">
+            {{ getConversationAvatar(selectedConversation) }}
+          </div>
+          <div>
+            <span class="cw-header-title">{{ getConversationName(selectedConversation) }}</span>
+            <span class="cw-header-status"
+              *ngIf="getConversationStatus(selectedConversation)"
+              [ngClass]="getConversationStatusClass(selectedConversation)">
+              <span class="cw-status-dot"></span>
               {{ getConversationStatus(selectedConversation) }}
             </span>
           </div>
-        </h5>
+        </ng-container>
       </div>
 
-      <!-- Bouton suppression conversation (visible seulement dans une conversation active) -->
-      <button class="delete-conv-button" 
-              *ngIf="!showConversationList && selectedConversation" 
-              (click)="confirmDeleteConversation()"
-              title="Supprimer cette conversation">
-        <i class="bi bi-trash3"></i>
-      </button>
-      
-      <button class="close-button" (click)="toggleChat()">
-        <i class="bi bi-x-lg"></i>
-      </button>
+      <div class="cw-header-actions">
+        <button class="cw-icon-btn danger"
+          *ngIf="!showConversationList && selectedConversation"
+          (click)="confirmDeleteConversation()" title="Supprimer la conversation">
+          <i class="bi bi-trash3"></i>
+        </button>
+        <button class="cw-icon-btn" (click)="toggleChat()" aria-label="Fermer">
+          <i class="bi bi-x-lg"></i>
+        </button>
+      </div>
     </div>
 
-    <!-- Liste des conversations -->
-    <div class="chat-widget-body" *ngIf="showConversationList">
-      <!-- Loading -->
-      <div *ngIf="loading.conversations" class="chat-loading">
-        <div class="spinner-border text-primary"></div>
+    <!-- ── LISTE DES CONVERSATIONS ──────────────────────────── -->
+    <div class="cw-body" *ngIf="showConversationList">
+
+      <div *ngIf="loading.conversations" class="cw-state">
+        <div class="spinner-border cw-spinner"></div>
         <p>Chargement...</p>
       </div>
 
-      <!-- Empty state -->
-      <div *ngIf="!loading.conversations && conversations.length === 0" class="chat-empty">
-        <i class="bi bi-chat-left-dots"></i>
+      <div *ngIf="!loading.conversations && conversations.length === 0" class="cw-state">
+        <div class="cw-state-icon">
+          <i class="bi bi-chat-left-dots"></i>
+        </div>
         <p>Aucune conversation</p>
+        <small>Démarrez une conversation depuis la page d'un établissement</small>
       </div>
 
-      <!-- Conversations list -->
-      <div *ngIf="!loading.conversations && conversations.length > 0" class="conversations-list">
-        <div 
-          class="conversation-item" 
-          *ngFor="let conversation of conversations"
-          (click)="selectConversation(conversation)"
-          [class.unread]="conversation.unread_count > 0">
-          
-          <div class="conversation-avatar">
-            {{ getConversationAvatar(conversation) }}
+      <div *ngIf="!loading.conversations && conversations.length > 0" class="cw-conv-list">
+        <div class="cw-conv-item"
+          *ngFor="let conv of conversations"
+          [class.unread]="conv.unread_count > 0"
+          (click)="selectConversation(conv)">
+
+          <div class="cw-conv-avatar">
+            {{ getConversationAvatar(conv) }}
+            <span class="cw-conv-status-dot"
+              [ngClass]="getConversationStatusClass(conv)"></span>
           </div>
-          
-          <div class="conversation-info">
-            <div class="conversation-header">
-              <h6>{{ getConversationName(conversation) }}</h6>
-              <span class="conversation-time">{{ formatDate(conversation.last_message_at) }}</span>
+
+          <div class="cw-conv-info">
+            <div class="cw-conv-top">
+              <span class="cw-conv-name">{{ getConversationName(conv) }}</span>
+              <span class="cw-conv-time">{{ formatDate(conv.last_message_at) }}</span>
             </div>
-            <p class="conversation-last-message">
-              {{ conversation.last_message || 'Nouvelle conversation' }}
+            <p class="cw-conv-preview">
+              {{ conv.last_message || 'Nouvelle conversation' }}
             </p>
           </div>
-          
-          <!-- Badge non lu: affiché seulement si unread_count > 0 -->
-          <span class="unread-badge" *ngIf="conversation.unread_count > 0">
-            {{ conversation.unread_count }}
+
+          <span class="cw-unread-badge" *ngIf="conv.unread_count > 0">
+            {{ conv.unread_count }}
           </span>
         </div>
       </div>
     </div>
 
-    <!-- Conversation active (messages) -->
-    <div class="chat-widget-body chat-conversation" *ngIf="!showConversationList && selectedConversation">
-      <!-- Messages loading -->
-      <div *ngIf="loading.messages" class="chat-loading">
-        <div class="spinner-border text-primary"></div>
+    <!-- ── CONVERSATION ACTIVE ──────────────────────────────── -->
+    <div class="cw-body cw-messages-body" *ngIf="!showConversationList && selectedConversation">
+
+      <div *ngIf="loading.messages" class="cw-state">
+        <div class="spinner-border cw-spinner"></div>
         <p>Chargement des messages...</p>
       </div>
 
-      <!-- Messages -->
-      <div *ngIf="!loading.messages" class="chat-messages">
-        <div 
-          *ngFor="let message of messages" 
-          class="message-wrapper"
-          [ngClass]="{
-            'my-message': isMyMessage(message),
-            'their-message': !isMyMessage(message)
-          }">
-          
-          <div class="message-bubble">
-            <p>{{ message.message }}</p>
-            <div class="message-footer">
-              <span class="message-time">{{ formatTime(message.created_at) }}</span>
-              
-              <!-- ✅ Indicateurs de lecture (seulement pour MES messages) -->
-              <span class="message-status" *ngIf="isMyMessage(message)">
-                <!-- Message lu (double check bleu) -->
-                <i class="bi bi-check-all message-read" *ngIf="message.is_read" title="Lu"></i>
-                <!-- Message reçu mais non lu (double check gris) -->
-                <i class="bi bi-check-all message-delivered" *ngIf="!message.is_read" title="Reçu"></i>
+      <div *ngIf="!loading.messages" class="cw-messages">
+        <div *ngFor="let msg of messages"
+          class="cw-msg-wrapper"
+          [class.mine]="isMyMessage(msg)"
+          [class.theirs]="!isMyMessage(msg)">
+
+          <div class="cw-bubble">
+            <p>{{ msg.message }}</p>
+            <div class="cw-bubble-footer">
+              <span class="cw-time">{{ formatTime(msg.created_at) }}</span>
+              <span class="cw-read-status" *ngIf="isMyMessage(msg)">
+                <i class="bi bi-check-all"
+                  [class.read]="msg.is_read"
+                  [title]="msg.is_read ? 'Lu' : 'Reçu'"></i>
               </span>
-              
-              <!-- Bouton suppression message: apparaît au hover -->
-              <button class="delete-msg-button" 
-                      (click)="confirmDeleteMessage(message); $event.stopPropagation()"
-                      title="Supprimer ce message">
+              <button class="cw-del-msg"
+                (click)="confirmDeleteMessage(msg); $event.stopPropagation()"
+                title="Supprimer">
                 <i class="bi bi-trash3"></i>
               </button>
             </div>
@@ -132,67 +136,60 @@
         </div>
 
         <!-- Typing indicator -->
-        <div *ngIf="isTyping" class="typing-indicator their-message">
-          <div class="message-bubble">
-            <span class="typing-dots">
-              <span></span>
-              <span></span>
-              <span></span>
+        <div *ngIf="isTyping" class="cw-msg-wrapper theirs">
+          <div class="cw-bubble typing">
+            <span class="cw-dots">
+              <span></span><span></span><span></span>
             </span>
           </div>
         </div>
       </div>
-
-      <!-- Message input -->
-      <div class="chat-input-container">
-        <input 
-          type="text" 
-          class="chat-input"
-          [(ngModel)]="messageText"
-          (input)="onTyping()"
-          (keyup.enter)="sendMessage()"
-          placeholder="Tapez votre message..."
-          [disabled]="loading.sending">
-        
-        <button 
-          class="send-button" 
-          (click)="sendMessage()"
-          [disabled]="!messageText.trim() || loading.sending">
-          <i class="bi bi-send-fill"></i>
-        </button>
-      </div>
     </div>
 
-    <!-- ============================================ -->
-    <!-- MODAL: Confirmer suppression de conversation -->
-    <!-- ============================================ -->
-    <div class="modal-overlay" *ngIf="showDeleteConversationModal">
-      <div class="modal-box">
-        <div class="modal-icon">
+    <!-- ── INPUT ─────────────────────────────────────────────── -->
+    <div class="cw-input-area" *ngIf="!showConversationList && selectedConversation">
+      <input
+        type="text"
+        class="cw-input"
+        [(ngModel)]="messageText"
+        (input)="onTyping()"
+        (keyup.enter)="sendMessage()"
+        placeholder="Tapez votre message..."
+        [disabled]="loading.sending">
+      <button class="cw-send"
+        (click)="sendMessage()"
+        [disabled]="!messageText.trim() || loading.sending"
+        aria-label="Envoyer">
+        <i class="bi bi-send-fill"></i>
+      </button>
+    </div>
+
+    <!-- ── MODAL SUPPRIMER CONVERSATION ─────────────────────── -->
+    <div class="cw-modal-overlay" *ngIf="showDeleteConversationModal">
+      <div class="cw-modal">
+        <div class="cw-modal-icon">
           <i class="bi bi-exclamation-triangle-fill"></i>
         </div>
         <h6>Supprimer cette conversation ?</h6>
-        <p>Cette action est irréversible. La conversation et tous ses messages seront définitivement supprimés pour tous les participants.</p>
-        <div class="modal-actions">
-          <button class="btn-modal-cancel" (click)="cancelDeleteConversation()">Annuler</button>
-          <button class="btn-modal-danger" (click)="executeDeleteConversation()">Supprimer</button>
+        <p>La conversation et tous ses messages seront définitivement supprimés pour tous les participants.</p>
+        <div class="cw-modal-actions">
+          <button class="cw-modal-cancel" (click)="cancelDeleteConversation()">Annuler</button>
+          <button class="cw-modal-danger" (click)="executeDeleteConversation()">Supprimer</button>
         </div>
       </div>
     </div>
 
-    <!-- ================================== -->
-    <!-- MODAL: Confirmer suppression message -->
-    <!-- ================================== -->
-    <div class="modal-overlay" *ngIf="showDeleteMessageModal">
-      <div class="modal-box">
-        <div class="modal-icon">
+    <!-- ── MODAL SUPPRIMER MESSAGE ───────────────────────────── -->
+    <div class="cw-modal-overlay" *ngIf="showDeleteMessageModal">
+      <div class="cw-modal">
+        <div class="cw-modal-icon">
           <i class="bi bi-exclamation-triangle-fill"></i>
         </div>
         <h6>Supprimer ce message ?</h6>
         <p>Ce message sera supprimé pour tous les participants de la conversation.</p>
-        <div class="modal-actions">
-          <button class="btn-modal-cancel" (click)="cancelDeleteMessage()">Annuler</button>
-          <button class="btn-modal-danger" (click)="executeDeleteMessage()">Supprimer</button>
+        <div class="cw-modal-actions">
+          <button class="cw-modal-cancel" (click)="cancelDeleteMessage()">Annuler</button>
+          <button class="cw-modal-danger" (click)="executeDeleteMessage()">Supprimer</button>
         </div>
       </div>
     </div>

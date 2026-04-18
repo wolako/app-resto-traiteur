@@ -1,536 +1,522 @@
-// ========================================
-// NAVBAR - DESIGN ULTRA-MODERNE
-// ========================================
+// ════════════════════════════════════════════════════════════
+// NAVBAR
+// ════════════════════════════════════════════════════════════
+:host { display: block; }
 
 .navbar-custom {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
-  box-shadow: 0 8px 32px rgba(102, 126, 234, 0.3);
-  padding: 18px 0;
-  position: sticky;
-  top: 0;
+  height: var(--rt-navbar-h);
+  background: rgba(255,255,255,0.97);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--rt-bdr);
+  padding: 0;
+  position: fixed;
+  top: 0; left: 0; right: 0;
   z-index: 1030;
-  backdrop-filter: blur(10px);
-  animation: slideDown 0.5s ease-out;
+  box-shadow: 0 2px 16px rgba(92,61,46,0.08);
+
+  &::after {
+    content: '';
+    position: absolute;
+    bottom: 0; left: 0; right: 0; height: 2px;
+    background: var(--g-primary); opacity: 0.7; pointer-events: none;
+  }
 
   .container {
-    position: relative;
+    max-width: 1200px; margin: 0 auto; padding: 0 24px;
+    height: 100%; display: flex; align-items: center;
+    justify-content: space-between; gap: 16px;
   }
 
-  // ========================================
-  // BRAND
-  // ========================================
-
-  .navbar-brand {
-    font-size: 1.6rem;
-    font-weight: 800;
-    color: white !important;
-    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-    display: flex;
-    align-items: center;
-    gap: 15px;
-    padding: 5px 15px;
-    border-radius: 15px;
-    background: rgba(255, 255, 255, 0.1);
-    backdrop-filter: blur(10px);
-
-    .brand-icon {
-      width: 50px;
-      height: 50px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background: white;
-      border-radius: 12px;
-      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
-      transition: all 0.3s ease;
-
-      .brand-logo {
-        width: 40px;
-        height: 40px;
-        filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.1));
-      }
-    }
-
-    .brand-text {
-      letter-spacing: -0.5px;
-      text-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
-    }
-
-    &:hover {
-      transform: translateY(-3px);
-      background: rgba(255, 255, 255, 0.15);
-
-      .brand-icon {
-        transform: rotate(-5deg) scale(1.1);
-        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
-      }
-    }
-  }
-
-  // ========================================
-  // TOGGLER
-  // ========================================
-
-  .navbar-toggler {
-    border: 2px solid rgba(255, 255, 255, 0.3);
-    padding: 10px 14px;
-    border-radius: 12px;
-    background: rgba(255, 255, 255, 0.1);
-    backdrop-filter: blur(10px);
-    transition: all 0.3s ease;
-
-    .navbar-toggler-icon {
-      filter: brightness(0) invert(1);
-      width: 24px;
-      height: 24px;
-    }
-
-    &:hover {
-      border-color: rgba(255, 255, 255, 0.5);
-      background: rgba(255, 255, 255, 0.15);
-      transform: scale(1.05);
-    }
-
-    &:focus {
-      box-shadow: 0 0 0 0.25rem rgba(255, 255, 255, 0.25);
-    }
-  }
-
-  // ========================================
-  // NAV LINKS
-  // ========================================
-
-  .navbar-nav {
-    .nav-item {
-      margin: 0 5px;
-    }
-
-    .nav-link {
-      color: rgba(255, 255, 255, 0.95) !important;
-      font-weight: 600;
-      padding: 10px 18px !important;
-      border-radius: 12px;
-      transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      position: relative;
-      overflow: hidden;
-
-      &::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background: rgba(255, 255, 255, 0.15);
-        transform: scaleX(0);
-        transform-origin: left;
-        transition: transform 0.3s ease;
-        z-index: -1;
-        border-radius: 12px;
-      }
-
-      i {
-        font-size: 1.2rem;
-        transition: transform 0.3s ease;
-      }
-
-      span {
-        font-size: 0.95rem;
-      }
-
-      &:hover {
-        color: white !important;
-        transform: translateY(-2px);
-        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
-
-        &::before {
-          transform: scaleX(1);
-        }
-
-        i {
-          transform: scale(1.15);
-        }
-      }
-
-      &.active {
-        background: rgba(255, 255, 255, 0.25);
-        color: white !important;
-        font-weight: 700;
-        box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
-      }
-
-      // Auth Links
-      &.nav-link-auth {
-        background: rgba(255, 255, 255, 0.1);
-        
-        &:hover {
-          background: rgba(255, 255, 255, 0.2);
-        }
-      }
-
-      &.nav-link-register {
-        background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
-        box-shadow: 0 6px 20px rgba(40, 167, 69, 0.3);
-
-        &:hover {
-          box-shadow: 0 8px 25px rgba(40, 167, 69, 0.4);
-          transform: translateY(-3px) scale(1.05);
-        }
-      }
-
-      // Icon Links
-      &.nav-link-icon {
-        padding: 10px 14px !important;
-
-        .icon-wrapper {
-          position: relative;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-
-          i {
-            font-size: 1.4rem;
-          }
-
-          .notification-badge {
-            position: absolute;
-            top: -8px;
-            right: -10px;
-            background: #dc3545;
-            color: white;
-            font-size: 0.7rem;
-            font-weight: 800;
-            padding: 3px 7px;
-            border-radius: 12px;
-            box-shadow: 0 4px 12px rgba(220, 53, 69, 0.4);
-            animation: pulse 2s ease-in-out infinite;
-            min-width: 20px;
-            text-align: center;
-          }
-
-          .chat-badge {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-          }
-        }
-      }
-    }
-  }
-
-  // ========================================
-  // USER DROPDOWN
-  // ========================================
-
-  .user-dropdown {
-    .user-menu-toggle {
-      background: rgba(255, 255, 255, 0.15);
-      padding: 8px 16px !important;
-      border-radius: 25px;
-      backdrop-filter: blur(10px);
-      border: 2px solid rgba(255, 255, 255, 0.2);
-
-      &::after {
-        margin-left: 12px;
-        transition: transform 0.3s ease;
-      }
-
-      &[aria-expanded="true"]::after {
-        transform: rotate(180deg);
-      }
-
-      .user-avatar {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-
-        i {
-          font-size: 2rem;
-          color: white;
-        }
-      }
-
-      .user-info {
-        display: flex;
-        flex-direction: column;
-        align-items: flex-start;
-        margin-left: 10px;
-
-        .user-name {
-          font-weight: 700;
-          font-size: 0.95rem;
-          color: white;
-          line-height: 1.2;
-        }
-
-        .user-role {
-          font-size: 0.75rem;
-          font-weight: 600;
-          color: rgba(255, 255, 255, 0.8);
-          text-transform: uppercase;
-          letter-spacing: 0.5px;
-          padding: 2px 8px;
-          background: rgba(255, 255, 255, 0.2);
-          border-radius: 8px;
-          margin-top: 3px;
-        }
-      }
-
-      &:hover {
-        background: rgba(255, 255, 255, 0.25);
-        border-color: rgba(255, 255, 255, 0.3);
-        transform: translateY(-2px);
-        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
-      }
-    }
-
-    .user-dropdown-menu {
-      border: none;
-      border-radius: 20px;
-      box-shadow: 0 12px 40px rgba(0, 0, 0, 0.2);
-      padding: 15px;
-      margin-top: 15px;
-      min-width: 250px;
-      animation: dropdownSlide 0.3s ease-out;
-      background: white;
-
-      .dropdown-item {
-        padding: 12px 18px;
-        border-radius: 12px;
-        transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        font-weight: 600;
-        color: #495057;
-        margin-bottom: 5px;
-
-        i {
-          font-size: 1.3rem;
-          width: 24px;
-          color: #667eea;
-          transition: transform 0.3s ease;
-        }
-
-        span {
-          flex: 1;
-        }
-
-        &:hover {
-          background: linear-gradient(135deg, #f8f9fb 0%, #e9ecef 100%);
-          transform: translateX(5px);
-          color: #212529;
-
-          i {
-            transform: scale(1.2);
-            color: #764ba2;
-          }
-        }
-
-        &:active {
-          background: #e9ecef;
-        }
-
-        &.logout-item {
-          border: none;
-          background: linear-gradient(135deg, #dc354520 0%, #c8233320 100%);
-          color: #dc3545;
-          margin-top: 5px;
-
-          i {
-            color: #dc3545;
-          }
-
-          &:hover {
-            background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
-            color: white;
-
-            i {
-              color: white;
-            }
-          }
-        }
-      }
-
-      .dropdown-divider {
-        margin: 10px 0;
-        border-color: #e9ecef;
-      }
-
-      button.dropdown-item {
-        border: none;
-        width: 100%;
-        text-align: left;
-        cursor: pointer;
-      }
-    }
+  &.navbar-minimal {
+    .container { justify-content: flex-start; }
+    .navbar-brand { animation: rt-fadeIn 0.4s ease-out both; }
   }
 }
 
-// ========================================
-// ANIMATIONS
-// ========================================
-
-@keyframes slideDown {
-  from {
-    opacity: 0;
-    transform: translateY(-20px);
+// ─── BRAND ────────────────────────────────────────────────────
+.navbar-brand {
+  display: flex; align-items: center; gap: 9px;
+  text-decoration: none; flex-shrink: 0;
+  .brand-icon { display: flex; align-items: center; justify-content: center; line-height: 0; }
+  .brand-logo { width: 38px; height: 38px; object-fit: contain; transition: transform 0.25s ease; }
+  &:hover .brand-logo { transform: scale(1.06); }
+  .brand-text {
+    font-family: 'Playfair Display', Georgia, serif;
+    font-size: 1.1rem; font-weight: 700; color: var(--rt-t1);
+    letter-spacing: -0.2px; transition: color 0.2s;
+    &:hover { color: var(--rt-primary); }
   }
-  to {
+}
+
+// ════════════════════════════════════════════════════════════
+// BARRE DE RECHERCHE INLINE
+// ════════════════════════════════════════════════════════════
+.navbar-search-inline {
+  flex: 1; max-width: 700px;
+  display: flex; align-items: center;
+  height: 42px; background: var(--rt-raised);
+  border: 1px solid var(--rt-bdr); border-radius: var(--rt-r);
+  overflow: visible; transition: border-color 0.2s, box-shadow 0.2s;
+  animation: rt-slideDown 0.22s ease-out both;
+
+  &:focus-within { border-color: var(--rt-primary); box-shadow: var(--shadow-focus); }
+
+  .nsi-search {
+    flex: 1; display: flex; align-items: center; gap: 8px;
+    padding: 0 12px; min-width: 0; height: 100%;
+    > i { color: var(--rt-t3); font-size: 0.82rem; flex-shrink: 0; }
+    input { flex: 1; border: none; outline: none; background: transparent; font-family: 'DM Sans', sans-serif; font-size: 0.84rem; color: var(--rt-t1); min-width: 0; &::placeholder { color: var(--rt-t4); } }
+    button { background: none; border: none; color: var(--rt-t4); cursor: pointer; padding: 3px; border-radius: 4px; font-size: 0.72rem; display: flex; align-items: center; flex-shrink: 0; transition: color 0.2s; &:hover { color: var(--rt-primary); } }
+  }
+  .nsi-sep { width: 1px; height: 22px; background: var(--rt-bdr-hi); flex-shrink: 0; }
+
+  @media (max-width: 991px) {
+    .nsi-sep, .nsi-dropdown { display: none; }
+  }
+}
+
+// ─── DROPDOWN CUSTOM ──────────────────────────────────────────
+.nsi-dropdown {
+  position: relative; flex-shrink: 0; height: 100%; display: flex; align-items: center;
+
+  &-trigger {
+    display: flex; align-items: center; gap: 7px; padding: 0 14px; height: 100%;
+    background: transparent; border: none; cursor: pointer;
+    font-family: 'DM Sans', sans-serif; font-size: 0.82rem; font-weight: 500;
+    color: var(--rt-t2); white-space: nowrap; transition: color 0.2s; outline: none;
+    &:hover { color: var(--rt-primary); }
+  }
+
+  .nsi-chevron { font-size: 0.68rem; color: var(--rt-t3); transition: transform 0.2s ease, color 0.2s; flex-shrink: 0; }
+
+  &.open {
+    .nsi-chevron { transform: rotate(180deg); color: var(--rt-primary); }
+    .nsi-dropdown-trigger { color: var(--rt-primary); }
+  }
+
+  &-menu {
+    position: absolute; top: calc(100% + 10px); left: 50%; transform: translateX(-50%);
+    min-width: 210px; z-index: 2000; background: var(--rt-sfc);
+    border: 1px solid var(--rt-bdr-hi); border-radius: var(--rt-rl);
+    box-shadow: 0 8px 32px rgba(92,61,46,0.15), 0 2px 8px rgba(92,61,46,0.08);
+    overflow: hidden; animation: dropdownIn 0.18s cubic-bezier(0.34,1.56,0.64,1) both;
+
+    &::before {
+      content: ''; position: absolute; top: -5px; left: 50%;
+      width: 10px; height: 10px; background: var(--rt-sfc);
+      border-left: 1px solid var(--rt-bdr-hi); border-top: 1px solid var(--rt-bdr-hi);
+      transform: translateX(-50%) rotate(45deg);
+    }
+  }
+
+  &-item {
+    display: flex; align-items: center; gap: 10px; width: 100%; padding: 11px 16px;
+    background: transparent; border: none; cursor: pointer;
+    font-family: 'DM Sans', sans-serif; font-size: 0.84rem; font-weight: 500;
+    color: var(--rt-t2); text-align: left; transition: background 0.15s, color 0.15s;
+    border-bottom: 1px solid var(--rt-bdr); &:last-child { border-bottom: none; }
+    i { font-size: 0.88rem; width: 16px; text-align: center; flex-shrink: 0; }
+    &:hover { background: var(--rt-raised); color: var(--rt-t1); }
+    &.active { background: var(--rt-primary-s); color: var(--rt-primary); font-weight: 600; i { color: var(--rt-primary); } }
+  }
+}
+
+@keyframes dropdownIn {
+  from { opacity: 0; transform: translateX(-50%) translateY(-6px) scale(0.96); }
+  to   { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); }
+}
+
+// ─── LIENS DESKTOP ────────────────────────────────────────────
+.nav-link-home {
+  display: flex; align-items: center; gap: 6px; padding: 7px 13px; border-radius: var(--rt-rs);
+  font-family: 'DM Sans', sans-serif; font-size: 0.87rem; font-weight: 500;
+  color: var(--rt-t2); text-decoration: none; transition: var(--rt-tr); white-space: nowrap; border: 1px solid transparent; flex-shrink: 0;
+  i { font-size: 0.9rem; }
+  &:hover { color: var(--rt-primary); background: var(--rt-primary-s); }
+  &.active { color: var(--rt-primary); background: var(--rt-primary-s); border-color: rgba(201,64,64,0.18); font-weight: 600; }
+  @media (max-width: 991px) { display: none !important; }
+}
+
+.navbar-links-desktop {
+  display: flex; align-items: center; gap: 8px; margin-left: auto;
+  .navbar-nav { display: flex; align-items: center; gap: 8px; }
+  @media (max-width: 991px) { display: none; }
+}
+
+.nav-link {
+  display: flex; align-items: center; gap: 6px; padding: 7px 13px; border-radius: var(--rt-rs);
+  font-family: 'DM Sans', sans-serif; font-size: 0.87rem; font-weight: 500;
+  color: var(--rt-t2); text-decoration: none; transition: var(--rt-tr); white-space: nowrap; border: 1px solid transparent;
+  i { font-size: 0.9rem; }
+  &:hover { color: var(--rt-primary); background: var(--rt-primary-s); }
+  &.active { color: var(--rt-primary); background: var(--rt-primary-s); border-color: rgba(201,64,64,0.18); font-weight: 600; }
+}
+.nav-link-auth { border-color: var(--rt-bdr); &:hover { border-color: var(--rt-bdr-hi); background: var(--rt-raised); color: var(--rt-t1); } }
+.nav-link-register {
+  background: var(--g-primary) !important; color: #fff !important; border: none !important; font-weight: 600; box-shadow: 0 3px 12px rgba(201,64,64,0.25);
+  &:hover { background: var(--g-primary-h) !important; box-shadow: 0 5px 18px rgba(201,64,64,0.38); transform: translateY(-1px); }
+}
+.nav-link-icon {
+  padding: 4px; border-radius: var(--rt-rs); background: transparent; border: none;
+  &:hover { background: transparent; }
+  .icon-wrapper {
+    width: 34px; height: 34px; display: flex; align-items: center; justify-content: center;
+    background: var(--rt-raised); border: 1px solid var(--rt-bdr); border-radius: var(--rt-rs);
+    position: relative; transition: var(--rt-tr); color: var(--rt-t2); font-size: 0.9rem;
+    &:hover { background: var(--rt-primary-s); color: var(--rt-primary); border-color: rgba(201,64,64,0.2); }
+  }
+  .notification-badge {
+    position: absolute; top: -4px; right: -4px; min-width: 16px; height: 16px; border-radius: 8px;
+    background: var(--g-primary); color: #fff; font-size: 0.58rem; font-weight: 700;
+    display: flex; align-items: center; justify-content: center; padding: 0 4px; border: 2px solid #fff;
+    animation: rt-popIn 0.3s cubic-bezier(0.34,1.56,0.64,1);
+    &.chat-badge { background: var(--g-green); }
+  }
+}
+
+// ─── USER DROPDOWN DESKTOP ────────────────────────────────────
+.user-dropdown { position: relative; }
+.user-menu-toggle {
+  display: flex; align-items: center; gap: 9px; padding: 5px 11px 5px 5px; border-radius: 10px;
+  background: var(--rt-raised); border: 1px solid var(--rt-bdr); text-decoration: none; transition: var(--rt-tr); cursor: pointer; white-space: nowrap;
+  &:hover { background: var(--rt-primary-s); border-color: rgba(201,64,64,0.2); }
+  .user-avatar { width: 30px; height: 30px; border-radius: 50%; flex-shrink: 0; background: var(--g-primary); display: flex; align-items: center; justify-content: center; color: #fff; font-size: 0.88rem; }
+  .user-info { display: flex; flex-direction: column; }
+  .user-name { font-family: 'DM Sans', sans-serif; font-size: 0.83rem; font-weight: 600; color: var(--rt-t1); }
+  .user-role { font-size: 0.67rem; color: var(--rt-t3); }
+}
+.user-dropdown-menu {
+  background: var(--rt-sfc) !important; border: 1px solid var(--rt-bdr) !important;
+  border-radius: var(--rt-rl) !important; padding: 7px !important;
+  box-shadow: var(--shadow-lg) !important; min-width: 215px; margin-top: 6px !important;
+  animation: rt-slideDown 0.2s ease-out;
+  .dropdown-item {
+    display: flex; align-items: center; gap: 9px; padding: 9px 12px !important; border-radius: var(--rt-rs) !important;
+    font-family: 'DM Sans', sans-serif; font-size: 0.84rem !important; color: var(--rt-t2) !important; transition: var(--rt-tr);
+    i { font-size: 0.88rem; width: 16px; text-align: center; color: var(--rt-t3); }
+    &:hover { background: var(--rt-raised) !important; color: var(--rt-t1) !important; i { color: var(--rt-primary); } }
+  }
+  .dropdown-divider { border-color: var(--rt-bdr) !important; margin: 4px 0 !important; }
+  .logout-item { width: 100%; background: none; border: none; text-align: left; cursor: pointer; color: var(--rt-primary) !important; i { color: var(--rt-primary) !important; } &:hover { background: var(--rt-primary-s) !important; } }
+}
+
+// ════════════════════════════════════════════════════════════
+// BOUTON MOBILE TRIGGER (remplace le toggler)
+// Visible seulement sur mobile (< 992px)
+// ════════════════════════════════════════════════════════════
+.mobile-trigger {
+  display: none;
+  align-items: center; justify-content: center;
+  background: none; border: none; cursor: pointer;
+  padding: 0; flex-shrink: 0; position: relative;
+  -webkit-tap-highlight-color: transparent;
+
+  @media (max-width: 991px) { display: flex; }
+}
+
+// Avatar initiales (utilisateur connecté)
+.mt-avatar {
+  width: 36px; height: 36px; border-radius: 50%;
+  background: var(--g-primary);
+  display: flex; align-items: center; justify-content: center;
+  position: relative; transition: transform 0.2s, box-shadow 0.2s;
+  box-shadow: 0 2px 10px rgba(201,64,64,0.3);
+
+  .mt-initials {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.75rem; font-weight: 800;
+    color: #fff; letter-spacing: 0.5px;
+    line-height: 1;
+  }
+
+  .mt-badge {
+    position: absolute; top: -3px; right: -3px;
+    min-width: 16px; height: 16px; border-radius: 8px;
+    background: #D4A843; color: #fff;
+    font-size: 0.55rem; font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+    padding: 0 3px; border: 2px solid #fff;
+    animation: rt-popIn 0.3s cubic-bezier(0.34,1.56,0.64,1);
+  }
+
+  .mobile-trigger:active & {
+    transform: scale(0.92);
+    box-shadow: 0 1px 6px rgba(201,64,64,0.2);
+  }
+}
+
+// Icône hamburger style iOS (non connecté)
+.mt-menu-icon {
+  width: 36px; height: 36px; border-radius: 10px;
+  background: var(--rt-raised); border: 1px solid var(--rt-bdr);
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 5px;
+  transition: background 0.2s, border-color 0.2s;
+
+  span {
+    display: block; height: 1.5px; border-radius: 2px;
+    background: var(--rt-t2); transition: transform 0.28s cubic-bezier(0.4,0,0.2,1), opacity 0.2s, width 0.2s;
+
+    &:nth-child(1) { width: 18px; }
+    &:nth-child(2) { width: 13px; transform-origin: right center; }
+    &:nth-child(3) { width: 18px; }
+  }
+
+  // Animation → X quand ouvert
+  &.is-open {
+    background: var(--rt-primary-s); border-color: rgba(201,64,64,0.2);
+    span:nth-child(1) { transform: translateY(6.5px) rotate(45deg); }
+    span:nth-child(2) { opacity: 0; transform: scaleX(0); }
+    span:nth-child(3) { transform: translateY(-6.5px) rotate(-45deg); }
+  }
+
+  .mobile-trigger:active & { transform: scale(0.9); }
+}
+
+// ════════════════════════════════════════════════════════════
+// BOTTOM SHEET — style iOS natif
+// ════════════════════════════════════════════════════════════
+
+// Overlay backdrop
+.bs-overlay {
+  // Overlay léger transparent — juste pour capturer les clics extérieurs
+  position: fixed; inset: 0;
+  background: transparent;
+  z-index: 1040;
+  opacity: 0; pointer-events: none;
+  visibility: hidden;
+
+  &.open {
+    opacity: 1; pointer-events: all; visibility: visible;
+  }
+
+  @media (min-width: 992px) { display: none !important; }
+}
+
+// Dropdown ancré à droite — style iOS/Android natif
+.bottom-sheet {
+  position: fixed;
+  top: var(--rt-navbar-h);
+  right: 12px;          // ancré côté avatar (droite)
+  left: auto;           // pas de pleine largeur
+  width: 280px;         // largeur fixe compacte
+  z-index: 1050;
+  background: #fff;
+  border-radius: 14px;
+  box-shadow:
+    0 4px 6px rgba(0,0,0,0.04),
+    0 10px 32px rgba(0,0,0,0.12),
+    0 0 0 1px rgba(0,0,0,0.06);
+  overflow: hidden;
+  visibility: hidden;
+  opacity: 0;
+  transform: translateY(-6px) scale(0.97);
+  transform-origin: top right;  // scale depuis le coin supérieur droit (avatar)
+  transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+              opacity 0.15s ease,
+              visibility 0s linear 0.2s;
+
+  // Petite flèche pointant vers le haut (vers la navbar)
+  &::before {
+    content: '';
+    position: absolute;
+    top: -6px; right: 16px;
+    width: 12px; height: 12px;
+    background: #fff;
+    border-left: 1px solid rgba(0,0,0,0.06);
+    border-top:  1px solid rgba(0,0,0,0.06);
+    transform: rotate(45deg);
+    z-index: 1;
+  }
+
+  &.open {
+    visibility: visible;
     opacity: 1;
-    transform: translateY(0);
+    transform: translateY(0) scale(1);
+    transition: transform 0.22s cubic-bezier(0.34, 1.15, 0.64, 1),
+                opacity 0.15s ease,
+                visibility 0s linear 0s;
+  }
+
+  @media (min-width: 992px) { display: none !important; }
+
+  // Sur très petit écran : légèrement plus étroit, bords latéraux
+  @media (max-width: 360px) {
+    right: 8px;
+    width: calc(100vw - 16px);
   }
 }
 
-@keyframes dropdownSlide {
-  from {
-    opacity: 0;
-    transform: translateY(-15px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
+
+
+@keyframes overlayIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+// Drag handle
+.bs-handle { display: none; }
+
+// ── En-tête utilisateur connecté ─────────────────────────────
+// ── En-tête utilisateur connecté ─────────────────────────────
+.bs-user-header {
+  display: flex; align-items: center; gap: 11px;
+  padding: 12px 16px;
+  border-bottom: 1px solid rgba(0,0,0,0.06);
+}
+
+.bs-user-avatar {
+  width: 38px; height: 38px; border-radius: 50%; flex-shrink: 0;
+  background: var(--g-primary);
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 2px 8px rgba(201,64,64,0.25);
+  span {
+    font-family: 'DM Sans', sans-serif; font-size: 0.82rem; font-weight: 800;
+    color: #fff; letter-spacing: 0.5px; line-height: 1;
   }
 }
 
-@keyframes pulse {
-  0%, 100% {
-    transform: scale(1);
+.bs-user-info { flex: 1; min-width: 0; }
+
+.bs-user-name {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.88rem; font-weight: 700; color: #111;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  margin-bottom: 2px;
+}
+
+.bs-user-role { display: flex; }
+.bs-role-pill {
+  display: inline-block; padding: 1px 8px; border-radius: 8px;
+  background: var(--rt-primary-s); color: var(--rt-primary);
+  font-family: 'DM Sans', sans-serif; font-size: 0.62rem; font-weight: 700;
+  border: 1px solid rgba(201,64,64,0.15);
+}
+
+// ── En-tête non connecté ─────────────────────────────────────
+.bs-guest-header {
+  display: flex; align-items: center; gap: 10px;
+  padding: 12px 16px;
+  border-bottom: 1px solid rgba(0,0,0,0.06);
+  .bs-guest-logo { width: 32px; height: 32px; border-radius: 9px; background: var(--rt-raised); border: 1px solid var(--rt-bdr); display: flex; align-items: center; justify-content: center; }
+  .bs-guest-title { font-family: 'Playfair Display', Georgia, serif; font-size: 0.95rem; font-weight: 700; color: #111; flex: 1; }
+}
+
+// Bouton fermer (X discret)
+.bs-close-btn {
+  width: 28px; height: 28px; border-radius: 50%; flex-shrink: 0;
+  background: rgba(0,0,0,0.06); border: none; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  color: rgba(0,0,0,0.4); font-size: 0.72rem;
+  transition: background 0.15s, color 0.15s;
+  -webkit-tap-highlight-color: transparent;
+  &:hover  { background: var(--rt-primary-s); color: var(--rt-primary); }
+  &:active { transform: scale(0.88); }
+}
+
+// ── Corps — s'adapte au contenu, pas de flex: 1 ───────────────
+.bs-body {
+  padding: 5px 8px 8px;
+  display: flex; flex-direction: column; gap: 1px;
+}
+
+.bs-section-label {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.6rem; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.09em; color: rgba(0,0,0,0.3);
+  padding: 6px 8px 2px; margin: 0;
+}
+
+.bs-divider {
+  height: 1px; background: rgba(0,0,0,0.06);
+  margin: 3px 6px;
+}
+
+// Item — compact
+.bs-item {
+  display: flex; align-items: center; gap: 11px;
+  padding: 8px 10px; border-radius: 10px;
+  border: none; background: transparent; cursor: pointer;
+  text-decoration: none; width: 100%; text-align: left;
+  transition: background 0.13s;
+  -webkit-tap-highlight-color: transparent;
+
+  &:hover  { background: rgba(0,0,0,0.04); }
+  &:active { background: rgba(0,0,0,0.07); transform: scale(0.99); }
+
+  &--active {
+    background: var(--rt-primary-s) !important;
+    .bs-item-label { color: var(--rt-primary) !important; font-weight: 600; }
+    .bs-item-arrow { color: var(--rt-primary) !important; }
   }
-  50% {
-    transform: scale(1.1);
+
+  &--danger .bs-item-label { color: var(--rt-primary); }
+
+  &--primary {
+    background: var(--rt-primary); margin: 2px 0;
+    .bs-item-label { color: #fff !important; font-weight: 700; }
+    .bs-item-arrow { color: rgba(255,255,255,0.6) !important; }
+    &:hover  { background: var(--g-primary-h); }
+    &:active { background: var(--g-primary-h); }
+    .bs-item-icon { background: rgba(255,255,255,0.18) !important; color: #fff !important; }
   }
 }
 
-// ========================================
-// RESPONSIVE
-// ========================================
-
-@media (max-width: 992px) {
-  .navbar-custom {
-    padding: 12px 0;
-
-    .navbar-brand {
-      font-size: 1.3rem;
-      padding: 5px 10px;
-
-      .brand-icon {
-        width: 45px;
-        height: 45px;
-
-        .brand-logo {
-          width: 35px;
-          height: 35px;
-        }
-      }
-    }
-
-    .navbar-collapse {
-      background: rgba(255, 255, 255, 0.15);
-      backdrop-filter: blur(20px);
-      border-radius: 20px;
-      padding: 20px;
-      margin-top: 15px;
-      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
-    }
-
-    .navbar-nav {
-      .nav-item {
-        margin: 5px 0;
-      }
-
-      .nav-link {
-        padding: 12px 16px !important;
-        justify-content: flex-start;
-
-        &.nav-link-icon {
-          justify-content: flex-start;
-        }
-      }
-    }
-
-    .user-dropdown {
-      .user-menu-toggle {
-        width: 100%;
-        justify-content: space-between;
-        padding: 12px 16px !important;
-
-        .user-info {
-          margin-left: 12px;
-          flex: 1;
-        }
-      }
-
-      .user-dropdown-menu {
-        position: static !important;
-        transform: none !important;
-        box-shadow: none;
-        background: rgba(255, 255, 255, 0.1);
-        backdrop-filter: blur(10px);
-        border: 2px solid rgba(255, 255, 255, 0.2);
-        margin-top: 10px;
-
-        .dropdown-item {
-          color: white;
-
-          i {
-            color: white;
-          }
-
-          &:hover {
-            background: rgba(255, 255, 255, 0.2);
-            color: white;
-
-            i {
-              color: white;
-            }
-          }
-
-          &.logout-item {
-            background: rgba(220, 53, 69, 0.3);
-            border: 2px solid rgba(220, 53, 69, 0.4);
-
-            &:hover {
-              background: rgba(220, 53, 69, 0.5);
-            }
-          }
-        }
-      }
-    }
-  }
+// Icône SF Symbol style — plus petite
+.bs-item-icon {
+  width: 30px; height: 30px; border-radius: 7px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.82rem;
 }
 
-@media (max-width: 576px) {
-  .navbar-custom {
-    .navbar-brand {
-      font-size: 1.1rem;
-
-      .brand-icon {
-        width: 40px;
-        height: 40px;
-
-        .brand-logo {
-          width: 30px;
-          height: 30px;
-        }
-      }
-
-      .brand-text {
-        display: none;
-      }
-    }
-
-    .user-dropdown {
-      .user-menu-toggle {
-        .user-name {
-          font-size: 0.85rem;
-        }
-
-        .user-role {
-          font-size: 0.7rem;
-        }
-      }
-    }
-  }
+// Label
+.bs-item-label {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.88rem; font-weight: 500; color: #111;
+  flex: 1;
 }
+
+// Chevron discret
+.bs-item-arrow {
+  font-size: 0.65rem; color: rgba(0,0,0,0.2); flex-shrink: 0;
+}
+
+// Badge compteur
+.bs-item-badge {
+  flex-shrink: 0; min-width: 18px; height: 18px;
+  background: var(--rt-primary); color: #fff;
+  border-radius: 9px; font-size: 0.6rem; font-weight: 700;
+  display: flex; align-items: center; justify-content: center; padding: 0 5px;
+  margin-right: 2px;
+  &.bs-badge-green { background: #1D7A45; }
+}
+
+// Espace en bas (évite que le dernier item colle au bord arrondi)
+.bs-safe-area {
+  height: 6px;
+  flex-shrink: 0;
+}
+
+// ════════════════════════════════════════════════════════════
+// RESPONSIVE — tablet intermédiaire
+// ════════════════════════════════════════════════════════════
+@media (max-width: 991px) {
+  .navbar-custom .container {
+    padding: 0 16px;
+    gap: 10px;
+  }
+
+  .navbar-search-inline {
+    flex: 1; min-width: 0; max-width: none; height: 38px;
+    .nsi-search { padding: 0 10px; input { font-size: 0.82rem; } }
+  }
+
+  .navbar-brand .brand-text {
+    display: none; // Cache le texte sur mobile si search active
+  }
+
+  .navbar-brand { flex-shrink: 0; }
+}
+
+// Cache le texte du brand sur très petit écran seulement si search active
+// (le HTML gère déjà *ngIf="!showSearchBar")

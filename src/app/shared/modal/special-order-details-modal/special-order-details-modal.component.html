@@ -1,0 +1,185 @@
+<div class="rt-modal-overlay" [class.visible]="show" *ngIf="show">
+  <div class="rt-modal rt-modal--lg">
+
+    <!-- Header -->
+    <div class="rt-modal-header">
+      <div class="rt-modal-title">
+        <div class="rt-modal-icon gold">
+          <i class="bi bi-star-fill"></i>
+        </div>
+        <div>
+          <h5>Commande spéciale <span class="rt-modal-id">{{ specialOrder?.id }}</span></h5>
+          <p *ngIf="specialOrder">{{ specialOrder.created_at | date:'dd/MM/yyyy à HH:mm' }}</p>
+        </div>
+      </div>
+      <button class="rt-modal-close" (click)="closeModal()">
+        <i class="bi bi-x-lg"></i>
+      </button>
+    </div>
+
+    <!-- Body -->
+    <div class="rt-modal-body" *ngIf="specialOrder">
+
+      <!-- Statut banner -->
+      <div class="rt-status-banner" [ngClass]="getStatusClass(specialOrder.status)">
+        <i class="bi" [ngClass]="getStatusIcon(specialOrder.status)"></i>
+        <strong>{{ getStatusLabel(specialOrder.status) }}</strong>
+      </div>
+
+      <!-- Client + Événement -->
+      <div class="rt-modal-grid-2">
+
+        <div class="rt-info-card">
+          <div class="rt-info-card-header">
+            <i class="bi bi-person-fill"></i> Client
+          </div>
+          <div class="rt-info-card-body">
+            <div class="rt-info-row">
+              <i class="bi bi-person-circle"></i>
+              <strong>{{ specialOrder.client_name }}</strong>
+            </div>
+            <div class="rt-info-row">
+              <i class="bi bi-telephone-fill"></i>
+              <a [href]="'tel:' + specialOrder.client_phone">{{ specialOrder.client_phone }}</a>
+            </div>
+            <div class="rt-info-row" *ngIf="specialOrder.client_email">
+              <i class="bi bi-envelope-fill"></i>
+              <a [href]="'mailto:' + specialOrder.client_email">{{ specialOrder.client_email }}</a>
+            </div>
+            <div class="rt-info-row muted" *ngIf="!specialOrder.client_email">
+              <i class="bi bi-envelope"></i>
+              <em>Aucun email</em>
+            </div>
+          </div>
+        </div>
+
+        <div class="rt-info-card">
+          <div class="rt-info-card-header gold">
+            <i class="bi bi-calendar-event-fill"></i> Événement
+          </div>
+          <div class="rt-info-card-body">
+            <div class="rt-info-row">
+              <i class="bi bi-tag-fill"></i>
+              <strong>{{ getEventTypeLabel(specialOrder.event_type) }}</strong>
+            </div>
+            <div class="rt-info-row">
+              <i class="bi bi-calendar3"></i>
+              <span>{{ specialOrder.event_date | date:'dd/MM/yyyy' }}
+                <span *ngIf="specialOrder.event_time" class="ms-2">
+                  <i class="bi bi-clock me-1"></i>{{ specialOrder.event_time }}
+                </span>
+              </span>
+            </div>
+            <div class="rt-info-row">
+              <i class="bi bi-people-fill"></i>
+              <strong>{{ specialOrder.number_of_guests }}</strong>&nbsp;personne(s)
+            </div>
+            <div class="rt-info-row" *ngIf="specialOrder.estimated_budget">
+              <i class="bi bi-cash-coin"></i>
+              Budget : <strong class="budget-amount">{{ specialOrder.estimated_budget | number:'1.0-0' }} FCFA</strong>
+            </div>
+            <div class="rt-info-row muted" *ngIf="!specialOrder.estimated_budget">
+              <i class="bi bi-cash-coin"></i>
+              <em>Budget non précisé</em>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Lieu -->
+      <div class="rt-section" *ngIf="specialOrder.delivery_address || specialOrder.city">
+        <div class="rt-section-title">
+          <i class="bi bi-geo-alt-fill"></i> Lieu de l'événement
+        </div>
+        <div class="rt-note-box">
+          <div *ngIf="specialOrder.delivery_address">
+            <i class="bi bi-geo-alt me-2 text-primary"></i>{{ specialOrder.delivery_address }}
+          </div>
+          <div *ngIf="specialOrder.city" class="mt-1">
+            <i class="bi bi-building me-2 text-muted"></i>{{ specialOrder.city }}
+          </div>
+        </div>
+      </div>
+
+      <!-- Préférences & Restrictions -->
+      <div class="rt-section"
+        *ngIf="specialOrder.menu_preferences || specialOrder.dietary_restrictions || specialOrder.special_requests">
+        <div class="rt-section-title">
+          <i class="bi bi-list-ul"></i> Préférences & Demandes
+        </div>
+        <div class="rt-note-box">
+          <div *ngIf="specialOrder.menu_preferences" class="mb-3">
+            <strong><i class="bi bi-journal-text me-1"></i>Préférences menu</strong>
+            <p class="mt-1 mb-0">{{ specialOrder.menu_preferences }}</p>
+          </div>
+          <div *ngIf="specialOrder.dietary_restrictions" class="mb-3">
+            <strong><i class="bi bi-exclamation-triangle-fill me-1" style="color:var(--rt-accent)"></i>Restrictions alimentaires</strong>
+            <p class="mt-1 mb-0">{{ specialOrder.dietary_restrictions }}</p>
+          </div>
+          <div *ngIf="specialOrder.special_requests">
+            <strong><i class="bi bi-chat-dots me-1"></i>Demandes spéciales</strong>
+            <p class="mt-1 mb-0">{{ specialOrder.special_requests }}</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Devis -->
+      <div class="rt-section"
+        *ngIf="specialOrder.status === 'quoted' || specialOrder.quoted_amount">
+        <div class="rt-section-title">
+          <i class="bi bi-file-earmark-text-fill"></i> Devis
+        </div>
+        <div class="rt-devis-card">
+          <div class="rt-devis-row">
+            <span>Montant total</span>
+            <strong class="devis-total">{{ specialOrder.quoted_amount | number:'1.0-0' }} FCFA</strong>
+          </div>
+          <div class="rt-devis-row" *ngIf="specialOrder.deposit_amount">
+            <span>Acompte ({{ specialOrder.deposit_percentage }}%)</span>
+            <strong class="devis-acompte">{{ specialOrder.deposit_amount | number:'1.0-0' }} FCFA</strong>
+          </div>
+          <div class="rt-devis-row" *ngIf="specialOrder.transport_fee > 0">
+            <span>Frais de transport</span>
+            <strong class="devis-transport">{{ specialOrder.transport_fee | number:'1.0-0' }} FCFA</strong>
+          </div>
+          <div class="rt-devis-row" *ngIf="specialOrder.deposit_status">
+            <span>Statut acompte</span>
+            <span class="rt-deposit-badge" [ngClass]="{
+              'paid':    specialOrder.deposit_status === 'paid' || specialOrder.deposit_status === 'cod_received',
+              'pending': specialOrder.deposit_status === 'pending',
+              'cod':     specialOrder.deposit_status === 'cod_pending'
+            }">
+              {{ getDepositStatusLabel(specialOrder.deposit_status) }}
+            </span>
+          </div>
+          <div class="rt-note-box mt-2" *ngIf="specialOrder.quote_notes">
+            <i class="bi bi-sticky me-1"></i>
+            <strong>Note :</strong> {{ specialOrder.quote_notes }}
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /body -->
+
+    <!-- Footer -->
+    <div class="rt-modal-footer">
+      <button class="rt-btn ghost" (click)="closeModal()">
+        <i class="bi bi-x-lg"></i> Fermer
+      </button>
+      <ng-container *ngIf="specialOrder">
+        <button class="rt-btn success"
+          *ngIf="specialOrder.status === 'pending'"
+          (click)="confirm()" [disabled]="!canAccept">
+          <i class="bi bi-check-circle-fill"></i> Confirmer
+        </button>
+        <button class="rt-btn danger"
+          *ngIf="specialOrder.status !== 'cancelled'"
+          (click)="cancel()">
+          <i class="bi bi-x-circle-fill"></i> Annuler la commande
+        </button>
+      </ng-container>
+    </div>
+
+  </div>
+</div>

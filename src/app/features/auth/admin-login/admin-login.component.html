@@ -1,100 +1,94 @@
 <!-- admin-login.component.html -->
-<div class="admin-login-container">
-  <div class="admin-login-card">
-    <!-- Logo et titre -->
-    <div class="admin-header">
-      <div class="admin-logo">
-        <i class="fas fa-shield-alt"></i>
+<div class="admin-login-page">
+  <div class="alp-card anim-fadeup">
+
+    <!-- Header -->
+    <div class="alp-header">
+      <div class="alp-brand-mark">
+        <i class="bi bi-shield-fill-check"></i>
       </div>
-      <h1 class="admin-title">Espace Administrateur</h1>
-      <p class="admin-subtitle">Connectez-vous pour accéder au panneau d'administration</p>
+      <div class="alp-badge">Accès restreint</div>
+      <h1>Espace Administrateur</h1>
+      <p>Connectez-vous pour accéder au panneau d'administration</p>
     </div>
 
-    <!-- Message d'erreur -->
-    <div class="error-message" *ngIf="errorMessage">
-      <i class="fas fa-exclamation-circle"></i>
-      <span>{{ errorMessage }}</span>
-    </div>
+    <!-- Body -->
+    <div class="alp-body">
 
-    <!-- Formulaire de connexion -->
-    <form [formGroup]="loginForm" (ngSubmit)="onSubmit()" class="admin-login-form">
-      <!-- Champ Email -->
-      <div class="form-group">
-        <label for="email" class="form-label">
-          <i class="fas fa-envelope"></i>
-          Adresse email
-        </label>
-        <input
-          type="email"
-          id="email"
-          formControlName="email"
-          class="form-control"
-          [class.invalid]="isFieldInvalid('email')"
-          placeholder="admin@restaurant.com"
-          autocomplete="username"
-        />
-        <span class="error-text" *ngIf="isFieldInvalid('email')">
-          {{ getErrorMessage('email') }}
-        </span>
+      <!-- Erreur -->
+      <div *ngIf="errorMessage" class="alp-error">
+        <i class="bi bi-exclamation-circle-fill"></i>
+        <span>{{ errorMessage }}</span>
       </div>
 
-      <!-- Champ Mot de passe -->
-      <div class="form-group">
-        <label for="password" class="form-label">
-          <i class="fas fa-lock"></i>
-          Mot de passe
-        </label>
-        <div class="password-input-wrapper">
-          <input
-            [type]="hidePassword ? 'password' : 'text'"
-            id="password"
-            formControlName="password"
-            class="form-control"
-            [class.invalid]="isFieldInvalid('password')"
-            placeholder="••••••••"
-            autocomplete="current-password"
-          />
-          <button
-            type="button"
-            class="toggle-password"
-            (click)="togglePasswordVisibility()"
-            tabindex="-1"
-          >
-            <i [class]="hidePassword ? 'fas fa-eye' : 'fas fa-eye-slash'"></i>
-          </button>
+      <!-- Formulaire -->
+      <form [formGroup]="loginForm" (ngSubmit)="onSubmit()">
+
+        <!-- Email -->
+        <div class="alp-form-group">
+          <label for="email" class="alp-label">Adresse email</label>
+          <div class="alp-input-wrapper">
+            <i class="bi bi-envelope-fill"></i>
+            <input
+              type="email"
+              id="email"
+              formControlName="email"
+              class="alp-input"
+              [class.is-invalid]="isFieldInvalid('email')"
+              placeholder="admin@restotraiteur.com"
+              autocomplete="username">
+          </div>
+          <div class="alp-invalid" *ngIf="isFieldInvalid('email')">
+            {{ getErrorMessage('email') }}
+          </div>
         </div>
-        <span class="error-text" *ngIf="isFieldInvalid('password')">
-          {{ getErrorMessage('password') }}
-        </span>
+
+        <!-- Mot de passe -->
+        <div class="alp-form-group">
+          <label for="password" class="alp-label">Mot de passe</label>
+          <div class="alp-input-wrapper">
+            <i class="bi bi-lock-fill"></i>
+            <input
+              [type]="hidePassword ? 'password' : 'text'"
+              id="password"
+              formControlName="password"
+              class="alp-input toggle-present"
+              [class.is-invalid]="isFieldInvalid('password')"
+              placeholder="••••••••"
+              autocomplete="current-password">
+            <button type="button" class="alp-toggle-pw"
+              (click)="togglePasswordVisibility()" tabindex="-1">
+              <i class="bi" [class.bi-eye]="hidePassword" [class.bi-eye-slash]="!hidePassword"></i>
+            </button>
+          </div>
+          <div class="alp-invalid" *ngIf="isFieldInvalid('password')">
+            {{ getErrorMessage('password') }}
+          </div>
+        </div>
+
+        <!-- Submit -->
+        <button type="submit" class="alp-submit"
+          [disabled]="loading" [class.loading]="loading">
+          <span *ngIf="loading" class="spinner-border spinner-border-sm"></span>
+          <i *ngIf="!loading" class="bi bi-shield-lock-fill"></i>
+          {{ loading ? 'Authentification...' : 'Accéder au panneau' }}
+        </button>
+
+      </form>
+
+      <!-- Avertissement sécurité -->
+      <div class="alp-security-note">
+        <i class="bi bi-info-circle-fill"></i>
+        <p>Page réservée aux administrateurs autorisés. Toute tentative d'accès non autorisée est enregistrée.</p>
       </div>
 
-      <!-- Bouton de connexion -->
-      <button
-        type="submit"
-        class="btn-submit"
-        [disabled]="loading"
-        [class.loading]="loading"
-      >
-        <span *ngIf="!loading">
-          <i class="fas fa-sign-in-alt"></i>
-          Se connecter
-        </span>
-        <span *ngIf="loading" class="spinner-container">
-          <i class="fas fa-spinner fa-spin"></i>
-          Connexion en cours...
-        </span>
-      </button>
-    </form>
-
-    <!-- Avertissement de sécurité -->
-    <div class="security-warning">
-      <i class="fas fa-info-circle"></i>
-      <p>Cette page est réservée aux administrateurs autorisés. Toute tentative d'accès non autorisée sera enregistrée.</p>
     </div>
-  </div>
 
-  <!-- Footer -->
-  <div class="admin-footer">
-    <p>&copy; 2025 Restaurant Traiteur. Tous droits réservés.</p>
+    <!-- Footer -->
+    <div class="alp-footer">
+      <i class="bi bi-lock-fill"></i>
+      <span>Connexion sécurisée &mdash; RestoTraiteur &copy; {{ currentYear }}</span>
+    </div>
+
   </div>
 </div>

@@ -66,7 +66,7 @@
         <table class="table table-striped table-hover">
           <thead class="table-dark">
             <tr>
-              <th>#</th>
+              <th></th>
               <th>Commande</th>
               <th>Montant commande</th>
               <th>Taux</th>
@@ -79,8 +79,8 @@
             <tr *ngFor="let c of commissions">
               <td>{{ c.id }}</td>
               <td>
-                <span *ngIf="c.order_id">#{{ c.order_id }}</span>
-                <span *ngIf="c.special_order_id" class="badge bg-info ms-1">Spéciale #{{ c.special_order_id }}</span>
+                <span *ngIf="c.order_id">{{ c.order_id }}</span>
+                <span *ngIf="c.special_order_id" class="badge bg-info ms-1">Spéciale {{ c.special_order_id }}</span>
               </td>
               <td class="fw-bold">{{ formatMontant(c.order_amount) }} FCFA</td>
               <td>

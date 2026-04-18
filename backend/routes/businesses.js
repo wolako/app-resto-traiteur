@@ -6,11 +6,22 @@ const { USER_ROLES } = require('../config/constants');
 
 const router = express.Router();
 
-// Routes publiques
+// ── Routes publiques ──────────────────────────────────────────
 router.get('/', businessController.getAllBusinesses);
 router.get('/restaurants', businessController.getRestaurants);
 router.get('/caterers/available', businessController.getAvailableCaterers);
 router.get('/:id', validateNumericParam('id'), businessController.getBusinessById);
+
+// Géolocalisation — AVANT /:id pour éviter le conflit de routing
+router.get('/nearby', businessController.getBusinessesNearby);
+
+router.get('/by-district', businessController.getBusinessesByDistrict);
+
+// Profil public complet (branding + menus + reviews)
+router.get('/:id/profile',
+  validateNumericParam('id'),
+  businessController.getPublicProfile
+);
 
 // Routes pour les menus (publique pour consultation)
 router.get('/:businessId/menus',
@@ -18,7 +29,7 @@ router.get('/:businessId/menus',
   businessController.getBusinessMenus
 );
 
-// Routes protégées pour les propriétaires d'établissements
+// ── Routes protégées ──────────────────────────────────────────
 router.put('/:id',
   authenticateToken,
   requireRole(USER_ROLES.RESTAURANT, USER_ROLES.TRAITEUR),
@@ -45,7 +56,6 @@ router.patch('/:id/availability',
   businessController.updateAvailability
 );
 
-// Gestion des menus
 router.post('/:businessId/menus',
   authenticateToken,
   requireRole(USER_ROLES.RESTAURANT, USER_ROLES.TRAITEUR),
@@ -53,6 +63,14 @@ router.post('/:businessId/menus',
   requireBusinessOwnership,
   validate('createMenu'),
   businessController.createMenu
+);
+
+router.get('/:id/revenue-stats',
+  authenticateToken,
+  requireRole(USER_ROLES.RESTAURANT, USER_ROLES.TRAITEUR),
+  validateNumericParam('id'),
+  requireBusinessOwnership,
+  businessController.getRevenueStats
 );
 
 module.exports = router;

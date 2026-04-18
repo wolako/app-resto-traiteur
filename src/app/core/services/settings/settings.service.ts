@@ -4,7 +4,6 @@ import { Observable, BehaviorSubject } from 'rxjs';
 import { tap } from 'rxjs/operators';
 import { environment } from '../../../../environments/environment';
 
-
 export interface AppSetting {
   id: number;
   key: string;
@@ -28,9 +27,10 @@ export class SettingsService {
   }
 
   loadPublicSettings(): void {
-    this.http.get<AppSetting[]>(`${this.apiUrl}/public`).subscribe(
-      settings => this.settingsSubject.next(settings)
-    );
+    this.http.get<AppSetting[]>(`${this.apiUrl}/public`).subscribe({
+      next: settings => this.settingsSubject.next(settings),
+      error: err => console.warn('Impossible de charger les paramètres publics:', err)
+    });
   }
 
   getAllSettings(): Observable<AppSetting[]> {
@@ -47,28 +47,33 @@ export class SettingsService {
 
   updateSetting(key: string, value: any): Observable<AppSetting> {
     return this.http.put<AppSetting>(`${this.apiUrl}/${key}`, { value }).pipe(
-      tap(() => this.loadPublicSettings())
+      tap(() => this.loadPublicSettings()) // ✅ déjà correct
     );
   }
 
   createSetting(setting: Partial<AppSetting>): Observable<AppSetting> {
-    return this.http.post<AppSetting>(this.apiUrl, setting);
+    return this.http.post<AppSetting>(this.apiUrl, setting).pipe(
+      tap(() => this.loadPublicSettings()) // ✅ AJOUT
+    );
   }
 
   deleteSetting(key: string): Observable<any> {
-    return this.http.delete(`${this.apiUrl}/${key}`);
+    return this.http.delete(`${this.apiUrl}/${key}`).pipe(
+      tap(() => this.loadPublicSettings()) // ✅ AJOUT
+    );
   }
 
   // Helpers pour récupérer des valeurs typées
-  getSetting(key: string): any {
+  getSetting(key: string, defaultValue: any = null): any {
     const settings = this.settingsSubject.value;
     const setting = settings.find(s => s.key === key);
-    if (!setting) return null;
+    if (!setting) return defaultValue; // ✅ AJOUT du defaultValue
 
     switch (setting.value_type) {
-      case 'number': return parseFloat(setting.value);
+      case 'number':  return parseFloat(setting.value);
       case 'boolean': return setting.value === 'true';
-      case 'json': return JSON.parse(setting.value);
+      case 'json':
+        try { return JSON.parse(setting.value); } catch { return defaultValue; }
       default: return setting.value;
     }
   }

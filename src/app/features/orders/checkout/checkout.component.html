@@ -1,162 +1,375 @@
+<!-- checkout.component.html -->
 <div class="checkout-container">
   <div class="container">
+
+    <div class="checkout-page-title mb-4">
+      <i class="bi bi-bag-check" style="color:var(--rt-primary);font-size:1.6rem;"></i>
+      Finaliser ma commande
+    </div>
+
     <div class="row">
 
-      <!-- ── Formulaire ──────────────────────────────────────── -->
-      <div class="col-lg-8 mb-4">
+      <!-- ══ FORMULAIRE — order-2 mobile, order-lg-1 desktop ══ -->
+      <div class="col-lg-8 mb-4 order-2 order-lg-1">
         <div class="checkout-card">
 
           <div class="card-header-checkout">
-            <i class="bi bi-credit-card"></i>
-            <h3>Finaliser la commande</h3>
+            <i class="bi bi-pencil-square"></i>
+            <h3>Informations de commande</h3>
           </div>
 
           <div class="card-body-checkout">
 
-            <!-- Badge Sandbox -->
+            <!-- Sandbox banner -->
             <div class="alert alert-warning d-flex align-items-center gap-2 mb-4" *ngIf="isSandbox">
               <i class="bi bi-shield-fill-check fs-5"></i>
-              <div>
-                <strong>Mode Sandbox actif</strong>
-                — Le paiement sera accepté immédiatement, aucune somme ne sera débitée.
-              </div>
+              <div><strong>Mode Sandbox actif</strong> — Paiements acceptés sans débit réel.</div>
             </div>
 
             <form [formGroup]="checkoutForm" (ngSubmit)="onSubmit()">
 
-              <!-- ── Informations client ─────────────────────── -->
+              <!-- ────────────────────────────────────────────
+                   1. INFORMATIONS CLIENT
+              ──────────────────────────────────────────────── -->
               <div class="form-section">
                 <h5 class="section-title">
-                  <i class="bi bi-person"></i>
-                  Informations client
+                  <i class="bi bi-person-circle"></i> Vos informations
                 </h5>
-
                 <div class="row">
                   <div class="col-md-6 mb-3">
-                    <label for="client_name" class="form-label">Nom complet *</label>
-                    <input
-                      type="text"
-                      class="form-control"
-                      id="client_name"
-                      formControlName="client_name"
-                      placeholder="Votre nom complet"
-                      [class.is-invalid]="checkoutForm.get('client_name')?.invalid && checkoutForm.get('client_name')?.touched">
+                    <label class="form-label">Nom complet *</label>
+                    <input type="text" class="form-control" formControlName="client_name"
+                      placeholder="Jean Dupont"
+                      [class.is-invalid]="fieldInvalid('client_name')">
                     <div class="invalid-feedback">Nom requis</div>
                   </div>
-
                   <div class="col-md-6 mb-3">
-                    <label for="client_phone" class="form-label">Téléphone *</label>
-                    <input
-                      type="tel"
-                      class="form-control"
-                      id="client_phone"
-                      formControlName="client_phone"
+                    <label class="form-label">Téléphone *</label>
+                    <input type="tel" class="form-control" formControlName="client_phone"
                       placeholder="+228 90 12 34 56"
-                      [class.is-invalid]="checkoutForm.get('client_phone')?.invalid && checkoutForm.get('client_phone')?.touched">
+                      [class.is-invalid]="fieldInvalid('client_phone')">
                     <div class="invalid-feedback">Téléphone requis</div>
                   </div>
-
                   <div class="col-12 mb-3">
-                    <label for="client_email" class="form-label">Email (optionnel)</label>
-                    <input
-                      type="email"
-                      class="form-control"
-                      id="client_email"
-                      formControlName="client_email"
-                      placeholder="votre@email.com">
+                    <label class="form-label">Email <span class="text-muted fw-normal">(optionnel)</span></label>
+                    <input type="email" class="form-control" formControlName="client_email"
+                      placeholder="vous@email.com"
+                      [class.is-invalid]="fieldInvalid('client_email')">
+                    <div class="invalid-feedback">Email invalide</div>
                   </div>
-
-                  <div class="col-12 mb-3">
-                    <label for="notes" class="form-label">Notes spéciales (optionnel)</label>
-                    <textarea
-                      class="form-control"
-                      id="notes"
-                      rows="3"
-                      formControlName="notes"
-                      placeholder="Instructions particulières pour votre commande..."></textarea>
+                  <div class="col-12">
+                    <label class="form-label">Notes <span class="text-muted fw-normal">(optionnel)</span></label>
+                    <textarea class="form-control" formControlName="notes" rows="2"
+                      placeholder="Allergies, préférences, instructions…"></textarea>
                   </div>
                 </div>
               </div>
 
-              <!-- ── Méthode de paiement ────────────────────── -->
+              <!-- ────────────────────────────────────────────
+                   2. MODE DE PAIEMENT
+              ──────────────────────────────────────────────── -->
               <div class="form-section">
                 <h5 class="section-title">
-                  <i class="bi bi-wallet2"></i>
-                  Méthode de paiement
+                  <i class="bi bi-wallet2"></i> Mode de paiement
+                </h5>
+                <div class="payment-types">
+                  <div class="payment-type-card"
+                    [class.selected]="isPaymentTypeSelected('online')"
+                    (click)="selectPaymentType('online')">
+                    <div class="payment-type-icon">💳</div>
+                    <div class="payment-type-content">
+                      <h6>Paiement en ligne</h6>
+                      <small>Sécurisé par CinetPay</small>
+                    </div>
+                    <i class="bi bi-check-circle-fill payment-type-check"
+                      *ngIf="isPaymentTypeSelected('online')"></i>
+                  </div>
+                  <div class="payment-type-card"
+                    [class.selected]="isPaymentTypeSelected('cod')"
+                    (click)="selectPaymentType('cod')">
+                    <div class="payment-type-icon">💵</div>
+                    <div class="payment-type-content">
+                      <h6>Paiement à la livraison</h6>
+                      <small>Cash à la réception</small>
+                    </div>
+                    <i class="bi bi-check-circle-fill payment-type-check"
+                      *ngIf="isPaymentTypeSelected('cod')"></i>
+                  </div>
+                </div>
+              </div>
+
+              <!-- ────────────────────────────────────────────
+                   3. ADRESSE DE LIVRAISON (COD uniquement)
+              ──────────────────────────────────────────────── -->
+              <div class="form-section" *ngIf="isPaymentTypeSelected('cod')">
+                <h5 class="section-title">
+                  <i class="bi bi-geo-alt-fill"></i> Adresse de livraison
+                </h5>
+                <div class="mb-3">
+                  <label class="form-label">Adresse complète *</label>
+                  <input type="text" class="form-control" formControlName="delivery_address"
+                    (input)="onAddressChange()"
+                    placeholder="123 Rue Exemple, Quartier, Lomé"
+                    [class.is-invalid]="fieldInvalid('delivery_address')">
+                  <div class="invalid-feedback">Adresse requise pour la livraison</div>
+                  <small class="form-text" style="font-size:.73rem;color:var(--rt-t3);margin-top:5px;display:block;">
+                    <i class="bi bi-info-circle me-1"></i>
+                    Frais calculés selon la distance estimée.
+                  </small>
+                </div>
+                <div class="alert alert-info d-flex align-items-center gap-2" *ngIf="fees.deliveryFee > 0">
+                  <i class="bi bi-truck fs-5"></i>
+                  <div>
+                    <strong>Frais de livraison : {{ fees.deliveryFee | number:'1.0-0' }} FCFA</strong>
+                    <small class="d-block" *ngIf="checkoutForm.get('delivery_distance')?.value">
+                      Distance estimée : {{ checkoutForm.get('delivery_distance')?.value | number:'1.1-1' }} km
+                    </small>
+                  </div>
+                </div>
+              </div>
+
+              <!-- ────────────────────────────────────────────
+                   4. CHOIX DE LA MÉTHODE EN LIGNE
+              ──────────────────────────────────────────────── -->
+              <div class="form-section" *ngIf="isOnlinePayment()">
+                <h5 class="section-title">
+                  <i class="bi bi-credit-card-2-front"></i> Choisissez votre méthode
                 </h5>
 
-                <!-- ✅ Cards cliquables — valeurs exactes attendues par le backend -->
                 <div class="payment-methods">
 
                   <!-- Mixx By Yas -->
                   <div class="payment-option"
-                       [class.selected]="isPaymentSelected('Mixx By Yas')"
-                       (click)="selectPaymentMethod('Mixx By Yas')">
-                    <div class="payment-icon">
-                      <span style="font-size: 1.4rem;">📱</span>
-                    </div>
+                    [class.selected]="isPaymentMethodSelected('Mixx By Yas')"
+                    (click)="selectPaymentMethod('Mixx By Yas')">
+                    <div class="payment-icon"><span style="font-size:1.5rem;">📱</span></div>
                     <div class="payment-info">
                       <strong>Mixx By Yas</strong>
-                      <small>T-Money / Flooz via Mixx By Yas</small>
+                      <small class="d-block">T-Money / Flooz via Togocom</small>
+                      <small class="text-warning" *ngIf="fees.subtotal > 0">
+                        + {{ calculatePaymentFee(fees.subtotal, 'Mixx By Yas') | number:'1.0-0' }} FCFA de frais
+                      </small>
                     </div>
-                    <i class="bi bi-check-circle-fill text-success ms-auto"
-                       *ngIf="isPaymentSelected('Mixx By Yas')"></i>
+                    <i class="bi bi-check-circle-fill ms-auto"
+                      *ngIf="isPaymentMethodSelected('Mixx By Yas')"></i>
                   </div>
 
                   <!-- Flooz -->
                   <div class="payment-option"
-                       [class.selected]="isPaymentSelected('flooz')"
-                       (click)="selectPaymentMethod('flooz')">
-                    <div class="payment-icon">
-                      <span style="font-size: 1.4rem;">💚</span>
-                    </div>
+                    [class.selected]="isPaymentMethodSelected('flooz')"
+                    (click)="selectPaymentMethod('flooz')">
+                    <div class="payment-icon"><span style="font-size:1.5rem;">💚</span></div>
                     <div class="payment-info">
                       <strong>Flooz</strong>
-                      <small>Paiement mobile Flooz</small>
+                      <small class="d-block">Paiement mobile Moov</small>
+                      <small class="text-warning" *ngIf="fees.subtotal > 0">
+                        + {{ calculatePaymentFee(fees.subtotal, 'flooz') | number:'1.0-0' }} FCFA de frais
+                      </small>
                     </div>
-                    <i class="bi bi-check-circle-fill text-success ms-auto"
-                       *ngIf="isPaymentSelected('flooz')"></i>
+                    <i class="bi bi-check-circle-fill ms-auto"
+                      *ngIf="isPaymentMethodSelected('flooz')"></i>
                   </div>
 
                   <!-- Carte bancaire -->
                   <div class="payment-option"
-                       [class.selected]="isPaymentSelected('card')"
-                       (click)="selectPaymentMethod('card')">
-                    <div class="payment-icon">
-                      <span style="font-size: 1.4rem;">💳</span>
-                    </div>
+                    [class.selected]="isPaymentMethodSelected('card')"
+                    (click)="selectPaymentMethod('card')">
+                    <div class="payment-icon"><span style="font-size:1.5rem;">💳</span></div>
                     <div class="payment-info">
                       <strong>Carte bancaire</strong>
-                      <small>Visa / Mastercard via CinetPay</small>
+                      <small class="d-block">Visa / Mastercard via CinetPay</small>
+                      <small class="text-danger" *ngIf="fees.subtotal > 0">
+                        + {{ calculatePaymentFee(fees.subtotal, 'card') | number:'1.0-0' }} FCFA de frais
+                      </small>
                     </div>
-                    <i class="bi bi-check-circle-fill text-success ms-auto"
-                       *ngIf="isPaymentSelected('card')"></i>
+                    <i class="bi bi-check-circle-fill ms-auto"
+                      *ngIf="isPaymentMethodSelected('card')"></i>
                   </div>
 
+                </div><!-- /payment-methods -->
+
+                <!-- ══════════════════════════════════════════
+                     4a. FORMULAIRE MOBILE MONEY
+                     Affiché pour Mixx By Yas et Flooz
+                ══════════════════════════════════════════ -->
+                <div class="payment-detail-form" *ngIf="isMobileMoney()">
+
+                  <div class="pdf-header">
+                    <span class="pdf-icon">{{ getMobileMoneyIcon() }}</span>
+                    <div>
+                      <div class="pdf-title">Numéro {{ getMobileMoneyLabel() }}</div>
+                      <div class="pdf-sub">
+                        Le paiement sera initié sur ce numéro
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="pdf-body">
+                    <label class="form-label">
+                      Numéro de téléphone *
+                      <span class="pdf-badge">{{ getMobileMoneyLabel() }}</span>
+                    </label>
+                    <div class="pdf-phone-row">
+                      <div class="pdf-flag">
+                        <span>🇹🇬</span>
+                        <small>+228</small>
+                      </div>
+                      <input
+                        type="tel"
+                        class="form-control pdf-phone-inp"
+                        formControlName="mobile_phone"
+                        [placeholder]="getMobileMoneyPlaceholder()"
+                        maxlength="15"
+                        [class.is-invalid]="fieldInvalid('mobile_phone')">
+                    </div>
+                    <div class="invalid-feedback d-block"
+                      *ngIf="fieldInvalid('mobile_phone')">
+                      <i class="bi bi-exclamation-circle me-1"></i>
+                      Numéro invalide — format attendu : +228 XX XX XX XX
+                    </div>
+                    <div class="pdf-hint" *ngIf="!fieldInvalid('mobile_phone')">
+                      <i class="bi bi-info-circle"></i>
+                      Vous recevrez une notification de paiement sur ce numéro
+                    </div>
+                  </div>
+
+                </div><!-- /mobile money form -->
+
+                <!-- ══════════════════════════════════════════
+                     4b. FORMULAIRE CARTE BANCAIRE
+                ══════════════════════════════════════════ -->
+                <div class="payment-detail-form card-form" *ngIf="isCardPayment()">
+
+                  <div class="pdf-header">
+                    <span class="pdf-icon">💳</span>
+                    <div>
+                      <div class="pdf-title">Informations de carte</div>
+                      <div class="pdf-sub">Visa · Mastercard · sécurisé TLS</div>
+                    </div>
+                    <div class="pdf-secure-badges">
+                      <span class="pdf-badge"><i class="bi bi-shield-lock-fill"></i> SSL</span>
+                      <span class="pdf-badge"><i class="bi bi-bank2"></i> 3D Secure</span>
+                    </div>
+                  </div>
+
+                  <div class="pdf-body">
+
+                    <!-- Titulaire -->
+                    <div class="mb-3">
+                      <label class="form-label">Nom du titulaire *</label>
+                      <input type="text" class="form-control" formControlName="card_holder"
+                        placeholder="NOM PRÉNOM (tel qu'il apparaît sur la carte)"
+                        style="text-transform:uppercase;"
+                        [class.is-invalid]="fieldInvalid('card_holder')">
+                      <div class="invalid-feedback">Nom du titulaire requis</div>
+                    </div>
+
+                    <!-- Numéro de carte -->
+                    <div class="mb-3">
+                      <label class="form-label">Numéro de carte *</label>
+                      <div class="card-number-wrapper">
+                        <input type="text" class="form-control card-number-inp"
+                          formControlName="card_number"
+                          placeholder="0000 0000 0000 0000"
+                          maxlength="16"
+                          inputmode="numeric"
+                          (input)="formatCardNumber($event)"
+                          [class.is-invalid]="fieldInvalid('card_number')">
+                        <div class="card-brand-icons">
+                          <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/5/5e/Visa_Inc._logo.svg/200px-Visa_Inc._logo.svg.png"
+                            alt="Visa" class="card-brand-img">
+                          <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/2/2a/Mastercard-logo.svg/200px-Mastercard-logo.svg.png"
+                            alt="Mastercard" class="card-brand-img">
+                        </div>
+                      </div>
+                      <div class="invalid-feedback">Numéro de carte invalide (16 chiffres)</div>
+                    </div>
+
+                    <!-- Expiry + CVV -->
+                    <div class="row">
+                      <div class="col-6 mb-3">
+                        <label class="form-label">Date d'expiration *</label>
+                        <input type="text" class="form-control" formControlName="card_expiry"
+                          placeholder="MM/AA"
+                          maxlength="5"
+                          inputmode="numeric"
+                          (input)="formatCardExpiry($event)"
+                          [class.is-invalid]="fieldInvalid('card_expiry')">
+                        <div class="invalid-feedback">Format MM/AA attendu</div>
+                      </div>
+                      <div class="col-6 mb-3">
+                        <label class="form-label">
+                          CVV *
+                          <span class="cvv-help" title="3 chiffres au dos de votre carte">
+                            <i class="bi bi-question-circle"></i>
+                          </span>
+                        </label>
+                        <div class="cvv-wrapper">
+                          <input type="password" class="form-control" formControlName="card_cvv"
+                            placeholder="•••"
+                            maxlength="4"
+                            inputmode="numeric"
+                            [class.is-invalid]="fieldInvalid('card_cvv')">
+                          <i class="bi bi-credit-card-back cvv-icon"></i>
+                        </div>
+                        <div class="invalid-feedback">CVV invalide</div>
+                      </div>
+                    </div>
+
+                    <!-- Notice sécurité carte -->
+                    <div class="card-security-notice">
+                      <i class="bi bi-lock-fill"></i>
+                      <span>Vos données bancaires sont chiffrées et ne sont jamais stockées sur nos serveurs.</span>
+                    </div>
+
+                  </div>
+                </div><!-- /card form -->
+
+              </div><!-- /méthode en ligne -->
+
+              <!-- ────────────────────────────────────────────
+                   5. INFO COD
+              ──────────────────────────────────────────────── -->
+              <div class="alert alert-info d-flex gap-3" *ngIf="isPaymentTypeSelected('cod')">
+                <i class="bi bi-info-circle-fill fs-4 flex-shrink-0 mt-1"></i>
+                <div>
+                  <h6 class="mb-2" style="font-family:'Playfair Display',serif;">📦 Comment ça marche ?</h6>
+                  <ul class="mb-0 ps-3" style="line-height:1.8;">
+                    <li>Votre commande est confirmée immédiatement</li>
+                    <li>Le restaurant prépare votre plat</li>
+                    <li>Vous payez <strong>{{ fees.total | number:'1.0-0' }} FCFA en cash</strong> à la livraison</li>
+                  </ul>
                 </div>
+              </div>
 
-                <!-- Message d'erreur si aucune méthode sélectionnée -->
-                <div class="text-danger small mt-2"
-                     *ngIf="checkoutForm.get('payment_method')?.invalid && checkoutForm.get('payment_method')?.touched">
-                  Veuillez sélectionner une méthode de paiement
-                </div>
-
-              </div><!-- /form-section paiement -->
-
-              <!-- ── Bouton submit ───────────────────────────── -->
-              <button
-                type="submit"
-                class="btn btn-success btn-lg w-100 btn-checkout"
+              <!-- ────────────────────────────────────────────
+                   6. BOUTON SUBMIT
+              ──────────────────────────────────────────────── -->
+              <button type="submit" class="btn btn-lg w-100 btn-checkout"
+                [ngClass]="isPaymentTypeSelected('cod') ? 'btn-warning' : 'btn-success'"
                 [disabled]="checkoutForm.invalid || loading">
+
                 <ng-container *ngIf="loading">
                   <span class="spinner-border spinner-border-sm me-2"></span>
-                  Traitement en cours...
+                  Traitement en cours…
                 </ng-container>
-                <ng-container *ngIf="!loading">
-                  <i class="bi bi-credit-card me-2"></i>
-                  {{ isSandbox ? '✅ Valider (Sandbox)' : 'Payer' }}
-                  {{ totalAmount | number:'1.0-0' }} FCFA
+                <ng-container *ngIf="!loading && isPaymentTypeSelected('cod')">
+                  <i class="bi bi-check-circle me-2"></i>
+                  Confirmer — paiement à la livraison
                 </ng-container>
+                <ng-container *ngIf="!loading && isOnlinePayment() && checkoutForm.get('payment_method')?.value">
+                  <i class="bi bi-lock-fill me-2"></i>
+                  {{ isSandbox ? 'Valider (Sandbox)' : 'Payer' }} {{ fees.total | number:'1.0-0' }} FCFA
+                </ng-container>
+                <ng-container *ngIf="!loading && !checkoutForm.get('payment_type')?.value">
+                  <i class="bi bi-arrow-right-circle me-2"></i>
+                  Choisissez un mode de paiement
+                </ng-container>
+                <ng-container *ngIf="!loading && isOnlinePayment() && !checkoutForm.get('payment_method')?.value">
+                  <i class="bi bi-arrow-right-circle me-2"></i>
+                  Choisissez une méthode de paiement
+                </ng-container>
+
               </button>
 
             </form>
@@ -164,18 +377,20 @@
         </div>
       </div>
 
-      <!-- ── Récapitulatif commande ──────────────────────────── -->
-      <div class="col-lg-4">
-        <div class="summary-card">
+      <!-- ══ RÉCAPITULATIF — order-1 mobile, order-lg-2 desktop ══ -->
+      <div class="col-lg-4 mb-4 order-1 order-lg-2">
 
+        <div class="summary-mobile-label d-lg-none">
+          <i class="bi bi-receipt"></i> Votre commande
+        </div>
+
+        <div class="summary-card">
           <div class="summary-header">
             <i class="bi bi-receipt"></i>
             <h5>Récapitulatif</h5>
           </div>
-
           <div class="summary-body">
 
-            <!-- Info établissement -->
             <div class="business-info">
               <h6>{{ business?.name }}</h6>
               <span class="business-type">
@@ -184,17 +399,13 @@
               </span>
             </div>
 
-            <!-- Articles -->
             <div class="order-items">
               <div class="order-item-checkout" *ngFor="let item of cart">
                 <div class="item-image-checkout">
-                  <img
-                    *ngIf="item.menu_item.image_url"
-                    [src]="item.menu_item.image_url"
-                    [alt]="item.menu_item.name"
-                    (error)="onImageError($event)">
+                  <img *ngIf="item.menu_item.image_url" [src]="item.menu_item.image_url"
+                    [alt]="item.menu_item.name" (error)="onImageError($event)">
                   <div *ngIf="!item.menu_item.image_url" class="item-placeholder-checkout">
-                    <i class="bi bi-image"></i>
+                    <i class="bi bi-egg-fried"></i>
                   </div>
                 </div>
                 <div class="item-info-checkout">
@@ -203,31 +414,56 @@
                     {{ item.quantity }} × {{ item.unit_price | number:'1.0-0' }} FCFA
                   </div>
                 </div>
-                <div class="item-price-checkout">
-                  {{ item.subtotal | number:'1.0-0' }} FCFA
-                </div>
+                <div class="item-price-checkout">{{ item.subtotal | number:'1.0-0' }} FCFA</div>
               </div>
             </div>
 
-            <!-- Total -->
-            <div class="summary-total">
-              <span>Total</span>
-              <strong>{{ totalAmount | number:'1.0-0' }} FCFA</strong>
+            <hr>
+
+            <div class="fees-breakdown">
+              <div class="fee-row">
+                <span>Sous-total</span>
+                <span class="fw-bold">{{ fees.subtotal | number:'1.0-0' }} FCFA</span>
+              </div>
+              <div class="fee-row" *ngIf="fees.deliveryFee > 0">
+                <span><i class="bi bi-truck"></i> Livraison</span>
+                <span class="text-warning">+{{ fees.deliveryFee | number:'1.0-0' }} FCFA</span>
+              </div>
+              <div class="fee-row" *ngIf="fees.paymentFee > 0">
+                <span><i class="bi bi-credit-card"></i> Frais transaction</span>
+                <span class="text-warning">+{{ fees.paymentFee | number:'1.0-0' }} FCFA</span>
+              </div>
+              <hr class="my-2">
+              <div class="fee-row total-row">
+                <span>Total à payer</span>
+                <span class="text-primary">{{ fees.total | number:'1.0-0' }} FCFA</span>
+              </div>
+            </div>
+
+            <div class="payment-summary-badge mt-3" *ngIf="checkoutForm.get('payment_type')?.value">
+              <div class="alert mb-0"
+                [ngClass]="isPaymentTypeSelected('cod') ? 'alert-warning' : 'alert-success'">
+                <i class="bi"
+                  [ngClass]="isPaymentTypeSelected('cod') ? 'bi-cash-coin' : 'bi-credit-card-fill'"></i>
+                <strong class="ms-2">
+                  {{ isPaymentTypeSelected('cod') ? 'Paiement à la livraison' : 'Paiement sécurisé en ligne' }}
+                </strong>
+              </div>
             </div>
 
           </div>
         </div>
 
-        <!-- Sécurité -->
-        <div class="security-info">
-          <i class="bi bi-shield-check"></i>
-          <p *ngIf="!isSandbox">Paiement sécurisé par CinetPay</p>
+        <div class="security-info mt-3 text-center">
+          <i class="bi bi-shield-lock"></i>
+          <p *ngIf="!isSandbox && isOnlinePayment()">Paiement sécurisé par CinetPay</p>
+          <p *ngIf="!isSandbox && isPaymentTypeSelected('cod')">Paiement en cash à la réception</p>
           <p *ngIf="isSandbox" class="text-warning">
             <strong>Mode test</strong> — aucun débit réel
           </p>
         </div>
-      </div>
 
+      </div>
     </div>
   </div>
 </div>

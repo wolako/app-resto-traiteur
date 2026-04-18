@@ -82,17 +82,14 @@ export class PlatformSettingsComponent implements OnInit {
   loadMaintenanceStatus(): void {
     this.maintenanceService.getMaintenanceStatus().subscribe({
       next: (status) => {
-        this.maintenanceData.enabled = status.enabled;
-        this.maintenanceData.message = status.message || 'L\'application est actuellement en maintenance. Veuillez réessayer dans quelques instants.';
+        this.maintenanceData.enabled  = status.enabled;
+        // ✅ Garder le message par défaut du formulaire si maintenance inactive
+        if (status.enabled && status.message) {
+          this.maintenanceData.message = status.message;
+        }
         this.maintenanceData.end_time = status.end_time || '';
       },
-      error: (err) => {
-        console.error('Erreur chargement statut maintenance:', err);
-        this.toastService.showError(
-          'Erreur de chargement',
-          'Impossible de charger le statut de maintenance'
-        );
-      }
+      error: (err) => console.error('Erreur chargement statut maintenance:', err)
     });
   }
 

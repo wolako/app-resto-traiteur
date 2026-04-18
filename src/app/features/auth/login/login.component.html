@@ -1,78 +1,130 @@
-<div class="container mt-5">
-    <div class="row justify-content-center">
-        <div class="col-md-6 col-lg-4">
-          <div class="card">
-            <div class="card-body">
-              <h2 class="card-title text-center mb-4">
-                <i class="bi bi-box-arrow-in-right"></i>
-                Connexion
-              </h2>
-              
-              <div *ngIf="error" class="error-message">
-                <i class="fas fa-exclamation-circle"></i>
-                <span>{{ error }}</span>
-              </div>
-              
-              <form [formGroup]="loginForm" (ngSubmit)="onSubmit()">
-                <div class="mb-3">
-                  <label for="email" class="form-label">Email</label>
-                  <input 
-                    type="email" 
-                    class="form-control" 
-                    id="email" 
-                    formControlName="email"
-                    [class.is-invalid]="loginForm.get('email')?.invalid && loginForm.get('email')?.touched">
-                  <div class="invalid-feedback" *ngIf="loginForm.get('email')?.invalid && loginForm.get('email')?.touched">
-                    Email requis et valide
-                  </div>
-                </div>
-                
-                <div class="mb-3">
-                  <div class="d-flex justify-content-between align-items-center mb-2">
-                    <label for="password" class="form-label mb-0">Mot de passe</label>
-                    <a routerLink="/forgot-password" class="text-primary small text-decoration-none">
-                      Mot de passe oublié ?
-                    </a>
-                  </div>
-                  <div class="input-wrapper">
-                    <i class="bi bi-lock"></i>
-                    <input 
-                      [type]="showPassword ? 'text' : 'password'"
-                      class="form-control" 
-                      id="password" 
-                      formControlName="password"
-                      [class.is-invalid]="loginForm.get('password')?.invalid && loginForm.get('password')?.touched"
-                      placeholder="Saisissez votre mot de passe">
-                    <button 
-                      type="button"
-                      class="toggle-password"
-                      (click)="togglePasswordVisibility()"
-                      tabindex="-1">
-                      <i class="bi" [class.bi-eye]="!showPassword" [class.bi-eye-slash]="showPassword"></i>
-                    </button>
-                  </div>
-                  <div class="invalid-feedback" *ngIf="loginForm.get('password')?.invalid && loginForm.get('password')?.touched">
-                    Mot de passe requis
-                  </div>
-                </div>
-                
-                <button 
-                  type="submit" 
-                  class="btn btn-primary w-100" 
-                  [disabled]="loginForm.invalid || loading">
-                  <span *ngIf="loading" class="spinner-border spinner-border-sm me-2"></span>
-                  Se connecter
-                </button>
-              </form>
-              
-              <div class="text-center mt-3">
-                <p>Pas encore de compte ?</p>
-                <a routerLink="/register" class="btn btn-outline-secondary">
-                  S'inscrire
-                </a>
-              </div>
-            </div>
+<div class="login-page">
+  <div class="login-card anim-fadeup">
+
+    <!-- Header -->
+    <div class="card-header-login">
+      <div class="brand-mark">
+        <i class="bi bi-person-circle"></i>
+      </div>
+      <h1>Bon retour</h1>
+      <p>Connectez-vous à votre espace RestoTraiteur</p>
+    </div>
+
+    <!-- Body -->
+    <div class="card-body-login">
+
+      <!-- Bannière erreur / redirection -->
+      <div *ngIf="error" class="error-banner"
+        [class.redirect-banner]="error.includes('partenaire') || error.includes('administrateurs')">
+        <i class="bi"
+          [class.bi-exclamation-circle-fill]="!error.includes('partenaire') && !error.includes('administrateurs')"
+          [class.bi-arrow-right-circle-fill]="error.includes('partenaire') || error.includes('administrateurs')">
+        </i>
+        <span>{{ error }}</span>
+      </div>
+
+      <!-- Toggle email / téléphone -->
+      <div class="login-mode-toggle">
+        <button type="button" class="mode-btn"
+          [class.active]="loginMode === 'email'"
+          (click)="switchMode('email')">
+          <i class="bi bi-envelope"></i> Email
+        </button>
+        <button type="button" class="mode-btn"
+          [class.active]="loginMode === 'phone'"
+          (click)="switchMode('phone')">
+          <i class="bi bi-telephone"></i> Téléphone
+        </button>
+      </div>
+
+      <!-- Formulaire -->
+      <form [formGroup]="loginForm" (ngSubmit)="onSubmit()">
+
+        <!-- Identifiant -->
+        <div class="form-group">
+          <label for="identifier" class="form-label">
+            {{ loginMode === 'email' ? 'Adresse email' : 'Numéro de téléphone' }}
+          </label>
+          <div class="input-wrapper">
+            <i class="bi"
+              [class.bi-envelope]="loginMode === 'email'"
+              [class.bi-telephone]="loginMode === 'phone'"></i>
+            <input
+              [type]="loginMode === 'email' ? 'email' : 'tel'"
+              class="form-control toggle-present"
+              id="identifier"
+              formControlName="identifier"
+              [placeholder]="loginMode === 'email' ? 'votre@email.com' : '+228 90 12 34 56'"
+              [class.is-invalid]="loginForm.get('identifier')?.invalid && loginForm.get('identifier')?.touched"
+              autocomplete="username">
+          </div>
+          <div class="invalid-feedback"
+            *ngIf="loginForm.get('identifier')?.touched && loginForm.get('identifier')?.errors?.['required']">
+            Ce champ est requis
+          </div>
+          <div class="invalid-feedback"
+            *ngIf="loginForm.get('identifier')?.touched && loginForm.get('identifier')?.errors?.['invalidEmail']">
+            Adresse email invalide
+          </div>
+          <div class="invalid-feedback"
+            *ngIf="loginForm.get('identifier')?.touched && loginForm.get('identifier')?.errors?.['invalidPhone']">
+            Numéro invalide — ex : +228 90 12 34 56
           </div>
         </div>
+
+        <!-- Mot de passe -->
+        <div class="form-group">
+          <div class="forgot-row">
+            <label for="password" class="form-label">Mot de passe</label>
+            <a routerLink="/forgot-password">Mot de passe oublié ?</a>
+          </div>
+          <div class="input-wrapper">
+            <i class="bi bi-lock"></i>
+            <input
+              [type]="showPassword ? 'text' : 'password'"
+              class="form-control toggle-present"
+              id="password"
+              formControlName="password"
+              [class.is-invalid]="loginForm.get('password')?.invalid && loginForm.get('password')?.touched"
+              placeholder="Votre mot de passe"
+              autocomplete="current-password">
+            <button type="button" class="toggle-password"
+              (click)="togglePasswordVisibility()" tabindex="-1"
+              [title]="showPassword ? 'Masquer' : 'Afficher'">
+              <i class="bi" [class.bi-eye]="!showPassword" [class.bi-eye-slash]="showPassword"></i>
+            </button>
+          </div>
+          <div class="invalid-feedback"
+            *ngIf="loginForm.get('password')?.invalid && loginForm.get('password')?.touched">
+            Mot de passe requis
+          </div>
+        </div>
+
+        <!-- Submit -->
+        <button type="submit" class="btn-login" [disabled]="loginForm.invalid || loading">
+          <span *ngIf="loading" class="spinner-border spinner-border-sm"></span>
+          <i *ngIf="!loading" class="bi bi-box-arrow-in-right"></i>
+          {{ loading ? 'Connexion...' : 'Se connecter' }}
+        </button>
+
+      </form>
+
+      <!-- Footer -->
+      <div class="card-footer-login">
+        <p>Pas encore de compte ?</p>
+        <a routerLink="/register" class="btn-register">
+          <i class="bi bi-person-plus"></i>
+          Créer un compte
+        </a>
+
+        <!-- Lien établissements — bien visible -->
+        <div class="business-login-hint">
+          <i class="bi bi-building"></i>
+          Vous êtes un restaurant ou traiteur ?
+          <a routerLink="/business/login">Connexion établissement →</a>
+        </div>
+      </div>
+
     </div>
+  </div>
 </div>

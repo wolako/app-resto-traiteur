@@ -19,6 +19,8 @@ export class AdminLoginComponent implements OnInit {
   loading = false;
   errorMessage = '';
 
+  currentYear = new Date().getFullYear();
+
   constructor(
     private fb: FormBuilder,
     private authService: AuthService,

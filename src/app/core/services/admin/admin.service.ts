@@ -195,4 +195,34 @@ export class AdminService {
     );
   }
 
+  // =============================================
+  // COMPTES DE PAIEMENT (NOUVEAU)
+  // =============================================
+  
+  getAllPaymentAccounts(status?: string): Observable<any> {
+    const params = status ? `?status=${status}` : '';
+    return this.http.get<any>(`${environment.apiUrl}/admin/payment-accounts${params}`);
+  }
+  
+  verifyPaymentAccount(accountId: number, adminNotes?: string): Observable<any> {
+    return this.http.put<any>(
+      `${environment.apiUrl}/admin/payment-accounts/${accountId}/verify`,
+      { admin_notes: adminNotes || null }
+    );
+  }
+ 
+  rejectPaymentAccount(accountId: number, rejectionReason: string, adminNotes?: string): Observable<any> {
+    return this.http.put<any>(
+      `${environment.apiUrl}/admin/payment-accounts/${accountId}/reject`,
+      { rejection_reason: rejectionReason, admin_notes: adminNotes || null }
+    );
+  }
+ 
+  suspendPaymentAccount(accountId: number, reason?: string): Observable<any> {
+    return this.http.put<any>(
+      `${environment.apiUrl}/admin/payment-accounts/${accountId}/suspend`,
+      { reason: reason || null }
+    );
+  }
+
 }

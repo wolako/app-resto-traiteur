@@ -1,5 +1,3 @@
-// controllers/supportController.js - VERSION CORRIGÉE
-
 const { pool } = require('../config/db');
 
 /**

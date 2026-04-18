@@ -1,6 +1,7 @@
 // middleware/subscriptionLimits.js - NOUVELLE LOGIQUE AVEC LIMITES
 
-const pool = require('../config/db');
+// ✅ CORRECTION : déstructuration nécessaire car config/db.js exporte { pool }
+const { pool } = require('../config/db');
 
 /**
  * ✅ NOUVELLE LOGIQUE :
@@ -341,17 +342,14 @@ async function checkMonthlySpecialOrdersLimit(req, res, next) {
 
 // ✅ Fonctions de compatibilité (gardées pour ne pas casser le code existant)
 async function checkOnlineOrdersAllowed(req, res, next) {
-  // Maintenant, on vérifie juste la limite mensuelle
   return checkMonthlyOrdersLimit(req, res, next);
 }
 
 async function checkReservationsAllowed(req, res, next) {
-  // Maintenant, on vérifie juste la limite mensuelle
   return checkMonthlyReservationsLimit(req, res, next);
 }
 
 async function checkSpecialOrdersAllowed(req, res, next) {
-  // Maintenant, on vérifie juste la limite mensuelle
   return checkMonthlySpecialOrdersLimit(req, res, next);
 }
 

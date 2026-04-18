@@ -1,419 +1,659 @@
+// ═══════════════════════════════════════════════════════════════════════════
+// SPECIAL ORDER — Style gastronomique premium
+// Cohérent avec le design system RT (variables depuis styles.scss)
+// ═══════════════════════════════════════════════════════════════════════════
+
+// ─── Page wrapper ─────────────────────────────────────────────────────────────
 .special-order-container {
   min-height: 100vh;
-  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-  padding: 2rem 0;
+  background: var(--rt-bg);
+  padding: 40px 0 80px;
+  position: relative;
 
-  .order-header {
-    text-align: center;
-    margin-bottom: 2rem;
-    
-    h2 {
-      color: #2c3e50;
-      font-weight: 700;
-      margin-bottom: 0.5rem;
-      background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-    }
+  &::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background:
+      radial-gradient(ellipse 65% 45% at 5%  0%,   rgba(212,168,67,0.06) 0%, transparent 55%),
+      radial-gradient(ellipse 55% 40% at 95% 100%,  rgba(42,157,92,0.05)  0%, transparent 55%);
+    pointer-events: none;
+    z-index: 0;
   }
 
-  // Section de succès
-  .success-message {
-    text-align: center;
-    padding: 3rem 2rem;
-    background: white;
-    border-radius: 20px;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-    margin: 2rem 0;
-    border: 1px solid #e9ecef;
-    animation: fadeInUp 0.6s ease-out;
-    
-    .success-icon {
-      font-size: 4rem;
-      color: #28a745;
-      margin-bottom: 1.5rem;
-      animation: bounceIn 0.8s ease-out;
-    }
-    
-    h3 {
-      color: #28a745;
-      font-weight: 700;
-      margin-bottom: 1rem;
-      font-size: 1.8rem;
-    }
-    
-    p {
-      color: #6c757d;
-      font-size: 1.1rem;
-      line-height: 1.6;
-      margin-bottom: 2rem;
-      max-width: 500px;
-      margin-left: auto;
-      margin-right: auto;
-    }
-    
-    .btn {
-      border-radius: 10px;
-      padding: 0.75rem 2rem;
-      font-weight: 600;
-      transition: all 0.3s ease;
-      
-      &:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
-      }
-    }
-  }
+  .container { position: relative; z-index: 1; }
+}
 
-  // Alertes
-  .alert {
-    border-radius: 15px;
-    border: none;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-    margin: 1rem 0;
-    
-    &-success {
-      background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
-      color: #155724;
-      border-left: 4px solid #28a745;
-    }
-    
-    &-danger {
-      background: linear-gradient(135deg, #f8d7da 0%, #f1b0b7 100%);
-      color: #721c24;
-      border-left: 4px solid #dc3545;
-    }
-  }
+// ═══════════════════════════════════════════════════════════════════════════
+// HEADER DE PAGE
+// ═══════════════════════════════════════════════════════════════════════════
+.order-header {
+  margin-bottom: 28px;
+  animation: rt-fadeUp 0.35s ease-out both;
 
-  // Carte du traiteur
-  .caterer-card {
-    .caterer-image {
-      width: 80px;
-      height: 80px;
-      object-fit: cover;
-      border: 3px solid #007bff;
-      border-radius: 50%;
-    }
-
-    .card {
-      transition: transform 0.2s ease-in-out;
-      border-radius: 15px;
-      border: none;
-      box-shadow: 0 5px 20px rgba(0,0,0,0.1);
-      
-      &:hover {
-        transform: translateY(-5px);
-      }
-    }
-  }
-
-  // Carte du formulaire
-  .order-card {
-    background: white;
-    border-radius: 20px;
-    padding: 2rem;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-    border: 1px solid #e9ecef;
-    animation: fadeIn 0.6s ease-out;
-    
-    .card-header {
-      background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
-      color: white;
-      padding: 1.5rem 2rem;
-      margin: -2rem -2rem 2rem -2rem;
-      border-radius: 20px 20px 0 0;
-      
-      h3 {
-        margin: 0;
-        font-weight: 600;
-      }
-    }
-  }
-
-  // Sections du formulaire
-  .form-section {
-    padding-bottom: 2rem;
-    border-bottom: 1px solid #e9ecef;
-    margin-bottom: 2rem;
-    
-    &:last-of-type {
-      border-bottom: none;
-      margin-bottom: 1rem;
-    }
-
-    h4 {
-      color: #495057;
-      font-weight: 600;
-      margin-bottom: 1.5rem;
-      padding-bottom: 0.5rem;
-      border-bottom: 2px solid #007bff;
-      display: inline-block;
-      
-      i {
-        margin-right: 0.5rem;
-        color: #007bff;
-      }
-    }
-  }
-
-  .form-label {
-    font-weight: 600;
-    color: #495057;
-    margin-bottom: 0.5rem;
-    
-    i {
-      margin-right: 0.5rem;
-      color: #6c757d;
-    }
-  }
-
-  .form-control, .form-select {
-    border: 2px solid #e9ecef;
+  .btn-back {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 8px 16px;
+    background: var(--rt-sfc);
+    border: 1px solid var(--rt-bdr);
     border-radius: 10px;
-    padding: 0.75rem 1rem;
-    transition: all 0.3s ease;
-    font-size: 1rem;
-    
-    &:focus {
-      border-color: #007bff;
-      box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
-      transform: translateY(-2px);
-    }
-    
-    &.is-invalid {
-      border-color: #dc3545;
-      box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.25);
+    color: var(--rt-t2);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.82rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: var(--rt-tr);
+    margin-bottom: 20px;
+
+    i { font-size: 0.9rem; }
+
+    &:hover {
+      background: var(--rt-primary-s);
+      color: var(--rt-primary);
+      border-color: rgba(201,64,64,0.25);
+      transform: translateX(-2px);
     }
   }
 
-  .form-text {
-    font-size: 0.875rem;
-    color: #6c757d;
-    margin-top: 0.25rem;
-  }
-
-  // Boîte d'information
-  .info-box {
-    background: linear-gradient(135deg, #e8f4fd 0%, #d1ecf1 100%);
-    border: 1px solid #b8daff;
-    border-radius: 15px;
-    padding: 1.5rem;
-    margin: 2rem 0;
+  h2 {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: var(--rt-t1);
+    margin: 0 0 6px;
     display: flex;
-    gap: 1rem;
-    align-items: flex-start;
+    align-items: center;
+    gap: 12px;
+    letter-spacing: -0.02em;
 
-    i {
-      color: #007bff;
-      font-size: 1.5rem;
-      margin-top: 0.25rem;
-      flex-shrink: 0;
-    }
-
-    strong {
-      color: #004085;
-      display: block;
-      margin-bottom: 0.5rem;
-    }
-
-    p {
-      color: #004085;
-      margin-bottom: 0;
-      line-height: 1.6;
-    }
+    i { color: var(--rt-accent); font-size: 1.6rem; }
   }
 
-  // Boutons
-  .btn {
-    border-radius: 10px;
-    padding: 0.75rem 2rem;
-    font-weight: 600;
-    transition: all 0.3s ease;
-    border: none;
-    
-    &-primary {
-      background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
-      
-      &:hover:not(:disabled) {
-        transform: translateY(-2px);
-        box-shadow: 0 6px 20px rgba(0, 123, 255, 0.4);
-      }
-      
-      &:disabled {
-        opacity: 0.6;
-        cursor: not-allowed;
-        transform: none;
-      }
-    }
-    
-    &-outline-secondary {
-      border: 2px solid #6c757d;
-      background: transparent;
-      color: #6c757d;
-      
-      &:hover {
-        background: linear-gradient(135deg, #6c757d 0%, #545b62 100%);
-        color: white;
-        transform: translateY(-2px);
-      }
-    }
+  .traiteur-name {
+    font-size: 0.88rem;
+    color: var(--rt-t3);
+    margin: 0;
+    font-weight: 500;
 
-    &-secondary {
-      background: linear-gradient(135deg, #6c757d 0%, #545b62 100%);
-      
-      &:hover:not(:disabled) {
-        transform: translateY(-2px);
-        box-shadow: 0 6px 20px rgba(108, 117, 125, 0.4);
-      }
+    span {
+      color: var(--rt-primary);
+      font-weight: 600;
     }
-  }
-
-  .form-actions {
-    text-align: center;
-    margin-top: 2rem;
-    
-    .btn {
-      min-width: 160px;
-      margin: 0 0.5rem;
-    }
-  }
-
-  .badge {
-    font-size: 0.875rem;
-    padding: 0.5rem 1rem;
-    border-radius: 20px;
-  }
-
-  // Responsive
-  @media (max-width: 768px) {
-    padding: 1rem 0;
-
-    .order-header {
-      h2 {
-        font-size: 1.8rem;
-      }
-    }
-
-    .success-message {
-      padding: 2rem 1rem;
-      margin: 1rem 0;
-      
-      h3 {
-        font-size: 1.5rem;
-      }
-      
-      p {
-        font-size: 1rem;
-      }
-    }
-
-    .caterer-card {
-      .caterer-image {
-        width: 60px;
-        height: 60px;
-      }
-    }
-
-    .order-card {
-      padding: 1.5rem;
-      margin: 0 0.5rem;
-    }
-
-    .info-box {
-      flex-direction: column;
-      text-align: center;
-      padding: 1rem;
-    }
-
-    .form-actions {
-      text-align: center;
-      
-      .btn {
-        width: 100%;
-        margin-bottom: 1rem;
-        
-        &:last-child {
-          margin-bottom: 0;
-        }
-      }
-    }
-  }
-
-  @media (max-width: 576px) {
-    .order-card {
-      padding: 1rem;
-    }
-
-    .form-section {
-      padding-bottom: 1.5rem;
-      margin-bottom: 1.5rem;
-    }
-  }
-
-  // Animations
-  @keyframes fadeIn {
-    from {
-      opacity: 0;
-      transform: translateY(20px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
-  }
-
-  @keyframes fadeInUp {
-    from {
-      opacity: 0;
-      transform: translateY(30px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
-  }
-
-  @keyframes bounceIn {
-    0% {
-      opacity: 0;
-      transform: scale(0.3);
-    }
-    50% {
-      opacity: 1;
-      transform: scale(1.05);
-    }
-    70% {
-      transform: scale(0.9);
-    }
-    100% {
-      opacity: 1;
-      transform: scale(1);
-    }
-  }
-
-  .order-card {
-    animation: fadeIn 0.6s ease-out;
   }
 }
 
-.success-actions {
+// ─── Alerte Sandbox ───────────────────────────────────────────────────────────
+.alert {
   display: flex;
-  gap: 1rem;
-  justify-content: center;
-  flex-wrap: wrap;
-  
-  .btn {
-    min-width: 180px;
+  align-items: flex-start;
+  gap: 10px;
+  border-radius: 12px !important;
+  font-size: 0.83rem;
+  font-weight: 500;
+  border: 1px solid !important;
+  padding: 12px 16px !important;
+
+  i { font-size: 1rem; flex-shrink: 0; margin-top: 1px; }
+
+  &.alert-warning {
+    background: var(--rt-accent-s) !important;
+    color: #8a6a10 !important;
+    border-color: rgba(212,168,67,0.25) !important;
   }
-  
-  @media (max-width: 576px) {
-    flex-direction: column;
+  &.alert-info {
+    background: var(--rt-blue-s) !important;
+    color: var(--rt-blue) !important;
+    border-color: rgba(43,127,191,0.20) !important;
+  }
+  &.alert-success {
+    background: var(--rt-green-s) !important;
+    color: var(--rt-green) !important;
+    border-color: rgba(42,157,92,0.20) !important;
+  }
+
+  small { display: block; margin-top: 3px; font-size: 0.75rem; opacity: 0.8; }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// ÉTAPE 1 : CARTE FORMULAIRE
+// ═══════════════════════════════════════════════════════════════════════════
+.order-card {
+  background: var(--rt-sfc);
+  border: 1px solid var(--rt-bdr);
+  border-radius: 22px;
+  overflow: hidden;
+  box-shadow: 0 10px 44px rgba(92,61,46,0.11);
+  animation: rt-fadeUp 0.4s ease-out both;
+}
+
+// ─── Section du formulaire ────────────────────────────────────────────────────
+.form-section {
+  padding: 28px 32px;
+  border-bottom: 1px solid var(--rt-bdr);
+  animation: rt-fadeUp 0.4s ease-out both;
+
+  &:last-of-type { border-bottom: none; }
+  &:nth-child(1) { animation-delay: 0.00s; }
+  &:nth-child(2) { animation-delay: 0.05s; }
+  &:nth-child(3) { animation-delay: 0.10s; }
+  &:nth-child(4) { animation-delay: 0.15s; }
+
+  @media (max-width: 576px) { padding: 22px 20px; }
+
+  h4 {
+    display: flex;
     align-items: center;
-    
-    .btn {
-      width: 100%;
-      max-width: 250px;
+    gap: 9px;
+    font-family: 'Playfair Display', serif;
+    font-size: 1.05rem;
+    font-weight: 600;
+    color: var(--rt-t1);
+    margin: 0 0 20px;
+    padding-bottom: 14px;
+    border-bottom: 1px solid var(--rt-bdr);
+
+    i { color: var(--rt-primary); font-size: 1rem; }
+  }
+}
+
+// ─── Labels ───────────────────────────────────────────────────────────────────
+.form-label {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--rt-t2);
+  margin-bottom: 6px;
+  letter-spacing: 0.02em;
+  display: block;
+}
+
+// ─── Inputs ───────────────────────────────────────────────────────────────────
+.form-control,
+.form-select {
+  background: var(--rt-raised) !important;
+  border: 1.5px solid var(--rt-bdr) !important;
+  border-radius: 11px !important;
+  color: var(--rt-t1) !important;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.86rem !important;
+  padding: 10px 14px !important;
+  transition: var(--rt-tr) !important;
+  box-shadow: none !important;
+
+  &::placeholder { color: var(--rt-t4) !important; }
+
+  &:focus {
+    border-color: var(--rt-accent) !important;
+    box-shadow: 0 0 0 3px rgba(212,168,67,0.12) !important;
+    background: var(--rt-sfc) !important;
+  }
+
+  &.is-invalid {
+    border-color: var(--rt-primary) !important;
+    box-shadow: 0 0 0 3px rgba(201,64,64,0.08) !important;
+  }
+
+  option { background: var(--rt-sfc); color: var(--rt-t1); }
+}
+
+textarea.form-control {
+  resize: vertical;
+  min-height: 80px;
+  line-height: 1.6;
+}
+
+.invalid-feedback {
+  font-size: 0.72rem;
+  color: var(--rt-primary);
+  margin-top: 4px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+
+  &::before { content: '⚠ '; font-size: 0.68rem; }
+}
+
+// ─── Actions formulaire ───────────────────────────────────────────────────────
+.form-actions {
+  padding: 24px 32px;
+  background: var(--rt-raised);
+  border-top: 1px solid var(--rt-bdr);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+
+  @media (max-width: 576px) { padding: 18px 20px; flex-direction: column; }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 12px 28px;
+    border-radius: 12px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.88rem;
+    font-weight: 700;
+    border: none;
+    cursor: pointer;
+    transition: var(--rt-tr);
+    white-space: nowrap;
+
+    @media (max-width: 576px) { width: 100%; }
+
+    &:disabled { opacity: 0.5; cursor: not-allowed; transform: none !important; box-shadow: none !important; }
+
+    // Envoyer la demande
+    &.btn-primary {
+      background: var(--g-primary) !important;
+      color: #fff !important;
+      box-shadow: 0 6px 22px rgba(201,64,64,0.28) !important;
+
+      &:hover:not(:disabled) {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 30px rgba(201,64,64,0.42) !important;
+      }
+    }
+
+    // Accepter devis
+    &.btn-success {
+      background: linear-gradient(135deg, #2A9D5C 0%, #3DBF70 100%) !important;
+      color: #fff !important;
+      box-shadow: 0 6px 22px rgba(42,157,92,0.28) !important;
+
+      &:hover:not(:disabled) {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 30px rgba(42,157,92,0.42) !important;
+      }
+    }
+
+    // Secondaires
+    &.btn-outline-primary {
+      background: transparent !important;
+      border: 1.5px solid rgba(43,127,191,0.35) !important;
+      color: var(--rt-blue) !important;
+
+      &:hover { background: var(--rt-blue-s) !important; }
+    }
+
+    &.btn-outline-secondary {
+      background: var(--rt-raised) !important;
+      border: 1.5px solid var(--rt-bdr) !important;
+      color: var(--rt-t2) !important;
+
+      &:hover { background: var(--rt-bg-alt) !important; border-color: var(--rt-bdr-hi) !important; }
+    }
+
+    .spinner-border {
+      width: 16px; height: 16px;
+      border-width: 2px;
+      color: rgba(255,255,255,0.85) !important;
     }
   }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// ÉTAPE 2 : ATTENTE DEVIS
+// ═══════════════════════════════════════════════════════════════════════════
+.waiting-card {
+  background: var(--rt-sfc);
+  border: 1px solid var(--rt-bdr);
+  border-radius: 22px;
+  box-shadow: 0 10px 44px rgba(92,61,46,0.11);
+  padding: 60px 40px !important;
+  text-align: center;
+  animation: rt-fadeUp 0.45s ease-out both;
+
+  .waiting-icon {
+    width: 90px;
+    height: 90px;
+    border-radius: 50%;
+    background: var(--rt-accent-s);
+    border: 3px solid rgba(212,168,67,0.25);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 24px;
+    animation: hourglass-spin 3s ease-in-out infinite;
+
+    i { font-size: 2.4rem; color: var(--rt-accent); }
+  }
+
+  h3 {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.55rem;
+    font-weight: 700;
+    color: var(--rt-t1);
+    margin-bottom: 12px;
+  }
+
+  p {
+    font-size: 0.88rem;
+    color: var(--rt-t3);
+    line-height: 1.7;
+    margin-bottom: 28px;
+    max-width: 420px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .waiting-actions {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+}
+
+@keyframes hourglass-spin {
+  0%, 100% { transform: rotate(0deg); }
+  45%       { transform: rotate(0deg); }
+  55%       { transform: rotate(180deg); }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// ÉTAPE 3 : DEVIS REÇU
+// ═══════════════════════════════════════════════════════════════════════════
+.quote-card {
+  background: var(--rt-sfc);
+  border: 1px solid var(--rt-bdr);
+  border-radius: 22px;
+  overflow: hidden;
+  box-shadow: 0 10px 44px rgba(92,61,46,0.11);
+  animation: rt-fadeUp 0.4s ease-out both;
+}
+
+.quote-header {
+  padding: 28px 32px 24px;
+  background: var(--rt-raised);
+  border-bottom: 1px solid var(--rt-bdr);
+
+  @media (max-width: 576px) { padding: 22px 20px 20px; }
+}
+
+// Détails du devis
+.quote-details-card {
+  margin: 24px 32px;
+  background: var(--rt-raised);
+  border: 1px solid var(--rt-bdr);
+  border-radius: 14px;
+  overflow: hidden;
+
+  @media (max-width: 576px) { margin: 20px 16px; }
+}
+
+.quote-details-header {
+  padding: 14px 20px;
+  background: var(--g-primary);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  i { color: rgba(255,255,255,0.85); font-size: 0.95rem; }
+
+  h4 {
+    font-family: 'Playfair Display', serif;
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #fff;
+    margin: 0;
+  }
+}
+
+.quote-details-body {
+  padding: 18px 20px;
+}
+
+.quote-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--rt-bdr);
+  font-size: 0.84rem;
+
+  &:last-child { border-bottom: none; }
+
+  span:first-child { color: var(--rt-t3); flex: 1; }
+
+  strong {
+    color: var(--rt-t1);
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+
+  &.total-quote-row {
+    padding-top: 14px;
+    margin-top: 4px;
+    border-top: 2px solid var(--rt-bdr-hi);
+
+    span:first-child {
+      font-family: 'DM Sans', sans-serif;
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: var(--rt-t2);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    strong {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.35rem;
+      color: var(--rt-primary);
+    }
+  }
+}
+
+.quote-notes-block {
+  margin: 0 32px 24px;
+  padding: 14px 18px;
+  background: var(--rt-blue-s);
+  border: 1px solid rgba(43,127,191,0.18);
+  border-radius: 11px;
+  font-size: 0.82rem;
+  color: var(--rt-blue);
+  line-height: 1.6;
+
+  strong { display: block; margin-bottom: 4px; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.05em; }
+
+  @media (max-width: 576px) { margin: 0 16px 20px; }
+}
+
+// ─── Section paiement dans quote-card ────────────────────────────────────────
+.payment-section-quote {
+  padding: 0 32px 0;
+
+  @media (max-width: 576px) { padding: 0 16px 0; }
+
+  h5 {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    font-family: 'Playfair Display', serif;
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--rt-t1);
+    margin: 0 0 16px;
+
+    i { color: var(--rt-primary); }
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// GRILLE MÉTHODES DE PAIEMENT (réutilisable)
+// ═══════════════════════════════════════════════════════════════════════════
+.payment-methods-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 10px;
+  margin-bottom: 20px;
+
+  @media (max-width: 480px) { grid-template-columns: 1fr 1fr; }
+}
+
+.payment-method-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 6px;
+  padding: 16px 12px 14px;
+  background: var(--rt-sfc);
+  border: 2px solid var(--rt-bdr);
+  border-radius: 13px;
+  cursor: pointer;
+  transition: var(--rt-tr);
+  user-select: none;
+
+  &:hover {
+    border-color: var(--rt-bdr-hi);
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-sm);
+  }
+
+  &.selected {
+    border-color: var(--rt-primary);
+    background: var(--rt-primary-s);
+    box-shadow: 0 4px 18px rgba(201,64,64,0.14);
+    transform: translateY(-3px);
+  }
+
+  .method-icon {
+    font-size: 1.8rem;
+    line-height: 1;
+  }
+
+  .method-label {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.76rem;
+    font-weight: 600;
+    color: var(--rt-t1);
+    line-height: 1.3;
+  }
+
+  .check-icon {
+    position: absolute;
+    top: 8px; right: 8px;
+    font-size: 0.85rem;
+    animation: rt-popIn 0.2s cubic-bezier(0.34,1.56,0.64,1) both;
+
+    i { color: var(--rt-green) !important; }
+  }
+
+  small.text-warning {
+    font-size: 0.67rem;
+    color: var(--rt-accent) !important;
+    font-weight: 600;
+  }
+}
+
+// ─── Récapitulatif acompte ────────────────────────────────────────────────────
+.deposit-summary {
+  background: var(--rt-sfc) !important;
+  border: 1px solid var(--rt-bdr) !important;
+  border-radius: 13px !important;
+  padding: 16px 20px !important;
+  animation: rt-fadeUp 0.25s ease-out both;
+
+  .d-flex {
+    font-size: 0.83rem;
+    color: var(--rt-t2);
+    span:first-child { color: var(--rt-t3); }
+    strong { color: var(--rt-t1); font-weight: 700; }
+    .text-warning { color: var(--rt-accent) !important; font-weight: 600; }
+  }
+
+  hr { border: none; border-top: 1px solid var(--rt-bdr); margin: 10px 0; }
+
+  .d-flex:last-child {
+    strong:first-child { font-size: 0.82rem; color: var(--rt-t1); }
+    strong.text-primary {
+      font-family: 'Playfair Display', serif !important;
+      font-size: 1.2rem !important;
+      font-weight: 700 !important;
+      color: var(--rt-primary) !important;
+    }
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// ÉTAPE 4 : CONFIRMATION
+// ═══════════════════════════════════════════════════════════════════════════
+.success-card {
+  background: var(--rt-sfc);
+  border: 1px solid var(--rt-bdr);
+  border-radius: 22px;
+  box-shadow: 0 10px 44px rgba(92,61,46,0.11);
+  padding: 60px 40px !important;
+  text-align: center;
+  animation: rt-popIn 0.5s cubic-bezier(0.34,1.56,0.64,1) both;
+
+  .success-icon {
+    width: 90px;
+    height: 90px;
+    border-radius: 50%;
+    background: var(--rt-green-s);
+    border: 3px solid rgba(42,157,92,0.25);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 24px;
+
+    i {
+      font-size: 2.6rem;
+      color: var(--rt-green);
+      animation: rt-popIn 0.4s 0.15s cubic-bezier(0.34,1.56,0.64,1) both;
+    }
+  }
+
+  h3 {
+    font-family: 'Playfair Display', serif;
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: var(--rt-t1);
+    margin-bottom: 12px;
+  }
+
+  p {
+    font-size: 0.88rem;
+    color: var(--rt-t3);
+    line-height: 1.7;
+    margin-bottom: 28px;
+    max-width: 440px;
+    margin-left: auto;
+    margin-right: auto;
+
+    strong { color: var(--rt-primary); font-weight: 700; }
+  }
+
+  .success-actions {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+}
+
+// ─── Padding bas pour payment-section-quote ──────────────────────────────────
+.payment-section-quote {
+  padding-bottom: 4px;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// RESPONSIVE
+// ═══════════════════════════════════════════════════════════════════════════
+@media (max-width: 768px) {
+  .special-order-container { padding: 20px 0 60px; }
+
+  .order-header h2 { font-size: 1.5rem; }
+
+  .waiting-card,
+  .success-card { padding: 40px 24px !important; }
+
+  .quote-header,
+  .payment-section-quote { padding-left: 20px; padding-right: 20px; }
 }

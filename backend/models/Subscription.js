@@ -1,7 +1,9 @@
-const pool = require('../config/db');
+const { pool } = require('../config/db');
 
 class Subscription {
-  // ✅ CORRECTION: Ajouter billing_period dans la requête
+
+  // ✅ CORRECTION 1 : Exclure les abonnements dont end_date est dépassée
+  // Même si status = 'active', si end_date < NOW() l'abonnement est expiré
   static async getByBusinessId(businessId) {
     const result = await pool.query(
       `SELECT bs.*, 
@@ -11,7 +13,9 @@ class Subscription {
               sp.max_menu_items, 
               sp.max_orders_per_month, 
               sp.max_photos,
-              sp.billing_period,  -- ✅ AJOUTÉ
+              sp.billing_period,
+              sp.max_reservations_per_month,
+              sp.max_special_orders_per_month,
               sp.can_accept_online_orders, 
               sp.can_accept_reservations, 
               sp.can_accept_special_orders, 
@@ -20,7 +24,9 @@ class Subscription {
               sp.custom_branding
        FROM business_subscriptions bs
        JOIN subscription_plans sp ON bs.plan_id = sp.id
-       WHERE bs.business_id = $1 AND bs.status = 'active'
+       WHERE bs.business_id = $1 
+         AND bs.status = 'active'
+         AND (bs.end_date IS NULL OR bs.end_date > NOW())  -- ✅ filtre les expirés
        ORDER BY bs.created_at DESC
        LIMIT 1`,
       [businessId]
@@ -67,24 +73,30 @@ class Subscription {
        JOIN businesses b ON bs.business_id = b.id
        JOIN subscription_plans sp ON bs.plan_id = sp.id
        WHERE bs.status = 'active' 
-       AND bs.end_date IS NOT NULL
-       AND bs.end_date BETWEEN NOW() AND NOW() + INTERVAL '${days} days'
+         AND bs.end_date IS NOT NULL
+         AND bs.end_date BETWEEN NOW() AND NOW() + INTERVAL '${days} days'
        ORDER BY bs.end_date ASC`
     );
     return result.rows;
   }
 
-  static async getBusinessSubscription(businessId) {
+  // ✅ NOUVEAU : Expirer tous les abonnements dont end_date est dépassée
+  // Appelé par le cron job chaque nuit
+  static async expireOverdueSubscriptions() {
     const result = await pool.query(
-      `SELECT bs.*, sp.commission_rate, sp.billing_period  -- ✅ AJOUTÉ
-      FROM business_subscriptions bs
-      JOIN subscription_plans sp ON bs.plan_id = sp.id
-      WHERE bs.business_id = $1 AND bs.status = 'active'
-      ORDER BY bs.created_at DESC
-      LIMIT 1`,
-      [businessId]
+      `UPDATE business_subscriptions
+       SET status = 'expired', updated_at = NOW()
+       WHERE status = 'active'
+         AND end_date IS NOT NULL
+         AND end_date < NOW()
+       RETURNING id, business_id, plan_id, end_date`
     );
-    return result.rows[0];
+    return result.rows; // Liste des abonnements qui viennent d'être expirés
+  }
+
+  static async getBusinessSubscription(businessId) {
+    // Même correction que getByBusinessId
+    return this.getByBusinessId(businessId);
   }
 }
 

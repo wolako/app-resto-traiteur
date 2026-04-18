@@ -18,12 +18,12 @@ class OrderReceiptService {
    */
   async sendOrderReceipt(orderId, clientInfo = {}) {
     try {
-      logger.info(`📄 Génération reçu commande #${orderId}`);
+      logger.info(`📄 Génération reçu commande ${orderId}`);
 
       // 1. Récupérer toutes les données de la commande
       const orderData = await receiptService.buildOrderReceiptData(pool, orderId);
       if (!orderData) {
-        logger.error(`Commande #${orderId} introuvable pour reçu`);
+        logger.error(`Commande ${orderId} introuvable pour reçu`);
         return { success: false, error: 'Commande introuvable' };
       }
 
@@ -36,7 +36,7 @@ class OrderReceiptService {
 
       // 2. Générer le PDF
       const pdfBuffer = await receiptService.generateReceiptBuffer(orderData);
-      logger.info(`✅ PDF généré pour commande #${orderId} (${pdfBuffer.length} bytes)`);
+      logger.info(`✅ PDF généré pour commande ${orderId} (${pdfBuffer.length} bytes)`);
 
       const toEmail  = orderData.client_email || clientInfo.email;
       const toPhone  = orderData.client_phone || clientInfo.phone;
@@ -56,15 +56,15 @@ class OrderReceiptService {
         });
         results.email = emailResult.success;
         if (emailResult.success) {
-          logger.info(`📧 Reçu email envoyé à ${toEmail} pour commande #${orderId}`);
+          logger.info(`📧 Reçu email envoyé à ${toEmail} pour commande ${orderId}`);
         }
       } else {
-        logger.warn(`⚠️ Pas d'email pour commande #${orderId}, reçu email non envoyé`);
+        logger.warn(`⚠️ Pas d'email pour commande ${orderId}, reçu email non envoyé`);
       }
 
       // 4. SMS de confirmation (surtout pour les invités sans email)
       if (toPhone) {
-        const smsMsg = `✅ RestoTraiteur - Reçu commande #${orderId}\n`
+        const smsMsg = `✅ RestoTraiteur - Reçu commande ${orderId}\n`
           + `Établissement: ${orderData.business_name}\n`
           + `Montant: ${amount} FCFA\n`
           + `${toEmail ? 'Votre reçu PDF a été envoyé par email.' : 'Merci de votre commande !'}`;
@@ -86,7 +86,7 @@ class OrderReceiptService {
       return { success: true, ...results };
 
     } catch (error) {
-      logger.error(`❌ Erreur génération reçu commande #${orderId}:`, error.message);
+      logger.error(`❌ Erreur génération reçu commande ${orderId}:`, error.message);
       return { success: false, error: error.message };
     }
   }
@@ -130,7 +130,7 @@ class OrderReceiptService {
       }
 
       if (toPhone) {
-        const smsMsg = `✅ RestoTraiteur - Reçu commande spéciale #SP-${specialOrderId}\n`
+        const smsMsg = `✅ RestoTraiteur - Reçu commande spéciale SP-${specialOrderId}\n`
           + `Établissement: ${orderData.business_name}\n`
           + `Événement: ${orderData.event_type}\n`
           + `Budget: ${amount} FCFA\n`
@@ -151,7 +151,7 @@ class OrderReceiptService {
       return { success: true, ...results };
 
     } catch (error) {
-      logger.error(`❌ Erreur reçu commande spéciale #${specialOrderId}:`, error.message);
+      logger.error(`❌ Erreur reçu commande spéciale ${specialOrderId}:`, error.message);
       return { success: false, error: error.message };
     }
   }
@@ -218,7 +218,7 @@ class OrderReceiptService {
         user_id:       userId,
         type:          'order_receipt',
         title:         '🧾 Reçu disponible',
-        message:       `Votre reçu pour la commande #${isSpecial ? 'SP-' : ''}${orderId} chez ${orderData.business_name} est disponible. Téléchargez-le depuis l'onglet Commandes.`,
+        message:       `Votre reçu pour la commande ${isSpecial ? 'SP-' : ''}${orderId} chez ${orderData.business_name} est disponible. Téléchargez-le depuis l'onglet Commandes.`,
         reference_id:  orderId,
         reference_type: isSpecial ? 'special_order' : 'order',
         priority:      'normal',

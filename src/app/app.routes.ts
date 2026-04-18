@@ -9,6 +9,7 @@ import { ReservationFormComponent } from './features/reservations/reservation-fo
 import { CheckoutComponent } from './features/orders/checkout/checkout.component';
 import { RegisterComponent } from './features/auth/register/register.component';
 import { LoginComponent } from './features/auth/login/login.component';
+import { BusinessLoginComponent } from './features/auth/business-login/business-login.component';
 import { AdminLoginComponent } from './features/auth/admin-login/admin-login.component';
 import { SpecialOrderComponent } from './features/special-order/special-order.component';
 import { ForgotPasswordComponent } from './features/auth/forgot-password/forgot-password.component';
@@ -16,6 +17,8 @@ import { ResetPasswordComponent } from './features/auth/reset-password/reset-pas
 import { VerifyEmailComponent } from './features/auth/verify-email/verify-email.component';
 import { VerificationNeededComponent } from './features/auth/verification-needed/verification-needed.component';
 import { ClientProfileComponent } from './features/client-profile/client-profile.component';
+import { MenuPageComponent } from './features/menu-page/menu-page.component';
+import { PayDepositComponent } from './features/orders/pay-deposit/pay-deposit.component';
 
 export const routes: Routes = [
   // ========================================
@@ -25,7 +28,29 @@ export const routes: Routes = [
   { 
     path: '', 
     component: HomeComponent,
-    title: 'Accueil - Restaurant App'
+    title: 'Accueil - RestoTraiteur'
+  },
+  
+  {
+    path: 'menu/:id',
+    component: MenuPageComponent,
+    title: 'Menu - RestoTraiteur'
+  },
+
+  // ✅ Pages profil public (accessibles à tous, sans guard)
+  {
+    path: 'profil/restaurant/:id',
+    loadComponent: () =>
+      import('./features/restaurant/restaurant-profile/restaurant-profile.component')
+        .then(m => m.RestaurantProfileComponent),
+    title: 'Profil Restaurant - RestoTraiteur'
+  },
+  {
+    path: 'profil/traiteur/:id',
+    loadComponent: () =>
+      import('./features/traiteur/traiteur-profile/traiteur-profile.component')
+        .then(m => m.TraiteurProfileComponent),
+    title: 'Profil Traiteur - RestoTraiteur'
   },
   
   // ========================================
@@ -35,40 +60,42 @@ export const routes: Routes = [
   { 
     path: 'login', 
     component: LoginComponent,
-    title: 'Connexion - app_resto-traiteur'
+    title: 'Connexion - RestoTraiteur'
+  },
+  {
+    path: 'business/login',
+    component: BusinessLoginComponent,
+    title: 'Connexion Établissement - RestoTraiteur'
   },
   { 
     path: 'register', 
     component: RegisterComponent,
-    title: 'Inscription - app_resto-traiteur'
+    title: 'Inscription - RestoTraiteur'
   },
-  
   {
     path: 'admin/login',
     component: AdminLoginComponent,
-    title: 'Connexion Admin - app_resto-traiteur'
+    title: 'Connexion Admin - RestoTraiteur'
   },
-
   {
     path: 'forgot-password',
     component: ForgotPasswordComponent,
-    title: 'Mot de passe oublié - app_resto-traiteur'
+    title: 'Mot de passe oublié - RestoTraiteur'
   },
   {
     path: 'reset-password',
     component: ResetPasswordComponent,
-    title: 'Réinitialiser le mot de passe - app_resto-traiteur'
+    title: 'Réinitialiser le mot de passe - RestoTraiteur'
   },
-  
   {
     path: 'verification-needed',
     component: VerificationNeededComponent,
-    title: 'Vérification requise - app_resto-traiteur'
+    title: 'Vérification requise - RestoTraiteur'
   },
   {
     path: 'verify-email',
     component: VerifyEmailComponent,
-    title: 'Vérification email - app_resto-traiteur'
+    title: 'Vérification email - RestoTraiteur'
   },
   
   // ========================================
@@ -78,17 +105,22 @@ export const routes: Routes = [
   { 
     path: 'checkout', 
     component: CheckoutComponent,
-    title: 'Paiement - app_resto-traiteur'
+    title: 'Paiement - RestoTraiteur'
   },
   { 
     path: 'reservation', 
     component: ReservationFormComponent,
-    title: 'Réservation - app_resto-traiteur'
+    title: 'Réservation - RestoTraiteur'
   },
   {
     path: 'special-order/:id',
     component: SpecialOrderComponent,
     title: 'Commande Spéciale - Traiteur'
+  },
+  {
+    path: 'pay-deposit/:id',
+    component: PayDepositComponent,
+    title: 'Payer l\'acompte - RestoTraiteur'
   },
 
   // ========================================
@@ -103,7 +135,7 @@ export const routes: Routes = [
       {
         path: 'profile',
         component: ClientProfileComponent,
-        title: 'Mon Profil - app_resto-traiteur'
+        title: 'Mon Profil - RestoTraiteur'
       },
       {
         path: '',
@@ -125,7 +157,7 @@ export const routes: Routes = [
       {
         path: 'dashboard',
         component: RestaurantDashboardComponent,
-        title: 'Dashboard Restaurant - app_resto-traiteur'
+        title: 'Dashboard Restaurant - RestoTraiteur'
       },
       {
         path: '',
@@ -147,7 +179,7 @@ export const routes: Routes = [
       {
         path: 'dashboard',
         component: TraiteurDashboardComponent,
-        title: 'Dashboard Traiteur - app_resto-traiteur'
+        title: 'Dashboard Traiteur - RestoTraiteur'
       },
       {
         path: '',
@@ -169,7 +201,7 @@ export const routes: Routes = [
       {
         path: 'dashboard',
         component: AdminDashboardComponent,
-        title: 'Dashboard Admin - app_resto-traiteur'
+        title: 'Dashboard Admin - RestoTraiteur'
       },
       {
         path: 'plans',
