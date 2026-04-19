@@ -1,4 +1,4 @@
-// checkout.component.ts — VERSION COMPLÈTE avec champs de saisie par méthode
+// checkout.component.ts
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
@@ -28,6 +28,11 @@ export class CheckoutComponent implements OnInit {
 
   fees = { subtotal: 0, deliveryFee: 0, paymentFee: 0, total: 0 };
 
+  // GPS state
+  gpsLoading = false;
+  gpsCoords: { lat: number; lng: number } | null = null;
+  gpsError: string | null = null;
+
   constructor(
     private fb: FormBuilder,
     private orderService: OrderService,
@@ -42,91 +47,73 @@ export class CheckoutComponent implements OnInit {
       client_email:      ['', [Validators.email]],
       notes:             [''],
 
-      // ── Mode paiement ─────────────────────────────────────
-      payment_type:      ['', Validators.required],
-      payment_method:    [''],
+      // ── Méthode de paiement unique (4 valeurs) ────────────
+      // 'mixx' | 'flooz' | 'card' | 'cod'
+      payment_method:    ['', Validators.required],
 
-      // ── Champs Mobile Money (Mixx / Flooz) ───────────────
-      mobile_phone:      [''],   // numéro mobile money
+      // ── Champs Mobile Money ───────────────────────────────
+      mobile_phone: [''],
 
       // ── Champs carte bancaire ─────────────────────────────
-      card_number:       [''],
-      card_expiry:       [''],   // MM/AA
-      card_cvv:          [''],
-      card_holder:       [''],
+      card_number:  [''],
+      card_expiry:  [''],
+      card_cvv:     [''],
+      card_holder:  [''],
 
-      // ── Livraison (COD) ───────────────────────────────────
-      delivery_address:  [''],
-      delivery_distance: [null]
+      // ── Livraison (COD + optionnel autres) ────────────────
+      wants_delivery:   [false],     // checkbox "je veux la livraison"
+      delivery_address: [''],
+      delivery_lat:     [null],
+      delivery_lng:     [null],
     });
 
-    // Validation conditionnelle selon payment_type
-    this.checkoutForm.get('payment_type')?.valueChanges.subscribe(type => {
-      this.resetPaymentFields();
-      if (type === 'online') {
-        this.checkoutForm.get('payment_method')?.setValidators([Validators.required]);
-        this.checkoutForm.get('delivery_address')?.clearValidators();
-      } else if (type === 'cod') {
-        this.checkoutForm.get('payment_method')?.clearValidators();
-        this.checkoutForm.get('payment_method')?.setValue('cash');
-        this.checkoutForm.get('delivery_address')?.setValidators([Validators.required]);
-      }
-      this.checkoutForm.get('payment_method')?.updateValueAndValidity();
-      this.checkoutForm.get('delivery_address')?.updateValueAndValidity();
-      this.calculateFees();
-    });
-
-    // Validation conditionnelle selon payment_method
+    // Validation dynamique selon la méthode
     this.checkoutForm.get('payment_method')?.valueChanges.subscribe(method => {
+      this.clearPaymentValidators();
       this.applyMethodValidators(method);
       this.calculateFees();
     });
+
+    // Validation adresse si livraison demandée
+    this.checkoutForm.get('wants_delivery')?.valueChanges.subscribe(wants => {
+      const addr = this.checkoutForm.get('delivery_address');
+      if (wants) {
+        addr?.setValidators([Validators.required]);
+      } else {
+        addr?.clearValidators();
+        this.gpsCoords = null;
+        this.gpsError = null;
+      }
+      addr?.updateValueAndValidity();
+      this.calculateFees();
+    });
   }
 
-  // ── Validation dynamique selon la méthode choisie ────────
-  private applyMethodValidators(method: string): void {
-    const mobilePhone = this.checkoutForm.get('mobile_phone');
-    const cardNumber  = this.checkoutForm.get('card_number');
-    const cardExpiry  = this.checkoutForm.get('card_expiry');
-    const cardCvv     = this.checkoutForm.get('card_cvv');
-    const cardHolder  = this.checkoutForm.get('card_holder');
-
-    // Reset all
-    [mobilePhone, cardNumber, cardExpiry, cardCvv, cardHolder].forEach(c => {
-      c?.clearValidators();
-      c?.updateValueAndValidity();
-    });
-
-    if (method === 'Mixx By Yas' || method === 'flooz') {
-      mobilePhone?.setValidators([
-        Validators.required,
-        Validators.pattern(/^(\+228|00228|228)?[0-9]{8}$/)
-      ]);
-      mobilePhone?.updateValueAndValidity();
-    }
-
-    if (method === 'card') {
-      cardNumber?.setValidators([Validators.required, Validators.pattern(/^[0-9]{16}$/)]);
-      cardExpiry?.setValidators([Validators.required, Validators.pattern(/^(0[1-9]|1[0-2])\/([0-9]{2})$/)]);
-      cardCvv?.setValidators([Validators.required, Validators.pattern(/^[0-9]{3,4}$/)]);
-      cardHolder?.setValidators([Validators.required]);
-      [cardNumber, cardExpiry, cardCvv, cardHolder].forEach(c => c?.updateValueAndValidity());
-    }
-  }
-
-  private resetPaymentFields(): void {
-    this.checkoutForm.patchValue({
-      payment_method: '',
-      mobile_phone:   '',
-      card_number:    '',
-      card_expiry:    '',
-      card_cvv:       '',
-      card_holder:    ''
-    });
-    ['mobile_phone','card_number','card_expiry','card_cvv','card_holder'].forEach(k => {
+  private clearPaymentValidators(): void {
+    ['mobile_phone', 'card_number', 'card_expiry', 'card_cvv', 'card_holder'].forEach(k => {
       this.checkoutForm.get(k)?.clearValidators();
       this.checkoutForm.get(k)?.updateValueAndValidity();
     });
+  }
+
+  private applyMethodValidators(method: string): void {
+    if (method === 'mixx' || method === 'flooz') {
+      this.checkoutForm.get('mobile_phone')?.setValidators([
+        Validators.required,
+        Validators.pattern(/^(\+228|00228|228)?[0-9]{8}$/)
+      ]);
+      this.checkoutForm.get('mobile_phone')?.updateValueAndValidity();
+    }
+
+    if (method === 'card') {
+      this.checkoutForm.get('card_number')?.setValidators([Validators.required, Validators.pattern(/^[0-9]{16}$/)]);
+      this.checkoutForm.get('card_expiry')?.setValidators([Validators.required, Validators.pattern(/^(0[1-9]|1[0-2])\/([0-9]{2})$/)]);
+      this.checkoutForm.get('card_cvv')?.setValidators([Validators.required, Validators.pattern(/^[0-9]{3,4}$/)]);
+      this.checkoutForm.get('card_holder')?.setValidators([Validators.required]);
+      ['card_number', 'card_expiry', 'card_cvv', 'card_holder'].forEach(k =>
+        this.checkoutForm.get(k)?.updateValueAndValidity()
+      );
+    }
   }
 
   ngOnInit(): void {
@@ -147,42 +134,115 @@ export class CheckoutComponent implements OnInit {
   calculateFees(): void {
     this.fees.subtotal = this.cart.reduce((t, i) => t + (Number(i.subtotal) || 0), 0);
 
-    const type   = this.checkoutForm.get('payment_type')?.value;
-    const method = this.checkoutForm.get('payment_method')?.value;
-    const dist   = this.checkoutForm.get('delivery_distance')?.value || 0;
+    const method  = this.checkoutForm.get('payment_method')?.value;
+    const wants   = this.checkoutForm.get('wants_delivery')?.value;
 
-    this.fees.deliveryFee = type === 'cod' ? this.calcDeliveryFee(dist) : 0;
-    this.fees.paymentFee  = (type === 'online' && method)
+    // Livraison si COD ou si checkbox cochée
+    this.fees.deliveryFee = (method === 'cod' || wants)
+      ? 500 // frais fixes — à affiner selon la distance GPS si disponible
+      : 0;
+
+    this.fees.paymentFee = (method && method !== 'cod')
       ? this.calculatePaymentFee(this.fees.subtotal, method)
       : 0;
+
     this.fees.total = this.fees.subtotal + this.fees.deliveryFee + this.fees.paymentFee;
   }
 
-  private calcDeliveryFee(km: number): number {
-    if (!km || km <= 0) return 0;
-    if (km < 5)  return 500;
-    if (km < 10) return 1000;
-    if (km < 20) return 1500;
-    return 2000;
-  }
-
   calculatePaymentFee(amount: number, method: string): number {
-    if (method === 'card')        return Math.round((amount * 0.035) + 150);
-    if (method === 'Mixx By Yas' || method === 'flooz')
-                                  return Math.round((amount * 0.029) + 100);
+    if (method === 'card')  return Math.round((amount * 0.035) + 150);
+    if (method === 'mixx' || method === 'flooz')
+      return Math.round((amount * 0.029) + 100);
     return 0;
   }
 
-  onAddressChange(): void {
-    const addr = this.checkoutForm.get('delivery_address')?.value;
-    if (addr && addr.length > 5) {
-      const dist = Math.min(Math.max(addr.length / 10, 3), 20);
-      this.checkoutForm.patchValue({ delivery_distance: dist });
-      this.calculateFees();
+  // ── Sélection méthode ────────────────────────────────────
+  selectMethod(method: string): void {
+    // Réinitialiser les champs de paiement avant de changer
+    this.checkoutForm.patchValue({
+      payment_method: method,
+      mobile_phone:   '',
+      card_number:    '',
+      card_expiry:    '',
+      card_cvv:       '',
+      card_holder:    ''
+    });
+    // Si COD, cocher automatiquement la livraison
+    if (method === 'cod') {
+      this.checkoutForm.patchValue({ wants_delivery: true });
     }
   }
 
-  // ── Formatage numéro de carte ─────────────────────────────
+  isMethodSelected(method: string): boolean {
+    return this.checkoutForm.get('payment_method')?.value === method;
+  }
+
+  isMobileMoney(): boolean {
+    const m = this.checkoutForm.get('payment_method')?.value;
+    return m === 'mixx' || m === 'flooz';
+  }
+
+  isCardPayment(): boolean {
+    return this.checkoutForm.get('payment_method')?.value === 'card';
+  }
+
+  isCOD(): boolean {
+    return this.checkoutForm.get('payment_method')?.value === 'cod';
+  }
+
+  wantsDelivery(): boolean {
+    return !!this.checkoutForm.get('wants_delivery')?.value;
+  }
+
+  // ── Géolocalisation GPS ───────────────────────────────────
+  requestGPS(): void {
+    if (!navigator.geolocation) {
+      this.gpsError = 'La géolocalisation n\'est pas supportée par votre navigateur.';
+      return;
+    }
+
+    this.gpsLoading = true;
+    this.gpsError   = null;
+
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        this.gpsLoading = false;
+        this.gpsCoords  = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+        this.checkoutForm.patchValue({
+          delivery_lat: pos.coords.latitude,
+          delivery_lng: pos.coords.longitude,
+        });
+        // Pré-remplir l'adresse avec les coordonnées
+        const addrCtrl = this.checkoutForm.get('delivery_address');
+        if (!addrCtrl?.value) {
+          addrCtrl?.patchValue(`${pos.coords.latitude.toFixed(6)}, ${pos.coords.longitude.toFixed(6)}`);
+        }
+        this.toastService.showSuccess('Position capturée !', 'Le livreur pourra vous localiser.');
+      },
+      (err) => {
+        this.gpsLoading = false;
+        switch (err.code) {
+          case err.PERMISSION_DENIED:
+            this.gpsError = 'Accès à la localisation refusé. Autorisez-la dans les paramètres.';
+            break;
+          case err.POSITION_UNAVAILABLE:
+            this.gpsError = 'Position non disponible. Réessayez.';
+            break;
+          default:
+            this.gpsError = 'Impossible d\'obtenir votre position.';
+        }
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+    );
+  }
+
+  clearGPS(): void {
+    this.gpsCoords = null;
+    this.gpsError  = null;
+    this.checkoutForm.patchValue({ delivery_lat: null, delivery_lng: null });
+  }
+
+  // ── Formatage carte ───────────────────────────────────────
   formatCardNumber(event: any): void {
     let val = event.target.value.replace(/\D/g, '').substring(0, 16);
     event.target.value = val;
@@ -196,52 +256,15 @@ export class CheckoutComponent implements OnInit {
     this.checkoutForm.get('card_expiry')?.setValue(val, { emitEvent: false });
   }
 
-  selectPaymentType(type: string): void {
-    this.checkoutForm.patchValue({ payment_type: type });
-  }
-
-  selectPaymentMethod(method: string): void {
-    this.checkoutForm.patchValue({ payment_method: method });
-  }
-
-  isPaymentTypeSelected(type: string): boolean {
-    return this.checkoutForm.get('payment_type')?.value === type;
-  }
-
-  isPaymentMethodSelected(method: string): boolean {
-    return this.checkoutForm.get('payment_method')?.value === method;
-  }
-
-  isOnlinePayment(): boolean {
-    return this.checkoutForm.get('payment_type')?.value === 'online';
-  }
-
-  isMobileMoney(): boolean {
-    const m = this.checkoutForm.get('payment_method')?.value;
-    return m === 'Mixx By Yas' || m === 'flooz';
-  }
-
-  isCardPayment(): boolean {
-    return this.checkoutForm.get('payment_method')?.value === 'card';
-  }
-
-  // ── Helpers affichage ─────────────────────────────────────
-  getMobileMoneyLabel(): string {
-    const m = this.checkoutForm.get('payment_method')?.value;
-    if (m === 'Mixx By Yas') return 'T-Money / Togocom';
-    if (m === 'flooz')       return 'Flooz / Moov';
-    return 'Mobile Money';
-  }
-
+  // ── Labels / helpers ──────────────────────────────────────
   getMobileMoneyPlaceholder(): string {
     const m = this.checkoutForm.get('payment_method')?.value;
-    if (m === 'Mixx By Yas') return '+228 9X XX XX XX';
-    if (m === 'flooz')       return '+228 7X XX XX XX';
-    return '+228 XX XX XX XX';
+    return m === 'mixx' ? '+228 9X XX XX XX' : '+228 7X XX XX XX';
   }
 
-  getMobileMoneyIcon(): string {
-    return this.checkoutForm.get('payment_method')?.value === 'Mixx By Yas' ? '📱' : '💚';
+  getMobileMoneyLabel(): string {
+    const m = this.checkoutForm.get('payment_method')?.value;
+    return m === 'mixx' ? 'Mixx By Yas (Yas / Togocom)' : 'Flooz (Moov Africa)';
   }
 
   fieldInvalid(name: string): boolean {
@@ -260,27 +283,29 @@ export class CheckoutComponent implements OnInit {
       return;
     }
 
-    this.loading   = true;
-    const formVal  = this.checkoutForm.value;
+    this.loading  = true;
+    const v       = this.checkoutForm.value;
+    const isCOD   = v.payment_method === 'cod';
 
     const orderData: any = {
       business_id:       this.business.id,
-      client_name:       formVal.client_name,
-      client_phone:      formVal.client_phone,
-      client_email:      formVal.client_email,
-      payment_type:      formVal.payment_type,
-      payment_method:    formVal.payment_method,
-      notes:             formVal.notes,
+      client_name:       v.client_name,
+      client_phone:      v.client_phone,
+      client_email:      v.client_email,
+      payment_type:      isCOD ? 'cod' : 'online',
+      payment_method:    v.payment_method,
+      notes:             v.notes,
       items:             this.cart,
       subtotal_amount:   this.fees.subtotal,
       delivery_fee:      this.fees.deliveryFee,
       payment_fee:       this.fees.paymentFee,
       total_amount:      this.fees.total,
-      delivery_address:  formVal.delivery_address,
-      delivery_distance: formVal.delivery_distance,
-      // Infos paiement (non stockées en clair côté serveur idéalement)
-      payment_phone:     formVal.mobile_phone   || null,
-      card_holder:       formVal.card_holder     || null
+      wants_delivery:    v.wants_delivery,
+      delivery_address:  v.delivery_address,
+      delivery_lat:      v.delivery_lat,
+      delivery_lng:      v.delivery_lng,
+      payment_phone:     v.mobile_phone   || null,
+      card_holder:       v.card_holder    || null,
     };
 
     this.orderService.createOrder(orderData).subscribe({
@@ -294,12 +319,12 @@ export class CheckoutComponent implements OnInit {
           return;
         }
 
-        if (formVal.payment_type === 'cod') {
+        if (isCOD) {
           this.loading = false;
           sessionStorage.removeItem('checkout_cart');
           sessionStorage.removeItem('checkout_business');
           this.toastService.showSuccess('✅ Commande confirmée !',
-            `Commande ${orderId} — ${this.fees.total.toLocaleString('fr-FR')} FCFA à la livraison`);
+            `Commande #${orderId} — ${this.fees.total.toLocaleString('fr-FR')} FCFA à la livraison`);
           setTimeout(() => this.router.navigate(['/orders', orderId]), 2000);
           return;
         }
@@ -308,10 +333,10 @@ export class CheckoutComponent implements OnInit {
           order_id:       orderId,
           amount:         this.fees.total,
           currency:       'XOF',
-          payment_method: formVal.payment_method,
-          customer_name:  formVal.client_name,
-          customer_phone: formVal.mobile_phone || formVal.client_phone,
-          customer_email: formVal.client_email
+          payment_method: v.payment_method,
+          customer_name:  v.client_name,
+          customer_phone: v.mobile_phone || v.client_phone,
+          customer_email: v.client_email
         };
 
         this.paymentService.initiatePayment(paymentData).subscribe({
@@ -322,13 +347,13 @@ export class CheckoutComponent implements OnInit {
             if (payRes.sandbox === true || this.isSandbox) {
               this.loading = false;
               this.toastService.showSuccess('✅ Paiement accepté !',
-                `Commande ${orderId} confirmée — ${this.fees.total.toLocaleString('fr-FR')} FCFA`);
+                `Commande #${orderId} confirmée — ${this.fees.total.toLocaleString('fr-FR')} FCFA`);
               setTimeout(() => this.router.navigate(['/']), 2500);
               return;
             }
 
             if (payRes.checkout_url) {
-              this.toastService.showSuccess('Commande créée', 'Redirection vers paiement...');
+              this.toastService.showSuccess('Commande créée', 'Redirection vers le paiement...');
               setTimeout(() => { window.location.href = payRes.checkout_url; }, 1000);
             } else {
               this.loading = false;

@@ -271,12 +271,23 @@ export class TraiteurProfileComponent implements OnInit, OnDestroy {
     const bannerUrl = this.profile?.branding?.banner_url;
     return bannerUrl ? this.resolveImageUrl(bannerUrl) : null;
   }
+
+  // traiteur-profile.component.ts — ajouter/remplacer
   hasBannerImage(): boolean {
-    return !!this.profile?.branding?.banner_url;
+    const url = this.profile?.branding?.banner_url;
+    return !!(url && url.trim().length > 0);
+  }
+
+  getBannerImageUrl(): string {
+    const url = this.profile?.branding?.banner_url;
+    if (!url || !url.trim()) return '';
+    return this.resolveImageUrl(url) ?? '';
   }
 
   getBannerFallbackColor(): string {
-    return this.profile?.branding?.primary_color || '#1a1a2e';
+    const color = this.profile?.branding?.primary_color;
+    if (color && /^#[0-9A-Fa-f]{6}$/.test(color)) return color;
+    return '#1a1a2e';
   }
 
   getLogoUrl(): string | null {

@@ -38,7 +38,9 @@
 
         <div class="business-header-info">
           <div class="business-image-small">
-            <img [src]="getBusinessImage(business)" [alt]="business.name">
+            <img [src]="getBusinessImage(business)"
+                [alt]="business.name"
+                (error)="onBusinessImageError($event, business.type)">
           </div>
           <div class="business-details">
             <h1 class="business-title">{{ business.name }}</h1>
@@ -70,7 +72,9 @@
       <div class="row">
         <div class="col-md-5">
           <div class="business-main-image">
-            <img [src]="getBusinessImage(business)" [alt]="business.name">
+            <img [src]="getBusinessImage(business)"
+                [alt]="business.name"
+                (error)="onBusinessImageError($event, business.type)">
             <div class="image-overlay">
               <span class="type-badge">
                 <i [class]="business.type === 'restaurant' ? 'bi bi-building' : 'bi bi-cake2'"></i>

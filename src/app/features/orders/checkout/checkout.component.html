@@ -20,7 +20,6 @@
 
           <div class="card-body-checkout">
 
-            <!-- Sandbox banner -->
             <div class="alert alert-warning d-flex align-items-center gap-2 mb-4" *ngIf="isSandbox">
               <i class="bi bi-shield-fill-check fs-5"></i>
               <div><strong>Mode Sandbox actif</strong> — Paiements acceptés sans débit réel.</div>
@@ -28,9 +27,7 @@
 
             <form [formGroup]="checkoutForm" (ngSubmit)="onSubmit()">
 
-              <!-- ────────────────────────────────────────────
-                   1. INFORMATIONS CLIENT
-              ──────────────────────────────────────────────── -->
+              <!-- ── 1. INFORMATIONS CLIENT ───────────────── -->
               <div class="form-section">
                 <h5 class="section-title">
                   <i class="bi bi-person-circle"></i> Vos informations
@@ -57,189 +54,199 @@
                       [class.is-invalid]="fieldInvalid('client_email')">
                     <div class="invalid-feedback">Email invalide</div>
                   </div>
+
+                  <!-- ✅ "Notes" renommé en quelque chose de clair -->
                   <div class="col-12">
-                    <label class="form-label">Notes <span class="text-muted fw-normal">(optionnel)</span></label>
+                    <label class="form-label">
+                      Demandes spéciales
+                      <span class="text-muted fw-normal">(optionnel)</span>
+                    </label>
                     <textarea class="form-control" formControlName="notes" rows="2"
-                      placeholder="Allergies, préférences, instructions…"></textarea>
-                  </div>
-                </div>
-              </div>
-
-              <!-- ────────────────────────────────────────────
-                   2. MODE DE PAIEMENT
-              ──────────────────────────────────────────────── -->
-              <div class="form-section">
-                <h5 class="section-title">
-                  <i class="bi bi-wallet2"></i> Mode de paiement
-                </h5>
-                <div class="payment-types">
-                  <div class="payment-type-card"
-                    [class.selected]="isPaymentTypeSelected('online')"
-                    (click)="selectPaymentType('online')">
-                    <div class="payment-type-icon">💳</div>
-                    <div class="payment-type-content">
-                      <h6>Paiement en ligne</h6>
-                      <small>Sécurisé par CinetPay</small>
-                    </div>
-                    <i class="bi bi-check-circle-fill payment-type-check"
-                      *ngIf="isPaymentTypeSelected('online')"></i>
-                  </div>
-                  <div class="payment-type-card"
-                    [class.selected]="isPaymentTypeSelected('cod')"
-                    (click)="selectPaymentType('cod')">
-                    <div class="payment-type-icon">💵</div>
-                    <div class="payment-type-content">
-                      <h6>Paiement à la livraison</h6>
-                      <small>Cash à la réception</small>
-                    </div>
-                    <i class="bi bi-check-circle-fill payment-type-check"
-                      *ngIf="isPaymentTypeSelected('cod')"></i>
-                  </div>
-                </div>
-              </div>
-
-              <!-- ────────────────────────────────────────────
-                   3. ADRESSE DE LIVRAISON (COD uniquement)
-              ──────────────────────────────────────────────── -->
-              <div class="form-section" *ngIf="isPaymentTypeSelected('cod')">
-                <h5 class="section-title">
-                  <i class="bi bi-geo-alt-fill"></i> Adresse de livraison
-                </h5>
-                <div class="mb-3">
-                  <label class="form-label">Adresse complète *</label>
-                  <input type="text" class="form-control" formControlName="delivery_address"
-                    (input)="onAddressChange()"
-                    placeholder="123 Rue Exemple, Quartier, Lomé"
-                    [class.is-invalid]="fieldInvalid('delivery_address')">
-                  <div class="invalid-feedback">Adresse requise pour la livraison</div>
-                  <small class="form-text" style="font-size:.73rem;color:var(--rt-t3);margin-top:5px;display:block;">
-                    <i class="bi bi-info-circle me-1"></i>
-                    Frais calculés selon la distance estimée.
-                  </small>
-                </div>
-                <div class="alert alert-info d-flex align-items-center gap-2" *ngIf="fees.deliveryFee > 0">
-                  <i class="bi bi-truck fs-5"></i>
-                  <div>
-                    <strong>Frais de livraison : {{ fees.deliveryFee | number:'1.0-0' }} FCFA</strong>
-                    <small class="d-block" *ngIf="checkoutForm.get('delivery_distance')?.value">
-                      Distance estimée : {{ checkoutForm.get('delivery_distance')?.value | number:'1.1-1' }} km
+                      placeholder="Ex : sans piment, sans oignon, cuisson bien cuite, allergie aux noix…"></textarea>
+                    <small class="form-text" style="font-size:.71rem;color:var(--rt-t3);margin-top:4px;display:block;">
+                      <i class="bi bi-info-circle me-1"></i>
+                      Indiquez ici vos préférences alimentaires ou allergies, pas un avis sur l'établissement.
                     </small>
                   </div>
                 </div>
               </div>
 
-              <!-- ────────────────────────────────────────────
-                   4. CHOIX DE LA MÉTHODE EN LIGNE
-              ──────────────────────────────────────────────── -->
-              <div class="form-section" *ngIf="isOnlinePayment()">
+              <!-- ── 2. MÉTHODE DE PAIEMENT ──────────────── -->
+              <div class="form-section">
                 <h5 class="section-title">
-                  <i class="bi bi-credit-card-2-front"></i> Choisissez votre méthode
+                  <i class="bi bi-wallet2"></i> Choisissez votre méthode de paiement
                 </h5>
 
-                <div class="payment-methods">
+                <!-- ══════════════════════════════════════════
+                     GRILLE 2×2 — 2 colonnes sur TOUS les écrans
+                ══════════════════════════════════════════ -->
+                <div class="payment-methods-grid">
 
-                  <!-- Mixx By Yas -->
-                  <div class="payment-option"
-                    [class.selected]="isPaymentMethodSelected('Mixx By Yas')"
-                    (click)="selectPaymentMethod('Mixx By Yas')">
-                    <div class="payment-icon"><span style="font-size:1.5rem;">📱</span></div>
-                    <div class="payment-info">
-                      <strong>Mixx By Yas</strong>
-                      <small class="d-block">T-Money / Flooz via Togocom</small>
-                      <small class="text-warning" *ngIf="fees.subtotal > 0">
-                        + {{ calculatePaymentFee(fees.subtotal, 'Mixx By Yas') | number:'1.0-0' }} FCFA de frais
-                      </small>
+                  <!-- Mixx By Yas — identité visuelle Axian/Yas 2024 -->
+                  <div class="pay-card"
+                    [class.selected]="isMethodSelected('mixx')"
+                    (click)="selectMethod('mixx')">
+                    <div class="pay-card-logo">
+                      <!-- SVG fidèle à l'identité Mixx by Yas (violet/bleu Axian, M+X stylisé) -->
+                      <svg width="44" height="44" viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <rect width="44" height="44" rx="11" fill="url(#mixxBg)"/>
+                        <defs>
+                          <linearGradient id="mixxBg" x1="0" y1="0" x2="44" y2="44" gradientUnits="userSpaceOnUse">
+                            <stop offset="0%" stop-color="#5B21B6"/>
+                            <stop offset="100%" stop-color="#1D4ED8"/>
+                          </linearGradient>
+                        </defs>
+                        <!-- Lettre M -->
+                        <path d="M7 31 L7 15 L14 24 L21 15 L21 31" stroke="white" stroke-width="2.8"
+                          stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+                        <!-- Lettre X -->
+                        <path d="M26 15 L36 31 M36 15 L26 31" stroke="#FCD34D" stroke-width="2.8"
+                          stroke-linecap="round"/>
+                      </svg>
                     </div>
-                    <i class="bi bi-check-circle-fill ms-auto"
-                      *ngIf="isPaymentMethodSelected('Mixx By Yas')"></i>
+                    <div class="pay-card-info">
+                      <span class="pay-card-name">Mixx By Yas</span>
+                      <span class="pay-card-sub">Yas · *145#</span>
+                      <span class="pay-card-fee" *ngIf="fees.subtotal > 0">
+                        +{{ calculatePaymentFee(fees.subtotal, 'mixx') | number:'1.0-0' }} F
+                      </span>
+                    </div>
+                    <div class="pay-card-check" *ngIf="isMethodSelected('mixx')">
+                      <i class="bi bi-check-circle-fill"></i>
+                    </div>
                   </div>
 
-                  <!-- Flooz -->
-                  <div class="payment-option"
-                    [class.selected]="isPaymentMethodSelected('flooz')"
-                    (click)="selectPaymentMethod('flooz')">
-                    <div class="payment-icon"><span style="font-size:1.5rem;">💚</span></div>
-                    <div class="payment-info">
-                      <strong>Flooz</strong>
-                      <small class="d-block">Paiement mobile Moov</small>
-                      <small class="text-warning" *ngIf="fees.subtotal > 0">
-                        + {{ calculatePaymentFee(fees.subtotal, 'flooz') | number:'1.0-0' }} FCFA de frais
-                      </small>
+                  <!-- Flooz — identité visuelle Moov Africa (bleu #0066CC + orange) -->
+                  <div class="pay-card"
+                    [class.selected]="isMethodSelected('flooz')"
+                    (click)="selectMethod('flooz')">
+                    <div class="pay-card-logo">
+                      <!-- SVG fidèle Flooz/Moov Africa : fond bleu, F blanc stylisé, point orange -->
+                      <svg width="44" height="44" viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <rect width="44" height="44" rx="11" fill="#0066CC"/>
+                        <!-- F de Flooz, épaisse, arrondie -->
+                        <rect x="10" y="10" width="5" height="24" rx="2.5" fill="white"/>
+                        <rect x="10" y="10" width="18" height="5" rx="2.5" fill="white"/>
+                        <rect x="10" y="20" width="14" height="5" rx="2.5" fill="white"/>
+                        <!-- Point orange signature Moov -->
+                        <circle cx="35" cy="12" r="5" fill="#FF6600"/>
+                        <!-- Texte FLOOZ en bas -->
+                        <text x="10" y="40" font-family="Arial, sans-serif" font-weight="800"
+                          font-size="6.5" fill="white" letter-spacing="1.5">FLOOZ</text>
+                      </svg>
                     </div>
-                    <i class="bi bi-check-circle-fill ms-auto"
-                      *ngIf="isPaymentMethodSelected('flooz')"></i>
+                    <div class="pay-card-info">
+                      <span class="pay-card-name">Flooz</span>
+                      <span class="pay-card-sub">Moov Africa · *155#</span>
+                      <span class="pay-card-fee" *ngIf="fees.subtotal > 0">
+                        +{{ calculatePaymentFee(fees.subtotal, 'flooz') | number:'1.0-0' }} F
+                      </span>
+                    </div>
+                    <div class="pay-card-check" *ngIf="isMethodSelected('flooz')">
+                      <i class="bi bi-check-circle-fill"></i>
+                    </div>
                   </div>
 
                   <!-- Carte bancaire -->
-                  <div class="payment-option"
-                    [class.selected]="isPaymentMethodSelected('card')"
-                    (click)="selectPaymentMethod('card')">
-                    <div class="payment-icon"><span style="font-size:1.5rem;">💳</span></div>
-                    <div class="payment-info">
-                      <strong>Carte bancaire</strong>
-                      <small class="d-block">Visa / Mastercard via CinetPay</small>
-                      <small class="text-danger" *ngIf="fees.subtotal > 0">
-                        + {{ calculatePaymentFee(fees.subtotal, 'card') | number:'1.0-0' }} FCFA de frais
-                      </small>
+                  <div class="pay-card"
+                    [class.selected]="isMethodSelected('card')"
+                    (click)="selectMethod('card')">
+                    <div class="pay-card-logo">
+                      <svg width="44" height="44" viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <rect width="44" height="44" rx="11" fill="url(#cardBg)"/>
+                        <defs>
+                          <linearGradient id="cardBg" x1="0" y1="0" x2="44" y2="44">
+                            <stop stop-color="#1E3A5F"/>
+                            <stop offset="1" stop-color="#2D6A9F"/>
+                          </linearGradient>
+                        </defs>
+                        <rect x="6" y="13" width="32" height="18" rx="3" fill="white" opacity="0.15"/>
+                        <rect x="6" y="13" width="32" height="6" rx="3" fill="white" opacity="0.28"/>
+                        <rect x="6" y="17" width="32" height="2.5" fill="#1E3A5F" opacity="0.5"/>
+                        <rect x="10" y="24" width="7" height="4.5" rx="1.5" fill="#FFD700" opacity="0.9"/>
+                        <circle cx="30" cy="26" r="3.5" fill="#EB001B" opacity="0.85"/>
+                        <circle cx="34.5" cy="26" r="3.5" fill="#F79E1B" opacity="0.85"/>
+                      </svg>
                     </div>
-                    <i class="bi bi-check-circle-fill ms-auto"
-                      *ngIf="isPaymentMethodSelected('card')"></i>
+                    <div class="pay-card-info">
+                      <span class="pay-card-name">Carte</span>
+                      <span class="pay-card-sub">Visa · Mastercard</span>
+                      <span class="pay-card-fee pay-card-fee--danger" *ngIf="fees.subtotal > 0">
+                        +{{ calculatePaymentFee(fees.subtotal, 'card') | number:'1.0-0' }} F
+                      </span>
+                    </div>
+                    <div class="pay-card-check" *ngIf="isMethodSelected('card')">
+                      <i class="bi bi-check-circle-fill"></i>
+                    </div>
                   </div>
 
-                </div><!-- /payment-methods -->
+                  <!-- À la livraison (COD) -->
+                  <div class="pay-card pay-card--cod"
+                    [class.selected]="isMethodSelected('cod')"
+                    (click)="selectMethod('cod')">
+                    <div class="pay-card-logo">
+                      <svg width="44" height="44" viewBox="0 0 44 44" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <rect width="44" height="44" rx="11" fill="url(#codBg)"/>
+                        <defs>
+                          <linearGradient id="codBg" x1="0" y1="0" x2="44" y2="44">
+                            <stop stop-color="#B45309"/>
+                            <stop offset="1" stop-color="#D97706"/>
+                          </linearGradient>
+                        </defs>
+                        <rect x="6" y="14" width="32" height="16" rx="3" fill="white" opacity="0.2"/>
+                        <rect x="8" y="16" width="13" height="12" rx="6" fill="white" opacity="0.4"/>
+                        <circle cx="14.5" cy="22" r="4" fill="white" opacity="0.85"/>
+                        <rect x="24" y="19" width="12" height="2.2" rx="1.1" fill="white" opacity="0.7"/>
+                        <rect x="24" y="23" width="9" height="2.2" rx="1.1" fill="white" opacity="0.5"/>
+                      </svg>
+                    </div>
+                    <div class="pay-card-info">
+                      <span class="pay-card-name">Livraison</span>
+                      <span class="pay-card-sub">Cash à la réception</span>
+                      <span class="pay-card-fee pay-card-fee--free">Sans frais</span>
+                    </div>
+                    <div class="pay-card-check pay-card-check--cod" *ngIf="isMethodSelected('cod')">
+                      <i class="bi bi-check-circle-fill"></i>
+                    </div>
+                  </div>
 
-                <!-- ══════════════════════════════════════════
-                     4a. FORMULAIRE MOBILE MONEY
-                     Affiché pour Mixx By Yas et Flooz
-                ══════════════════════════════════════════ -->
+                </div><!-- /payment-methods-grid -->
+
+                <!-- ── Formulaire Mobile Money ────────────── -->
                 <div class="payment-detail-form" *ngIf="isMobileMoney()">
-
                   <div class="pdf-header">
-                    <span class="pdf-icon">{{ getMobileMoneyIcon() }}</span>
+                    <span class="pdf-icon">{{ isMethodSelected('mixx') ? '📱' : '💚' }}</span>
                     <div>
-                      <div class="pdf-title">Numéro {{ getMobileMoneyLabel() }}</div>
-                      <div class="pdf-sub">
-                        Le paiement sera initié sur ce numéro
-                      </div>
+                      <div class="pdf-title">{{ getMobileMoneyLabel() }}</div>
+                      <div class="pdf-sub">Saisissez votre numéro pour initier le paiement</div>
                     </div>
                   </div>
-
                   <div class="pdf-body">
-                    <label class="form-label">
-                      Numéro de téléphone *
-                      <span class="pdf-badge">{{ getMobileMoneyLabel() }}</span>
-                    </label>
+                    <label class="form-label">Numéro de téléphone *</label>
                     <div class="pdf-phone-row">
                       <div class="pdf-flag">
                         <span>🇹🇬</span>
                         <small>+228</small>
                       </div>
-                      <input
-                        type="tel"
-                        class="form-control pdf-phone-inp"
+                      <input type="tel" class="form-control pdf-phone-inp"
                         formControlName="mobile_phone"
                         [placeholder]="getMobileMoneyPlaceholder()"
                         maxlength="15"
                         [class.is-invalid]="fieldInvalid('mobile_phone')">
                     </div>
-                    <div class="invalid-feedback d-block"
-                      *ngIf="fieldInvalid('mobile_phone')">
+                    <div class="invalid-feedback d-block" *ngIf="fieldInvalid('mobile_phone')">
                       <i class="bi bi-exclamation-circle me-1"></i>
-                      Numéro invalide — format attendu : +228 XX XX XX XX
+                      Numéro invalide — format attendu : 9X XX XX XX
                     </div>
                     <div class="pdf-hint" *ngIf="!fieldInvalid('mobile_phone')">
                       <i class="bi bi-info-circle"></i>
                       Vous recevrez une notification de paiement sur ce numéro
                     </div>
                   </div>
+                </div>
 
-                </div><!-- /mobile money form -->
-
-                <!-- ══════════════════════════════════════════
-                     4b. FORMULAIRE CARTE BANCAIRE
-                ══════════════════════════════════════════ -->
+                <!-- ── Formulaire Carte bancaire ──────────── -->
                 <div class="payment-detail-form card-form" *ngIf="isCardPayment()">
-
                   <div class="pdf-header">
                     <span class="pdf-icon">💳</span>
                     <div>
@@ -251,121 +258,161 @@
                       <span class="pdf-badge"><i class="bi bi-bank2"></i> 3D Secure</span>
                     </div>
                   </div>
-
                   <div class="pdf-body">
-
-                    <!-- Titulaire -->
                     <div class="mb-3">
                       <label class="form-label">Nom du titulaire *</label>
                       <input type="text" class="form-control" formControlName="card_holder"
-                        placeholder="NOM PRÉNOM (tel qu'il apparaît sur la carte)"
-                        style="text-transform:uppercase;"
+                        placeholder="NOM PRÉNOM" style="text-transform:uppercase;"
                         [class.is-invalid]="fieldInvalid('card_holder')">
-                      <div class="invalid-feedback">Nom du titulaire requis</div>
+                      <div class="invalid-feedback">Nom requis</div>
                     </div>
-
-                    <!-- Numéro de carte -->
                     <div class="mb-3">
                       <label class="form-label">Numéro de carte *</label>
                       <div class="card-number-wrapper">
                         <input type="text" class="form-control card-number-inp"
                           formControlName="card_number"
                           placeholder="0000 0000 0000 0000"
-                          maxlength="16"
-                          inputmode="numeric"
+                          maxlength="16" inputmode="numeric"
                           (input)="formatCardNumber($event)"
                           [class.is-invalid]="fieldInvalid('card_number')">
                         <div class="card-brand-icons">
-                          <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/5/5e/Visa_Inc._logo.svg/200px-Visa_Inc._logo.svg.png"
-                            alt="Visa" class="card-brand-img">
-                          <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/2/2a/Mastercard-logo.svg/200px-Mastercard-logo.svg.png"
-                            alt="Mastercard" class="card-brand-img">
+                          <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/5/5e/Visa_Inc._logo.svg/200px-Visa_Inc._logo.svg.png" alt="Visa" class="card-brand-img">
+                          <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/2/2a/Mastercard-logo.svg/200px-Mastercard-logo.svg.png" alt="Mastercard" class="card-brand-img">
                         </div>
                       </div>
-                      <div class="invalid-feedback">Numéro de carte invalide (16 chiffres)</div>
+                      <div class="invalid-feedback">16 chiffres requis</div>
                     </div>
-
-                    <!-- Expiry + CVV -->
                     <div class="row">
                       <div class="col-6 mb-3">
-                        <label class="form-label">Date d'expiration *</label>
+                        <label class="form-label">Expiration *</label>
                         <input type="text" class="form-control" formControlName="card_expiry"
-                          placeholder="MM/AA"
-                          maxlength="5"
-                          inputmode="numeric"
+                          placeholder="MM/AA" maxlength="5" inputmode="numeric"
                           (input)="formatCardExpiry($event)"
                           [class.is-invalid]="fieldInvalid('card_expiry')">
-                        <div class="invalid-feedback">Format MM/AA attendu</div>
+                        <div class="invalid-feedback">Format MM/AA</div>
                       </div>
                       <div class="col-6 mb-3">
                         <label class="form-label">
                           CVV *
-                          <span class="cvv-help" title="3 chiffres au dos de votre carte">
-                            <i class="bi bi-question-circle"></i>
-                          </span>
+                          <span class="cvv-help" title="3 chiffres au dos"><i class="bi bi-question-circle"></i></span>
                         </label>
                         <div class="cvv-wrapper">
                           <input type="password" class="form-control" formControlName="card_cvv"
-                            placeholder="•••"
-                            maxlength="4"
-                            inputmode="numeric"
+                            placeholder="•••" maxlength="4" inputmode="numeric"
                             [class.is-invalid]="fieldInvalid('card_cvv')">
                           <i class="bi bi-credit-card-back cvv-icon"></i>
                         </div>
                         <div class="invalid-feedback">CVV invalide</div>
                       </div>
                     </div>
-
-                    <!-- Notice sécurité carte -->
                     <div class="card-security-notice">
                       <i class="bi bi-lock-fill"></i>
                       <span>Vos données bancaires sont chiffrées et ne sont jamais stockées sur nos serveurs.</span>
                     </div>
-
                   </div>
-                </div><!-- /card form -->
+                </div>
 
-              </div><!-- /méthode en ligne -->
+                <!-- ── Info COD ───────────────────────────── -->
+                <div class="alert alert-info d-flex gap-3 mt-3" *ngIf="isCOD()">
+                  <i class="bi bi-info-circle-fill fs-4 flex-shrink-0 mt-1"></i>
+                  <div>
+                    <h6 class="mb-1" style="font-family:'Playfair Display',serif;">Comment ça marche ?</h6>
+                    <ul class="mb-0 ps-3" style="line-height:1.8;font-size:0.82rem;">
+                      <li>Votre commande est confirmée immédiatement</li>
+                      <li>Le restaurant prépare votre plat</li>
+                      <li>Vous payez <strong>{{ fees.total | number:'1.0-0' }} FCFA en cash</strong> à la livraison</li>
+                    </ul>
+                  </div>
+                </div>
 
-              <!-- ────────────────────────────────────────────
-                   5. INFO COD
-              ──────────────────────────────────────────────── -->
-              <div class="alert alert-info d-flex gap-3" *ngIf="isPaymentTypeSelected('cod')">
-                <i class="bi bi-info-circle-fill fs-4 flex-shrink-0 mt-1"></i>
-                <div>
-                  <h6 class="mb-2" style="font-family:'Playfair Display',serif;">📦 Comment ça marche ?</h6>
-                  <ul class="mb-0 ps-3" style="line-height:1.8;">
-                    <li>Votre commande est confirmée immédiatement</li>
-                    <li>Le restaurant prépare votre plat</li>
-                    <li>Vous payez <strong>{{ fees.total | number:'1.0-0' }} FCFA en cash</strong> à la livraison</li>
-                  </ul>
+              </div><!-- /section méthode -->
+
+              <!-- ── 3. LIVRAISON + GPS ───────────────────── -->
+              <div class="form-section">
+                <h5 class="section-title">
+                  <i class="bi bi-geo-alt-fill"></i> Livraison
+                </h5>
+
+                <div class="delivery-toggle" *ngIf="!isCOD()">
+                  <label class="delivery-toggle-label">
+                    <input type="checkbox" formControlName="wants_delivery" class="delivery-toggle-input">
+                    <span class="delivery-toggle-track">
+                      <span class="delivery-toggle-thumb"></span>
+                    </span>
+                    <span class="delivery-toggle-text">
+                      Je souhaite me faire livrer
+                      <small>(+500 FCFA)</small>
+                    </span>
+                  </label>
+                </div>
+
+                <div class="delivery-form" *ngIf="isCOD() || wantsDelivery()">
+                  <div class="mb-3">
+                    <label class="form-label">Adresse de livraison *</label>
+                    <input type="text" class="form-control" formControlName="delivery_address"
+                      placeholder="Quartier, rue, repères…"
+                      [class.is-invalid]="fieldInvalid('delivery_address')">
+                    <div class="invalid-feedback">Adresse requise</div>
+                  </div>
+
+                  <div class="gps-block">
+                    <div class="gps-header">
+                      <div class="gps-header-left">
+                        <div class="gps-icon-wrap"><i class="bi bi-broadcast-pin"></i></div>
+                        <div>
+                          <div class="gps-title">Partager ma position GPS</div>
+                          <div class="gps-sub">Le livreur pourra vous localiser précisément</div>
+                        </div>
+                      </div>
+                      <button type="button" class="gps-btn"
+                        [class.gps-btn--loading]="gpsLoading"
+                        [class.gps-btn--done]="!!gpsCoords"
+                        (click)="gpsCoords ? clearGPS() : requestGPS()"
+                        [disabled]="gpsLoading">
+                        <span *ngIf="gpsLoading" class="spinner-border spinner-border-sm me-1"></span>
+                        <ng-container *ngIf="!gpsLoading && !gpsCoords">
+                          <i class="bi bi-crosshair me-1"></i> Localiser
+                        </ng-container>
+                        <ng-container *ngIf="!gpsLoading && gpsCoords">
+                          <i class="bi bi-check-circle-fill me-1"></i> Capturé · Effacer
+                        </ng-container>
+                        <span *ngIf="gpsLoading">Localisation…</span>
+                      </button>
+                    </div>
+                    <div class="gps-coords" *ngIf="gpsCoords">
+                      <i class="bi bi-geo-fill text-success me-1"></i>
+                      <strong>Position capturée :</strong>
+                      {{ gpsCoords.lat | number:'1.4-6' }}°N, {{ gpsCoords.lng | number:'1.4-6' }}°E
+                      <a [href]="'https://maps.google.com/?q=' + gpsCoords.lat + ',' + gpsCoords.lng"
+                        target="_blank" rel="noopener" class="gps-map-link ms-2">
+                        <i class="bi bi-map-fill"></i> Voir
+                      </a>
+                    </div>
+                    <div class="gps-error" *ngIf="gpsError">
+                      <i class="bi bi-exclamation-triangle-fill me-1"></i> {{ gpsError }}
+                    </div>
+                  </div>
                 </div>
               </div>
 
-              <!-- ────────────────────────────────────────────
-                   6. BOUTON SUBMIT
-              ──────────────────────────────────────────────── -->
+              <!-- ── 4. BOUTON SUBMIT ─────────────────────── -->
               <button type="submit" class="btn btn-lg w-100 btn-checkout"
-                [ngClass]="isPaymentTypeSelected('cod') ? 'btn-warning' : 'btn-success'"
+                [ngClass]="isCOD() ? 'btn-checkout--cod' : 'btn-checkout--online'"
                 [disabled]="checkoutForm.invalid || loading">
 
                 <ng-container *ngIf="loading">
                   <span class="spinner-border spinner-border-sm me-2"></span>
                   Traitement en cours…
                 </ng-container>
-                <ng-container *ngIf="!loading && isPaymentTypeSelected('cod')">
+                <ng-container *ngIf="!loading && isCOD()">
                   <i class="bi bi-check-circle me-2"></i>
-                  Confirmer — paiement à la livraison
+                  Confirmer — {{ fees.total | number:'1.0-0' }} FCFA à la livraison
                 </ng-container>
-                <ng-container *ngIf="!loading && isOnlinePayment() && checkoutForm.get('payment_method')?.value">
+                <ng-container *ngIf="!loading && !isCOD() && checkoutForm.get('payment_method')?.value">
                   <i class="bi bi-lock-fill me-2"></i>
                   {{ isSandbox ? 'Valider (Sandbox)' : 'Payer' }} {{ fees.total | number:'1.0-0' }} FCFA
                 </ng-container>
-                <ng-container *ngIf="!loading && !checkoutForm.get('payment_type')?.value">
-                  <i class="bi bi-arrow-right-circle me-2"></i>
-                  Choisissez un mode de paiement
-                </ng-container>
-                <ng-container *ngIf="!loading && isOnlinePayment() && !checkoutForm.get('payment_method')?.value">
+                <ng-container *ngIf="!loading && !checkoutForm.get('payment_method')?.value">
                   <i class="bi bi-arrow-right-circle me-2"></i>
                   Choisissez une méthode de paiement
                 </ng-container>
@@ -440,15 +487,25 @@
               </div>
             </div>
 
-            <div class="payment-summary-badge mt-3" *ngIf="checkoutForm.get('payment_type')?.value">
-              <div class="alert mb-0"
-                [ngClass]="isPaymentTypeSelected('cod') ? 'alert-warning' : 'alert-success'">
+            <div class="method-badge mt-3" *ngIf="checkoutForm.get('payment_method')?.value">
+              <div class="method-badge-inner"
+                [class.method-badge-inner--cod]="isCOD()"
+                [class.method-badge-inner--online]="!isCOD()">
                 <i class="bi"
-                  [ngClass]="isPaymentTypeSelected('cod') ? 'bi-cash-coin' : 'bi-credit-card-fill'"></i>
+                  [ngClass]="isCOD() ? 'bi-cash-coin' : isMobileMoney() ? 'bi-phone-fill' : 'bi-credit-card-fill'">
+                </i>
                 <strong class="ms-2">
-                  {{ isPaymentTypeSelected('cod') ? 'Paiement à la livraison' : 'Paiement sécurisé en ligne' }}
+                  <ng-container *ngIf="isMethodSelected('mixx')">Mixx By Yas</ng-container>
+                  <ng-container *ngIf="isMethodSelected('flooz')">Flooz (Moov Africa)</ng-container>
+                  <ng-container *ngIf="isMethodSelected('card')">Carte bancaire</ng-container>
+                  <ng-container *ngIf="isCOD()">Paiement à la livraison</ng-container>
                 </strong>
               </div>
+            </div>
+
+            <div class="gps-recap mt-2" *ngIf="gpsCoords">
+              <i class="bi bi-geo-fill text-success me-1"></i>
+              <small>GPS activé — le livreur vous localisera</small>
             </div>
 
           </div>
@@ -456,11 +513,9 @@
 
         <div class="security-info mt-3 text-center">
           <i class="bi bi-shield-lock"></i>
-          <p *ngIf="!isSandbox && isOnlinePayment()">Paiement sécurisé par CinetPay</p>
-          <p *ngIf="!isSandbox && isPaymentTypeSelected('cod')">Paiement en cash à la réception</p>
-          <p *ngIf="isSandbox" class="text-warning">
-            <strong>Mode test</strong> — aucun débit réel
-          </p>
+          <p *ngIf="!isSandbox && !isCOD()">Paiement sécurisé par CinetPay</p>
+          <p *ngIf="!isSandbox && isCOD()">Paiement en cash à la réception</p>
+          <p *ngIf="isSandbox" class="text-warning"><strong>Mode test</strong> — aucun débit réel</p>
         </div>
 
       </div>

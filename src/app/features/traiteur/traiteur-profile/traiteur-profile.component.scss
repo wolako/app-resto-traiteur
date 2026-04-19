@@ -59,10 +59,76 @@
 }
 
 .profile-hero {
-  position: relative; min-height: 420px; display: flex; flex-direction: column;
-  .hero-banner { position: absolute; inset: 0; background-size: cover; background-position: center; z-index: 0; }
-  .hero-overlay { position: absolute; inset: 0; background: linear-gradient(to bottom, rgba(0,0,0,0.2) 0%, rgba(0,0,0,0.55) 100%); }
-  .btn-back { position: absolute; top: 1rem; left: 1rem; z-index: 2; background: rgba(255,255,255,0.2); border: none; color: white; border-radius: 50%; width: 40px; height: 40px; font-size: 1.1rem; cursor: pointer; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(4px); transition: background 0.2s; &:hover { background: rgba(255,255,255,0.35); } }
+  position: relative;
+  min-height: 420px;
+  display: flex;
+  flex-direction: column;
+
+  .hero-banner {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    // ✅ Utilise la variable CSS — jamais d'image par défaut sans variable définie
+    background-image: var(--banner-url, none);
+
+    // ✅ Quand pas de bannière — effacement total garanti
+    &.no-banner {
+      background-image: none !important;
+      // background-color géré par [style.background-color] dans le template
+    }
+
+    // ✅ Quand image présente
+    &.has-image {
+      background-color: transparent;
+    }
+  }
+
+  .hero-overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(to bottom, rgba(0,0,0,0.2) 0%, rgba(0,0,0,0.55) 100%);
+  }
+
+  // ✅ Overlay allégé sur fond uni (sans image)
+  .no-banner .hero-overlay,
+  .hero-banner.no-banner ~ .hero-overlay {
+    background: linear-gradient(
+      to top,
+      rgba(0,0,0,0.65) 0%,
+      rgba(0,0,0,0.2)  60%,
+      transparent      100%
+    );
+  }
+
+  .btn-back {
+    position: absolute; top: 1rem; left: 1rem; z-index: 2;
+    background: rgba(255,255,255,0.2); border: none; color: white;
+    border-radius: 50%; width: 40px; height: 40px; font-size: 1.1rem;
+    cursor: pointer; display: flex; align-items: center; justify-content: center;
+    backdrop-filter: blur(4px); transition: background 0.2s;
+    &:hover { background: rgba(255,255,255,0.35); }
+  }
+}
+
+// ✅ Badge Premium sur fond uni
+.no-banner-badge {
+  position: absolute;
+  top: 1rem; right: 1rem;
+  z-index: 2;
+  display: flex; align-items: center; gap: 0.4rem;
+  padding: 0.35rem 0.75rem;
+  background: rgba(255,255,255,0.15);
+  border: 1px solid rgba(255,255,255,0.25);
+  border-radius: 50px;
+  color: rgba(255,255,255,0.85);
+  font-size: 0.75rem; font-weight: 600;
+  backdrop-filter: blur(6px);
+  cursor: pointer; transition: background 0.2s;
+  &:hover { background: rgba(255,255,255,0.25); color: white; }
+  i { font-size: 0.8rem; }
 }
 
 .hero-identity {

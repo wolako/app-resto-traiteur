@@ -46,8 +46,8 @@
     <div class="hero-banner"
         [class.has-image]="hasBannerImage()"
         [class.no-banner]="!hasBannerImage()"
-        [style.background-image]="hasBannerImage() ? 'url(' + getBusinessImage() + ')' : 'none'"
-        [style.background-color]="!hasBannerImage() ? getBannerFallbackColor() : 'transparent'">
+        [style.--banner-url]="hasBannerImage() ? 'url(' + getBannerImageUrl() + ')' : 'none'"
+        [style.background-color]="!hasBannerImage() ? getBannerFallbackColor() : null">
       <div class="hero-overlay"></div>
     </div>
 

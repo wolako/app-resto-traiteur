@@ -4030,3 +4030,8 @@
 {"email":"admin@restotraiteur.com","level":"info","message":"Super-admin already exists","timestamp":"2026-04-18T01:46:18.356Z"}
 {"environment":"development","level":"info","message":"Server started","nodeVersion":"v20.18.3","port":"3000","timestamp":"2026-04-18T01:46:18.418Z"}
 {"adminId":1,"businessId":"10","level":"info","message":"Établissement mis à jour par admin","timestamp":"2026-04-18T01:53:43.710Z","updates":["name","description","address","phone","opening_hour","closing_hour","availability_start","availability_end","latitude","longitude","district"]}
+{"level":"info","message":"Service SMS initialisé","timestamp":"2026-04-18T21:12:20.307Z"}
+{"level":"info","message":"[SubExpiry] Crons planifiés — URL : https://jason-overbulky-hazardously.ngrok-free.dev/restaurant/dashboard?tab=subscription","timestamp":"2026-04-18T21:12:27.136Z"}
+{"level":"info","message":"Service email Gmail initialisé avec succès","timestamp":"2026-04-18T21:12:27.142Z"}
+{"email":"admin@restotraiteur.com","level":"info","message":"Super-admin already exists","timestamp":"2026-04-18T21:12:27.785Z"}
+{"environment":"development","level":"info","message":"Server started","nodeVersion":"v20.18.3","port":"3000","timestamp":"2026-04-18T21:12:27.825Z"}

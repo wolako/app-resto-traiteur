@@ -5,6 +5,7 @@ import { BusinessService } from '../../core/services/business/business.service';
 import { ToastService } from '../../core/services/toast/toast.service';
 import { Business } from '../../core/models/business.model';
 import { Menu } from '../../core/models/menu.model';
+import { environment } from '../../../environments/environment';
  
 @Component({
   selector: 'app-menu-page',
@@ -20,7 +21,7 @@ export class MenuPageComponent implements OnInit {
  
   loading      = true;
   loadingMenus = false;
-  navigating   = false;          // ✅ NOUVEAU — overlay de transition
+  navigating   = false;
   activeMenuIndex = 0;
  
   constructor(
@@ -168,13 +169,34 @@ export class MenuPageComponent implements OnInit {
  
   // ── Helpers images ───────────────────────────────────────────
   getBusinessImage(business: Business): string {
-    return (business as any).image_url || this.getDefaultImage(business.type);
+    const cover = (business as any).cover_image_url;
+
+    if (cover) {
+      // URL externe (https://...) — retourner telle quelle
+      if (cover.startsWith('http')) return cover;
+
+      // Chemin relatif (/uploads/covers/...) — construire avec la base courante
+      const base = environment.apiUrl.replace(/\/api$/, '');
+      const absolute = `${base}${cover}`;
+
+      if (absolute.includes('ngrok')) {
+        return `${absolute}${absolute.includes('?') ? '&' : '?'}ngrok-skip-browser-warning=true`;
+      }
+      return absolute;
+    }
+
+    return this.getDefaultImage(business.type);
   }
- 
+
   getDefaultImage(type: string): string {
     return type === 'restaurant'
-      ? 'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=800&q=80'
-      : 'https://images.unsplash.com/photo-1555244162-803834f70033?w=800&q=80';
+      ? 'assets/images/default-restaurant.jpg'
+      : 'assets/images/default-traiteur.jpg';
+  }
+
+  onBusinessImageError(event: any, type: string): void {
+    event.target.onerror = null;
+    event.target.src = this.getDefaultImage(type);
   }
  
   getItemImage(item: any): string {
