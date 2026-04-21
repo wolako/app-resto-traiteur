@@ -4090,3 +4090,9 @@
 {"email":"admin@restotraiteur.com","level":"info","message":"Super-admin already exists","timestamp":"2026-04-21T22:23:25.105Z"}
 {"environment":"development","level":"info","message":"Server started","nodeVersion":"v20.18.3","port":"3000","timestamp":"2026-04-21T22:23:25.118Z"}
 {"level":"info","message":"Service email Gmail initialisé avec succès","timestamp":"2026-04-21T22:23:25.877Z"}
+{"level":"info","message":"Service SMS initialisé","timestamp":"2026-04-21T22:54:03.255Z"}
+{"level":"info","message":"[SubExpiry] Crons planifiés — URL : https://jason-overbulky-hazardously.ngrok-free.dev/restaurant/dashboard?tab=subscription","timestamp":"2026-04-21T22:54:06.973Z"}
+{"email":"admin@restotraiteur.com","level":"info","message":"Super-admin already exists","timestamp":"2026-04-21T22:54:06.989Z"}
+{"environment":"development","level":"info","message":"Server started","nodeVersion":"v20.18.3","port":"3000","timestamp":"2026-04-21T22:54:07.006Z"}
+{"level":"info","message":"Service email Gmail initialisé avec succès","timestamp":"2026-04-21T22:54:08.095Z"}
+{"level":"info","message":"Préférences de notification mises à jour","preferences":{"email_notifications":true,"notify_order_confirmed":true,"notify_order_delivered":true,"notify_order_ready":true,"notify_reservation_confirmed":true,"notify_reservation_reminder":true,"push_notifications":true,"sms_notifications":true},"timestamp":"2026-04-21T23:07:17.933Z","userId":16}

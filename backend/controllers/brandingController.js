@@ -161,6 +161,21 @@ exports.updateBranding = async (req, res) => {
       return res.status(400).json({ success: false, error: 'Aucun champ à mettre à jour' });
     }
 
+    // ✅ GUARD : empêcher qu'une cover_image_url soit stockée comme banner_url
+    if (updates.banner_url && typeof updates.banner_url === 'string') {
+      const bUrl = updates.banner_url.trim();
+      if (bUrl.includes('/covers/') || bUrl.includes('cover-business-')) {
+        console.warn(`[updateBranding] GUARD: tentative de stocker une cover comme banner pour business ${businessId}`);
+        delete updates.banner_url; // ignorer silencieusement
+      }
+    }
+    if (updates.banner_mobile_url && typeof updates.banner_mobile_url === 'string') {
+      const bUrl = updates.banner_mobile_url.trim();
+      if (bUrl.includes('/covers/') || bUrl.includes('cover-business-')) {
+        delete updates.banner_mobile_url;
+      }
+    }
+
     // Sérialiser JSONB
     if (updates.gallery_urls    !== undefined) updates.gallery_urls    = JSON.stringify(updates.gallery_urls);
     if (updates.footer_links    !== undefined) updates.footer_links    = JSON.stringify(updates.footer_links);
@@ -273,9 +288,14 @@ exports.uploadBanner = async (req, res) => {
     if (!req.file) return res.status(400).json({ success: false, error: 'Aucun fichier fourni' });
 
     const bannerUrl = `/uploads/banners/${req.file.filename}`;
-    const field     = req.query.mobile === 'true' ? 'banner_mobile_url' : 'banner_url';
+    const field = req.query.mobile === 'true' ? 'banner_mobile_url' : 'banner_url';
 
-    // Supprimer l'ancienne bannière locale
+    // ✅ GUARD : vérifier que le fichier est bien dans /banners/ et pas /covers/
+    if (!bannerUrl.startsWith('/uploads/banners/')) {
+      if (req.file) fs.unlink(req.file.path, () => {});
+      return res.status(400).json({ success: false, error: 'Chemin de fichier invalide pour une bannière' });
+    }
+
     const old = await pool.query(`SELECT ${field} FROM business_branding WHERE business_id = $1`, [businessId]);
     if (old.rows[0]?.[field]?.startsWith('/uploads/')) {
       fs.unlink(path.join(__dirname, '..', old.rows[0][field]), () => {});
@@ -287,9 +307,6 @@ exports.uploadBanner = async (req, res) => {
        ON CONFLICT (business_id) DO UPDATE SET ${field} = $2, updated_at = NOW()`,
       [businessId, bannerUrl]
     );
-
-    // ✅ NE PAS synchroniser banner_url vers businesses.cover_image_url
-    // Les deux champs sont strictement séparés
 
     return res.json({ success: true, data: { [field]: bannerUrl } });
   } catch (err) {

@@ -273,9 +273,27 @@ const getPublicProfile = async (req, res) => {
       accent_color:      (hasBranding && b.accent_color)      || '#e8a87c',
       logo_url:          (hasBranding && b.logo_url)          || null,
       logo_square_url:   (hasBranding && b.logo_square_url)   || null,
-      // ✅ banner_url = bannière profil, conditionnel Premium, jamais = cover
-      banner_url:        (hasBranding && b.banner_url)        || null,
-      banner_mobile_url: (hasBranding && b.banner_mobile_url) || null,
+
+      // ✅ GUARD STRICT : banner_url ne peut JAMAIS être une URL de cover
+      // Une URL de cover contient 'covers/' ou 'cover-business-' dans son chemin
+      banner_url: (() => {
+        if (!hasBranding || !b.banner_url) return null;
+        const url = b.banner_url.trim();
+        // Rejeter toute URL qui ressemble à une cover
+        if (url.includes('/covers/') || url.includes('cover-business-')) {
+          console.warn(`[getPublicProfile] GUARD: banner_url contient une cover pour business ${b.id}: ${url}`);
+          return null;
+        }
+        return url;
+      })(),
+
+      banner_mobile_url: (() => {
+        if (!hasBranding || !b.banner_mobile_url) return null;
+        const url = b.banner_mobile_url.trim();
+        if (url.includes('/covers/') || url.includes('cover-business-')) return null;
+        return url;
+      })(),
+
       gallery_urls:      (hasBranding && b.gallery_urls)      || [],
       tagline:           b.branding_tagline || b.tagline      || null,
       footer_text:       (hasBranding && b.footer_text)       || null,

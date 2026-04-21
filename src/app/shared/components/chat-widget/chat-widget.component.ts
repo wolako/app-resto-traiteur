@@ -52,6 +52,18 @@ export class ChatWidgetComponent implements OnInit, OnDestroy {
 
   unreadCount = 0;
 
+  // ── Swipe-to-dismiss ────────────────────────────────────────
+  isSwiping        = false;
+  swipeTransform   = 'translateY(0)';
+  swipeOpacity     = '1';
+  private _swipeStartY    = 0;
+  private _swipeStartTime = 0;
+  private _currentDeltaY  = 0;
+  /** Seuil en px pour déclencher la fermeture */
+  private readonly SWIPE_CLOSE_THRESHOLD  = 80;
+  /** Vélocité min en px/ms pour fermeture rapide */
+  private readonly SWIPE_VELOCITY_THRESHOLD = 0.4;
+
   private subscriptions: Subscription[] = [];
   private typingTimeout: any;
   private isLoadingConversations = false;
@@ -76,12 +88,18 @@ export class ChatWidgetComponent implements OnInit, OnDestroy {
 
     this.currentUser = this.authService.getCurrentUser();
 
-    if (this.currentUser?.role === 'superadmin') return;
+    if (this.currentUser?.role === 'superadmin') {
+      return;
+    }
 
     if (!this.currentUser) {
       this.currentUser = {
-        id: 0, email: 'guest@temp.com', role: 'guest',
-        first_name: 'Invité', last_name: '', phone: '',
+        id: 0,
+        email: 'guest@temp.com',
+        role: 'guest',
+        first_name: 'Invité',
+        last_name: '',
+        phone: '',
         is_active: true,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
@@ -92,26 +110,26 @@ export class ChatWidgetComponent implements OnInit, OnDestroy {
 
     window.addEventListener('openChatWidget', (event: any) => {
       const conversation = event.detail?.conversation;
-      const isGuest      = event.detail?.isGuest;
+      const isGuest = event.detail?.isGuest;
 
       if (conversation) {
         if (isGuest) {
           this.currentUser = {
-            id: 0, email: 'guest@temp.com', role: 'guest',
-            first_name: event.detail.guestName  || 'Invité',
-            last_name: '', phone: event.detail.guestPhone || '',
+            id: 0,
+            email: 'guest@temp.com',
+            role: 'guest',
+            first_name: event.detail.guestName || 'Invité',
+            last_name: '',
+            phone: event.detail.guestPhone || '',
             is_active: true,
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString()
           };
         }
-
         this.isOpen = true;
         this.selectedConversation = conversation;
         this.showConversationList = false;
         this.checkIfHomePage();
-        // ✅ Bloquer le scroll lors de l'ouverture via événement externe
-        this.lockBodyScroll();
         this.cdr.detectChanges();
         setTimeout(() => this.scrollToBottom(), 200);
       }
@@ -123,8 +141,6 @@ export class ChatWidgetComponent implements OnInit, OnDestroy {
         this.showConversationList = true;
         this.selectedConversation = null;
         this.checkIfHomePage();
-        // ✅ Bloquer le scroll
-        this.lockBodyScroll();
         this.loadConversations();
       }
     }) as EventListener);
@@ -139,7 +155,7 @@ export class ChatWidgetComponent implements OnInit, OnDestroy {
           this.chatService.waitForSocketReady().then(() => {
             this.loadConversations();
             this.chatService.updateUnreadCount();
-          }).catch(() => {});
+          }).catch(err => { console.error('❌ Erreur waitForSocketReady:', err); });
         }
       }
     });
@@ -150,8 +166,6 @@ export class ChatWidgetComponent implements OnInit, OnDestroy {
         this.selectedConversation = conversation;
         this.showConversationList = false;
         this.isOpen = true;
-        // ✅ Bloquer le scroll quand une conv s'ouvre depuis l'extérieur
-        this.lockBodyScroll();
         this.cdr.detectChanges();
         setTimeout(() => this.scrollToBottom(), 200);
       }
@@ -203,14 +217,12 @@ export class ChatWidgetComponent implements OnInit, OnDestroy {
         this.chatService.waitForSocketReady().then(() => {
           this.loadConversations();
           this.chatService.updateUnreadCount();
-        }).catch(() => {});
+        }).catch(err => { console.error('❌ Erreur waitForSocketReady au démarrage:', err); });
       }
     }
   }
 
   ngOnDestroy(): void {
-    // ✅ Toujours débloquer le scroll à la destruction du composant
-    this.unlockBodyScroll();
     this.subscriptions.forEach(sub => sub.unsubscribe());
     if (this.selectedConversation) {
       this.chatService.leaveConversation(this.selectedConversation.id);
@@ -218,31 +230,95 @@ export class ChatWidgetComponent implements OnInit, OnDestroy {
     this.chatService.disconnectSocket();
   }
 
-  // ── Gestion du scroll du body ──────────────────────────────────
-  // Safari iOS nécessite position:fixed + width:100% en plus de overflow:hidden.
-  // On stocke scrollY pour restaurer la position exacte à la fermeture.
-  private scrollY = 0;
+  // ════════════════════════════════════════════════════════════
+  // SWIPE-TO-DISMISS
+  //
+  // Logique bottom sheet iOS native :
+  //   1. touchstart → mémoriser Y + timestamp
+  //   2. touchmove  → appliquer translateY(delta) en temps réel si delta > 0
+  //                   + réduire opacity légèrement
+  //   3. touchend   → si delta > seuil OU vélocité rapide → fermer
+  //                   sinon → snap back animé
+  // ════════════════════════════════════════════════════════════
+  onSwipeStart(e: TouchEvent): void {
+    // Sur desktop (pas de touch) ou si l'event vient du body/messages → ignorer
+    if (e.touches.length !== 1) return;
 
-  private lockBodyScroll(): void {
-    if (window.innerWidth > 768) return; // desktop : pas de blocage
-    this.scrollY = window.scrollY;
-    document.body.style.overflow  = 'hidden';
-    document.body.style.position  = 'fixed';
-    document.body.style.top       = `-${this.scrollY}px`;
-    document.body.style.width     = '100%';
+    this.isSwiping       = true;
+    this._swipeStartY    = e.touches[0].clientY;
+    this._swipeStartTime = Date.now();
+    this._currentDeltaY  = 0;
+
+    // Désactiver la transition CSS pendant le swipe actif
+    // pour un mouvement parfaitement fluide
+    this.swipeTransform = 'translateY(0)';
+    this.cdr.detectChanges();
   }
 
-  private unlockBodyScroll(): void {
-    if (window.innerWidth > 768) return;
-    document.body.style.overflow  = '';
-    document.body.style.position  = '';
-    document.body.style.top       = '';
-    document.body.style.width     = '';
-    // Restaurer la position de scroll exacte
-    window.scrollTo(0, this.scrollY);
+  onSwipeMove(e: TouchEvent): void {
+    if (!this.isSwiping || e.touches.length !== 1) return;
+
+    const deltaY = e.touches[0].clientY - this._swipeStartY;
+
+    // Ne gérer que le swipe vers le bas (pas vers le haut)
+    if (deltaY <= 0) {
+      this.swipeTransform = 'translateY(0)';
+      this.swipeOpacity   = '1';
+      return;
+    }
+
+    // Résistance progressive : plus on tire, moins ça suit
+    // Formule élastique : delta * (1 - delta / (2 * maxPull))
+    // Simple rubber band : full speed jusqu'à 150px, puis résistance
+    const resistance = deltaY > 150
+      ? 150 + (deltaY - 150) * 0.35
+      : deltaY;
+
+    this._currentDeltaY = deltaY;
+    this.swipeTransform = `translateY(${resistance}px)`;
+
+    // Fade out progressif : commence à 60px, transparent à 200px
+    const opacity = Math.max(0, 1 - (deltaY - 60) / 140);
+    this.swipeOpacity = String(Math.min(1, opacity));
+
+    // Empêcher le scroll de la page pendant le swipe
+    e.preventDefault();
+    this.cdr.detectChanges();
   }
 
-  // ── Vérifier si on est sur une page sans bouton flottant ───────
+  onSwipeEnd(e: TouchEvent): void {
+    if (!this.isSwiping) return;
+
+    const deltaTime  = Date.now() - this._swipeStartTime;
+    const velocity   = deltaTime > 0 ? this._currentDeltaY / deltaTime : 0;
+    const shouldClose = this._currentDeltaY > this.SWIPE_CLOSE_THRESHOLD
+                     || velocity > this.SWIPE_VELOCITY_THRESHOLD;
+
+    if (shouldClose) {
+      // Fermeture : animer vers le bas puis fermer
+      this.swipeTransform = 'translateY(100%)';
+      this.swipeOpacity   = '0';
+      this.isSwiping      = false;
+      this.cdr.detectChanges();
+
+      // Laisser l'animation CSS se jouer (200ms), puis fermer
+      setTimeout(() => {
+        this.swipeTransform = 'translateY(0)';
+        this.swipeOpacity   = '1';
+        this.toggleChat();
+      }, 200);
+    } else {
+      // Snap back : retour à la position initiale avec transition
+      this.isSwiping      = false;
+      this.swipeTransform = 'translateY(0)';
+      this.swipeOpacity   = '1';
+      this.cdr.detectChanges();
+    }
+
+    this._currentDeltaY = 0;
+  }
+
+  // ════════════════════════════════════════════════════════════
 
   private checkIfHomePage(): void {
     const currentUrl = this.router.url;
@@ -259,32 +335,19 @@ export class ChatWidgetComponent implements OnInit, OnDestroy {
     this.isHomePage = isOnHiddenPage && !this.isOpen;
   }
 
-  // ── Toggle ouverture/fermeture ─────────────────────────────────
-
   toggleChat(): void {
     this.isOpen = !this.isOpen;
     this.checkIfHomePage();
-
-    if (this.isOpen) {
-      // ✅ Bloquer le scroll du body sur mobile à l'ouverture
-      this.lockBodyScroll();
-      if (this.currentUser && this.currentUser.role !== 'guest') {
-        this.loadConversations();
-      }
-    } else {
-      // ✅ Débloquer le scroll à la fermeture
-      this.unlockBodyScroll();
+    if (this.isOpen && this.currentUser && this.currentUser.role !== 'guest') {
+      this.loadConversations();
     }
   }
-
-  // ── Chargement conversations ───────────────────────────────────
 
   loadConversations(): void {
     if (this.isLoadingConversations) return;
 
     this.loading.conversations = true;
     this.isLoadingConversations = true;
-
     const role = this.currentUser.role;
 
     if (role === 'client') {
@@ -293,7 +356,7 @@ export class ChatWidgetComponent implements OnInit, OnDestroy {
           this.conversations = response.conversations || [];
           this.loading.conversations = false;
           this.isLoadingConversations = false;
-          this.conversations.forEach(conv => this.chatService.joinConversation(conv.id));
+          this.conversations.forEach(conv => { this.chatService.joinConversation(conv.id); });
           this.cdr.detectChanges();
         },
         error: () => {
@@ -310,7 +373,7 @@ export class ChatWidgetComponent implements OnInit, OnDestroy {
             this.conversations = response.conversations || [];
             this.loading.conversations = false;
             this.isLoadingConversations = false;
-            this.conversations.forEach(conv => this.chatService.joinConversation(conv.id));
+            this.conversations.forEach(conv => { this.chatService.joinConversation(conv.id); });
             this.cdr.detectChanges();
           },
           error: () => {
@@ -326,13 +389,10 @@ export class ChatWidgetComponent implements OnInit, OnDestroy {
     }
   }
 
-  // ── Sélection conversation ────────────────────────────────────
-
   selectConversation(conversation: any): void {
     if (this.selectedConversation) {
       this.chatService.leaveConversation(this.selectedConversation.id);
     }
-
     this.selectedConversation = conversation;
     this.showConversationList = false;
     this.loading.messages = true;
@@ -387,10 +447,10 @@ export class ChatWidgetComponent implements OnInit, OnDestroy {
 
   isMyMessage(message: any): boolean {
     if (!this.currentUser || !message) return false;
-    const role       = this.currentUser.role;
+    const role = this.currentUser.role;
     const senderType = message.sender_type;
-    if (role === 'guest')                        return senderType === 'guest';
-    if (role === 'client')                       return senderType === 'client' && message.sender_id === this.currentUser.id;
+    if (role === 'guest')                          return senderType === 'guest';
+    if (role === 'client')                         return senderType === 'client' && message.sender_id === this.currentUser.id;
     if (role === 'restaurant' || role === 'traiteur') return senderType === 'business';
     return false;
   }
@@ -412,12 +472,12 @@ export class ChatWidgetComponent implements OnInit, OnDestroy {
   }
 
   confirmDeleteMessage(message: any): void { this.messageToDelete = message; this.showDeleteMessageModal = true; this.cdr.detectChanges(); }
-  cancelDeleteMessage():           void { this.messageToDelete = null;    this.showDeleteMessageModal = false; this.cdr.detectChanges(); }
+  cancelDeleteMessage():               void { this.messageToDelete = null;    this.showDeleteMessageModal = false; this.cdr.detectChanges(); }
 
   executeDeleteMessage(): void {
     if (!this.messageToDelete || !this.selectedConversation) return;
     this.showDeleteMessageModal = false;
-    const messageId      = this.messageToDelete.id;
+    const messageId = this.messageToDelete.id;
     const conversationId = this.selectedConversation.id;
     this.messageToDelete = null;
     this.chatService.deleteMessageViaSocket(messageId, conversationId);
@@ -428,16 +488,18 @@ export class ChatWidgetComponent implements OnInit, OnDestroy {
 
   getConversationName(conversation: any): string {
     if (!this.currentUser) return 'Conversation';
-    return (this.currentUser.role === 'client' || this.currentUser.role === 'guest')
-      ? conversation.business_name || 'Établissement'
-      : conversation.client_name  || 'Client';
+    if (this.currentUser.role === 'client' || this.currentUser.role === 'guest') {
+      return conversation.business_name || 'Établissement';
+    }
+    return conversation.client_name || 'Client';
   }
 
   getConversationStatus(conversation: any): string {
     if (!this.currentUser) return '';
     if (this.currentUser.role === 'client' || this.currentUser.role === 'guest') {
-      if (conversation.business_type === 'restaurant') return this.isRestaurantOpen(conversation) ? 'En ligne' : 'Hors ligne';
-      if (conversation.business_type === 'traiteur')   return conversation.is_available ? 'Disponible' : 'Indisponible';
+      const businessType = conversation.business_type;
+      if (businessType === 'restaurant') return this.isRestaurantOpen(conversation) ? 'En ligne' : 'Hors ligne';
+      if (businessType === 'traiteur')   return conversation.is_available ? 'Disponible' : 'Indisponible';
     }
     return '';
   }
@@ -445,19 +507,22 @@ export class ChatWidgetComponent implements OnInit, OnDestroy {
   getConversationStatusClass(conversation: any): string {
     if (!this.currentUser) return '';
     if (this.currentUser.role === 'client' || this.currentUser.role === 'guest') {
-      if (conversation.business_type === 'restaurant') return this.isRestaurantOpen(conversation) ? 'status-online' : 'status-offline';
-      if (conversation.business_type === 'traiteur')   return conversation.is_available ? 'status-online' : 'status-offline';
+      const businessType = conversation.business_type;
+      if (businessType === 'restaurant') return this.isRestaurantOpen(conversation) ? 'status-online' : 'status-offline';
+      if (businessType === 'traiteur')   return conversation.is_available ? 'status-online' : 'status-offline';
     }
     return '';
   }
 
   private isRestaurantOpen(conversation: any): boolean {
     if (!conversation.opening_hour || !conversation.closing_hour) return false;
-    const now            = new Date();
+    const now = new Date();
     const currentMinutes = now.getHours() * 60 + now.getMinutes();
     const openingMinutes = this.timeToMinutes(conversation.opening_hour);
     const closingMinutes = this.timeToMinutes(conversation.closing_hour);
-    if (closingMinutes < openingMinutes) return currentMinutes >= openingMinutes || currentMinutes <= closingMinutes;
+    if (closingMinutes < openingMinutes) {
+      return currentMinutes >= openingMinutes || currentMinutes <= closingMinutes;
+    }
     return currentMinutes >= openingMinutes && currentMinutes <= closingMinutes;
   }
 
@@ -469,9 +534,10 @@ export class ChatWidgetComponent implements OnInit, OnDestroy {
 
   getConversationAvatar(conversation: any): string {
     if (!this.currentUser) return '💬';
-    return (this.currentUser.role === 'client' || this.currentUser.role === 'guest')
-      ? (conversation.business_type === 'restaurant' ? '🍽️' : '🍰')
-      : '👤';
+    if (this.currentUser.role === 'client' || this.currentUser.role === 'guest') {
+      return conversation.business_type === 'restaurant' ? '🍽️' : '🍰';
+    }
+    return '👤';
   }
 
   formatTime(date: string): string {
@@ -480,8 +546,8 @@ export class ChatWidgetComponent implements OnInit, OnDestroy {
   }
 
   formatDate(date: string): string {
-    const d         = new Date(date);
-    const today     = new Date();
+    const d = new Date(date);
+    const today = new Date();
     const yesterday = new Date(today);
     yesterday.setDate(yesterday.getDate() - 1);
     if (d.toDateString() === today.toDateString())     return 'Aujourd\'hui';
@@ -490,7 +556,7 @@ export class ChatWidgetComponent implements OnInit, OnDestroy {
   }
 
   private scrollToBottom(): void {
-    const el = document.querySelector('.cw-messages');
-    if (el) el.scrollTop = el.scrollHeight;
+    const messagesContainer = document.querySelector('.cw-messages');
+    if (messagesContainer) messagesContainer.scrollTop = messagesContainer.scrollHeight;
   }
 }

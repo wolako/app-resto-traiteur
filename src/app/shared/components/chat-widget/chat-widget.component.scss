@@ -1,7 +1,5 @@
 // ════════════════════════════════════════════════════════════
-// CHAT WIDGET
-// Variables de couleur originales CONSERVÉES (var(--rt-*))
-// Seules corrections : overlay bloquant + bottom sheet mobile
+// CHAT WIDGET — RestoTraiteur
 // ════════════════════════════════════════════════════════════
 
 // ─── BOUTON FLOTTANT ──────────────────────────────────────────
@@ -35,32 +33,13 @@
   }
 
   @media (max-width: 768px) {
-    bottom: calc(64px + env(safe-area-inset-bottom, 0px) + 14px);
+    bottom: 78px;
     right: 16px;
-    width: 48px; height: 48px;
+    width: 48px;
+    height: 48px;
     font-size: 1.15rem;
   }
 }
-
-// ─── OVERLAY BLOQUANT (mobile uniquement) ─────────────────────
-// Nouveau : couvre la page derrière le bottom sheet.
-// Empêche le scroll de "traverser" le widget.
-// Cliquer dessus ferme le chat.
-.cw-overlay {
-  display: none;
-
-  @media (max-width: 768px) {
-    display: block;
-    position: fixed;
-    inset: 0;
-    z-index: 1048; // juste en dessous du widget (1050)
-    background: rgba(26,10,0,0.48);
-    backdrop-filter: blur(2px);
-    -webkit-backdrop-filter: blur(2px);
-    animation: cwOverlayIn .22s ease;
-  }
-}
-@keyframes cwOverlayIn { from { opacity: 0; } to { opacity: 1; } }
 
 // ─── WIDGET — Desktop ─────────────────────────────────────────
 .cw-widget {
@@ -76,41 +55,65 @@
   overflow: hidden;
   z-index: 1050;
 
-  // ─── MOBILE — Bottom Sheet corrigé ───────────────────────────
-  // Corrections vs version précédente :
-  // • bottom: 0 (ancré tout en bas, pas de "trou")
-  // • height: 90dvh (couvre presque tout l'écran)
-  // • L'overlay (ci-dessus) couvre le reste de la page
+  // ✅ Transition pour le snap-back après relâchement du swipe
+  // Désactivée pendant le swipe actif (.cw-widget--swiping)
+  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1),
+              opacity  0.25s ease-out;
+
+  // Pendant le glissement : pas de transition (le transform suit le doigt)
+  &--swiping {
+    transition: none !important;
+    cursor: grabbing;
+    user-select: none;
+  }
+
+  // ════════════════════════════════════════════════════════
+  // MOBILE — Bottom Sheet natif
+  //
+  // Design inspiré de WhatsApp / iMessage / apps natives iOS :
+  // • Pleine largeur mais avec des marges latérales de 0
+  // • Coins arrondis uniquement en HAUT (20px)
+  // • Drag handle visible en haut
+  // • Ombre portée vers le haut uniquement
+  // • Hauteur : écran - bottom nav - espace respiration
+  // ════════════════════════════════════════════════════════
   @media (max-width: 768px) {
-    bottom: 0;
+    // Position : juste au-dessus du bottom nav
+    bottom: 64px;
     left: 0;
     right: 0;
     width: 100%;
 
-    height: 90dvh;
-    max-height: 90dvh;
+    // ✅ Coins arrondis en haut — feel bottom sheet natif
+    border-radius: 20px 20px 0 0;
+
+    // Hauteur naturelle — laisse respirer l'écran
+    height: calc(100dvh - 64px - 60px);
+    max-height: 580px;
     min-height: 320px;
 
-    border-radius: 20px 20px 0 0;
+    // Bordures : uniquement en haut et sur les côtés (pas en bas)
     border-top: 1px solid var(--rt-bdr-hi);
     border-left: 1px solid var(--rt-bdr);
     border-right: 1px solid var(--rt-bdr);
     border-bottom: none;
 
+    // Ombre vers le haut, douce et naturelle
     box-shadow:
       0 -6px 24px rgba(92,61,46,0.12),
       0 -2px 8px rgba(92,61,46,0.06);
-
-    padding-bottom: env(safe-area-inset-bottom, 0px);
   }
 
+  // Très petits écrans (iPhone SE, etc.)
   @media (max-width: 420px) {
-    height: 92dvh;
-    max-height: 92dvh;
+    height: calc(100dvh - 64px - 50px);
+    max-height: 500px;
   }
 }
 
-// ─── DRAG HANDLE ──────────────────────────────────────────────
+// ─── DRAG HANDLE — affiché uniquement sur mobile ──────────────
+// Inséré dans le HTML via ::before du cw-header sur mobile
+// (voir chat-widget.component.html : <div class="cw-drag-handle">)
 .cw-drag-handle {
   display: none;
 
@@ -147,8 +150,11 @@
     background: var(--g-primary);
   }
 
+  // Sur mobile, le filet rouge passe après le drag handle
+  // → pas de ::before sur le header (le drag handle est au-dessus)
   @media (max-width: 768px) {
     padding: 11px 16px;
+
     &::before { display: none; }
   }
 }
@@ -222,8 +228,6 @@
   scrollbar-color: rgba(180,100,60,0.18) transparent;
   &::-webkit-scrollbar { width: 4px; }
   &::-webkit-scrollbar-thumb { background: rgba(180,100,60,0.18); border-radius: 2px; }
-  // Empêche le scroll de se propager à la page derrière sur mobile
-  overscroll-behavior: contain;
 }
 
 .cw-messages-body {
@@ -412,8 +416,7 @@
   flex-shrink: 0;
 
   @media (max-width: 768px) {
-    padding: 10px 16px;
-    padding-bottom: calc(10px + env(safe-area-inset-bottom, 0px));
+    padding: 10px 16px 14px; // padding-bottom augmenté pour respiration
   }
 }
 
