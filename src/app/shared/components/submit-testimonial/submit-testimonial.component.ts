@@ -4,6 +4,7 @@ import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angula
 import { TestimonialService } from '../../../core/services/testimonial/testimonial.service';
 import { AuthService } from '../../../core/services/auth/auth.service';
 import { ToastService } from '../../../core/services/toast/toast.service';
+import { TestimonialSubmission } from '../../../core/models/testimonial.model';
 
 @Component({
   selector: 'app-submit-testimonial',
@@ -101,18 +102,25 @@ export class SubmitTestimonialComponent implements OnInit {
   checkEligibility(): void {
     this.testimonialService.checkEligibility().subscribe({
       next: (response: any) => {
-        this.isEligible = response.eligible;
-        this.accountAge = response.accountAge || 0;
-        this.deliveredOrders = response.deliveredOrders || 0;
-        
+        // ✅ La réponse peut être wrappée dans { success, eligible, ... }
+        // ou directement { eligible, ... }
+        const data = response.data || response;
+        this.isEligible      = data.eligible === true;
+        this.accountAge      = data.accountAge || 0;
+        this.deliveredOrders = data.deliveredOrders || 0;
+
         if (!this.isEligible) {
-          this.eligibilityMessage = response.message || 'Vous n\'êtes pas encore éligible';
+          this.eligibilityMessage = data.message || 'Vous n\'êtes pas encore éligible';
         }
       },
       error: (error: any) => {
         console.error('Error checking eligibility:', error);
+        // ✅ Si 400, extraire le message d'éligibilité plutôt que d'afficher une erreur générique
+        const errData = error.error || {};
         this.isEligible = false;
-        this.eligibilityMessage = error.error?.message || 'Erreur de vérification d\'éligibilité';
+        this.eligibilityMessage = errData.message || 'Erreur de vérification d\'éligibilité';
+        this.accountAge      = errData.accountAge      || 0;
+        this.deliveredOrders = errData.deliveredOrders || 0;
       }
     });
   }
@@ -162,67 +170,55 @@ export class SubmitTestimonialComponent implements OnInit {
   // ==========================================
 
   submitTestimonial(): void {
-    if (this.testimonialForm.invalid) {
-      this.testimonialForm.markAllAsTouched();
-      this.toastService.showWarning(
-        'Formulaire incomplet',
-        'Veuillez remplir tous les champs requis'
-      );
-      return;
-    }
-
-    this.loading = true;
-
-    const formData = {
-      ...this.testimonialForm.value,
-      displayName: this.testimonialForm.value.displayName.trim() || 
-                   `${this.currentUser.first_name} ${this.currentUser.last_name.charAt(0)}.`
-    };
-
-    if (this.hasTestimonial && (this.testimonial.status === 'pending' || this.testimonial.status === 'rejected')) {
-      // Mise à jour
-      this.testimonialService.updateMyTestimonial(formData).subscribe({
-        next: (response: any) => {
-          this.loading = false;
-          this.toastService.showSuccess(
-            'Témoignage mis à jour',
-            'Votre témoignage a été mis à jour et est en attente de validation'
-          );
-          this.checkEligibilityAndLoadTestimonial();
-        },
-        error: (error: any) => {
-          console.error('Error updating testimonial:', error);
-          this.loading = false;
-          this.toastService.showError(
-            'Erreur',
-            error.error?.message || 'Impossible de mettre à jour votre témoignage'
-          );
-        }
-      });
-    } else {
-      // Nouvelle soumission
-      this.testimonialService.submitTestimonial(formData).subscribe({
-        next: (response: any) => {
-          this.loading = false;
-          this.toastService.showSuccess(
-            'Témoignage soumis',
-            'Votre témoignage a été soumis et est en attente de validation'
-          );
-          this.testimonialForm.reset();
-          this.selectedRating = 0;
-          this.checkEligibilityAndLoadTestimonial();
-        },
-        error: (error: any) => {
-          console.error('Error submitting testimonial:', error);
-          this.loading = false;
-          this.toastService.showError(
-            'Erreur',
-            error.error?.message || 'Impossible de soumettre votre témoignage'
-          );
-        }
-      });
-    }
+  if (this.testimonialForm.invalid || this.selectedRating === 0) {
+    this.testimonialForm.markAllAsTouched();
+    this.toastService.showWarning('Formulaire incomplet', 'Veuillez remplir tous les champs requis');
+    return;
   }
+
+  this.loading = true;
+
+  // ✅ Construire le display_name depuis le formulaire ou les infos user
+  const displayNameValue = this.testimonialForm.value.displayName?.trim()
+    || `${this.currentUser?.first_name || ''} ${(this.currentUser?.last_name || '').charAt(0)}.`.trim();
+
+  const formData: TestimonialSubmission = {
+    rating:      this.testimonialForm.value.rating,
+    comment:     this.testimonialForm.value.comment,
+    displayName: displayNameValue,
+    display_name: displayNameValue,
+    allowPhoto:  this.testimonialForm.value.allowPhoto || false,
+    allow_photo: this.testimonialForm.value.allowPhoto || false,
+  };
+
+  if (this.hasTestimonial && (this.testimonial?.status === 'pending' || this.testimonial?.status === 'rejected')) {
+    this.testimonialService.updateMyTestimonial(formData).subscribe({
+      next: () => {
+        this.loading = false;
+        this.toastService.showSuccess('Témoignage mis à jour', 'En attente de validation');
+        this.checkEligibilityAndLoadTestimonial();
+      },
+      error: (error: any) => {
+        this.loading = false;
+        this.toastService.showError('Erreur', error.error?.message || 'Impossible de mettre à jour');
+      }
+    });
+  } else {
+    this.testimonialService.submitTestimonial(formData).subscribe({
+      next: () => {
+        this.loading = false;
+        this.toastService.showSuccess('Témoignage soumis', 'En attente de validation');
+        this.testimonialForm.reset();
+        this.selectedRating = 0;
+        this.checkEligibilityAndLoadTestimonial();
+      },
+      error: (error: any) => {
+        this.loading = false;
+        this.toastService.showError('Erreur', error.error?.message || 'Impossible de soumettre');
+      }
+    });
+  }
+}
 
   // ==========================================
   // HELPERS

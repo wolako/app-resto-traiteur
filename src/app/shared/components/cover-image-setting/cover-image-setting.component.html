@@ -1,140 +1,201 @@
+<!-- cover-image-setting.component.html -->
+<div class="cover-card">
 
-    <div class="cover-setting-card">
-
-      <div class="cover-setting-header">
-        <i class="bi bi-house-heart-fill"></i>
-        <div>
-          <h6>Image de la carte d'accueil</h6>
-          <p class="text-muted small mb-0">
-            Recommandé : 800×500 px, format paysage. Disponible sur tous les plans.
-          </p>
-        </div>
-      </div>
-
-      <!-- État : chargement initial -->
-      <div *ngIf="initialLoading" class="text-center py-4">
-        <div class="spinner-border spinner-border-sm text-primary"></div>
-        <p class="small text-muted mt-2">Chargement...</p>
-      </div>
-
-      <ng-container *ngIf="!initialLoading">
-
-        <!-- Aperçu actuel -->
-        <div class="cover-current-preview" *ngIf="coverPreview && !uploading">
-          <img [src]="coverPreview" alt="Cover actuelle"
-               (error)="onPreviewError()"
-               class="cover-preview-img">
-          <div class="cover-preview-actions">
-            <span class="badge-live">
-              <i class="bi bi-check-circle-fill"></i> Image active
-            </span>
-            <button type="button" class="btn-remove-cover" (click)="removeCover()">
-              <i class="bi bi-trash3"></i> Supprimer
-            </button>
-          </div>
-        </div>
-
-        <!-- Source tabs -->
-        <div class="source-tabs my-3">
-          <button type="button"
-                  class="source-tab"
-                  [class.active]="!showUrlInput"
-                  (click)="showUrlInput = false">
-            <i class="bi bi-upload me-1"></i> Depuis mon PC
-          </button>
-          <button type="button"
-                  class="source-tab"
-                  [class.active]="showUrlInput"
-                  (click)="showUrlInput = true">
-            <i class="bi bi-link-45deg me-1"></i> Depuis une URL
-          </button>
-        </div>
-
-        <!-- Upload fichier -->
-        <ng-container *ngIf="!showUrlInput">
-          <div class="upload-zone"
-               [class.uploading]="uploading"
-               (click)="!uploading && coverFileInput.click()"
-               [style.cursor]="uploading ? 'wait' : 'pointer'">
-
-            <div *ngIf="!uploading" class="upload-empty">
-              <i class="bi bi-cloud-upload-fill"></i>
-              <p>Cliquez pour choisir une image</p>
-              <small>JPG, PNG, WEBP · max 8 MB · 800×500 px recommandé</small>
-            </div>
-
-            <div *ngIf="uploading" class="upload-progress">
-              <div class="spinner-border text-primary mb-2"></div>
-              <p class="small">Upload en cours... {{ uploadProgress }}%</p>
-              <div class="progress-bar-wrap">
-                <div class="progress-bar-fill"
-                     [style.width.%]="uploadProgress"></div>
-              </div>
-            </div>
-          </div>
-          <input #coverFileInput
-                 type="file"
-                 accept="image/jpeg,image/png,image/webp"
-                 style="display:none"
-                 (change)="onFileSelected($event)">
-
-          <!-- Erreur upload -->
-          <div *ngIf="uploadError" class="upload-error mt-2">
-            <i class="bi bi-exclamation-triangle-fill"></i>
-            {{ uploadError }}
-            <button (click)="uploadError = null" class="btn-dismiss">✕</button>
-          </div>
-        </ng-container>
-
-        <!-- URL input -->
-        <ng-container *ngIf="showUrlInput">
-          <div class="url-input-zone">
-            <!-- Aperçu URL avant validation -->
-            <div class="url-preview" *ngIf="urlPreviewSrc">
-              <img [src]="urlPreviewSrc"
-                   alt="Aperçu"
-                   (load)="urlPreviewValid = true"
-                   (error)="urlPreviewValid = false; urlPreviewSrc = null">
-            </div>
-            <div class="input-group mt-2">
-              <span class="input-group-text">
-                <i class="bi bi-link-45deg"></i>
-              </span>
-              <input type="url"
-                     class="form-control"
-                     [(ngModel)]="urlInput"
-                     (input)="onUrlInput()"
-                     placeholder="https://exemple.com/image.jpg">
-              <button type="button"
-                      class="btn btn-primary"
-                      (click)="applyUrl()"
-                      [disabled]="!urlInput.trim() || saving || !urlPreviewValid">
-                <span *ngIf="saving" class="spinner-border spinner-border-sm me-1"></span>
-                Appliquer
-              </button>
-            </div>
-            <small class="text-muted mt-1 d-block">
-              <i class="bi bi-info-circle me-1"></i>
-              L'image doit être publiquement accessible en HTTPS.
-            </small>
-          </div>
-        </ng-container>
-
-        <!-- Tips -->
-        <div class="cover-tips mt-3">
-          <div class="tip-item">
-            <i class="bi bi-aspect-ratio text-primary"></i>
-            <span>Format paysage 800×500 px ou 16:9</span>
-          </div>
-          <div class="tip-item">
-            <i class="bi bi-brightness-high text-warning"></i>
-            <span>Bonne luminosité — évitez les images trop sombres</span>
-          </div>
-          <div class="tip-item">
-            <i class="bi bi-camera-fill text-success"></i>
-            <span>Vos vrais plats ou ambiance — photos authentiques</span>
-          </div>
-        </div>
-
-      </ng-container>
+  <!-- ── HEADER ── -->
+  <div class="cover-card-header">
+    <div class="cover-card-icon">
+      <i class="bi bi-image-fill"></i>
+    </div>
+    <div class="cover-card-title-wrap">
+      <h6 class="cover-card-title">Image de la carte d'accueil</h6>
+      <p class="cover-card-subtitle">
+        Recommandé&nbsp;: 800&times;500&nbsp;px, format paysage&nbsp;&middot;&nbsp;JPG, PNG, WEBP
+      </p>
+    </div>
   </div>
+
+  <!-- ── LOADING ── -->
+  <div *ngIf="initialLoading" class="cover-loading">
+    <div class="cover-loading-pulse"></div>
+    <span>Chargement de l'image...</span>
+  </div>
+
+  <ng-container *ngIf="!initialLoading">
+
+    <!-- ── APERÇU IMAGE ACTIVE ── -->
+    <div class="cover-preview-wrap" *ngIf="coverPreview && !uploading">
+      <div class="cover-preview-img-container">
+        <img [src]="coverPreview"
+             alt="Image de couverture"
+             class="cover-preview-img"
+             (error)="onPreviewError()">
+        <div class="cover-preview-overlay">
+          <span class="cover-live-badge">
+            <i class="bi bi-check-circle-fill"></i>
+            Image active
+          </span>
+        </div>
+      </div>
+      <div class="cover-preview-footer">
+        <div class="cover-preview-meta">
+          <i class="bi bi-image"></i>
+          <span>Visible sur votre carte d'accueil</span>
+        </div>
+        <button type="button" class="btn-remove" (click)="removeCover()">
+          <i class="bi bi-trash3"></i>
+          Retirer
+        </button>
+      </div>
+    </div>
+
+    <!-- ── SOURCE TABS ── -->
+    <div class="source-tabs">
+      <button type="button"
+              class="source-tab"
+              [class.active]="!showUrlInput"
+              (click)="showUrlInput = false; uploadError = null">
+        <i class="bi bi-cloud-upload"></i>
+        <span>Depuis mon ordinateur</span>
+      </button>
+      <button type="button"
+              class="source-tab"
+              [class.active]="showUrlInput"
+              (click)="showUrlInput = true; uploadError = null">
+        <i class="bi bi-link-45deg"></i>
+        <span>Depuis une URL</span>
+      </button>
+    </div>
+
+    <!-- ── UPLOAD FICHIER ── -->
+    <ng-container *ngIf="!showUrlInput">
+
+      <div class="upload-zone"
+           [class.is-uploading]="uploading"
+           [class.has-error]="!!uploadError"
+           (click)="!uploading && coverFileInput.click()"
+           (dragover)="onDragOver($event)"
+           (drop)="onDrop($event)">
+
+        <!-- État vide -->
+        <ng-container *ngIf="!uploading">
+          <div class="upload-icon-wrap">
+            <i class="bi bi-cloud-arrow-up-fill"></i>
+          </div>
+          <p class="upload-label">Cliquez pour choisir une image</p>
+          <p class="upload-hint">ou glissez-déposez ici</p>
+          <div class="upload-formats">
+            <span>JPG</span>
+            <span>PNG</span>
+            <span>WEBP</span>
+            <span>8 MB max</span>
+          </div>
+        </ng-container>
+
+        <!-- Upload en cours -->
+        <ng-container *ngIf="uploading">
+          <div class="upload-progress-icon">
+            <svg class="upload-spinner" viewBox="0 0 36 36">
+              <circle cx="18" cy="18" r="15" fill="none" stroke="var(--rt-bdr)" stroke-width="3"/>
+              <circle cx="18" cy="18" r="15" fill="none" stroke="var(--rt-primary)" stroke-width="3"
+                      stroke-dasharray="94" [attr.stroke-dashoffset]="94 - (94 * uploadProgress / 100)"
+                      stroke-linecap="round" transform="rotate(-90 18 18)"/>
+            </svg>
+            <span class="upload-pct">{{ uploadProgress }}%</span>
+          </div>
+          <p class="upload-label">Upload en cours...</p>
+          <p class="upload-hint">Ne fermez pas cette page</p>
+        </ng-container>
+
+      </div>
+
+      <input #coverFileInput
+             type="file"
+             accept="image/jpeg,image/png,image/webp"
+             style="display:none"
+             (change)="onFileSelected($event)">
+
+      <!-- Erreur upload -->
+      <div class="upload-error-bar" *ngIf="uploadError">
+        <i class="bi bi-exclamation-triangle-fill"></i>
+        <span>{{ uploadError }}</span>
+        <button class="upload-error-dismiss" (click)="uploadError = null" aria-label="Fermer">
+          <i class="bi bi-x-lg"></i>
+        </button>
+      </div>
+
+    </ng-container>
+
+    <!-- ── URL INPUT ── -->
+    <ng-container *ngIf="showUrlInput">
+
+      <div class="url-section">
+
+        <!-- Aperçu URL -->
+        <div class="url-preview-wrap" *ngIf="urlPreviewSrc">
+          <img [src]="urlPreviewSrc"
+               alt="Aperçu"
+               class="url-preview-img"
+               (load)="urlPreviewValid = true"
+               (error)="urlPreviewValid = false; urlPreviewSrc = null">
+          <div class="url-preview-status" *ngIf="urlPreviewValid">
+            <i class="bi bi-check-circle-fill"></i>
+            Image valide et accessible
+          </div>
+        </div>
+
+        <div class="url-input-group">
+          <div class="url-input-wrap">
+            <i class="bi bi-link-45deg url-input-icon"></i>
+            <input type="url"
+                   class="url-input"
+                   [(ngModel)]="urlInput"
+                   (input)="onUrlInput()"
+                   placeholder="https://exemple.com/image.jpg">
+          </div>
+          <button type="button"
+                  class="btn-apply-url"
+                  (click)="applyUrl()"
+                  [disabled]="!urlInput.trim() || saving || !urlPreviewValid">
+            <div class="btn-spinner" *ngIf="saving"></div>
+            <i class="bi bi-check-lg" *ngIf="!saving"></i>
+            <span>{{ saving ? 'Enregistrement...' : 'Appliquer' }}</span>
+          </button>
+        </div>
+
+        <p class="url-hint">
+          <i class="bi bi-shield-check"></i>
+          L'image doit être publiquement accessible en HTTPS. Elle sera prévisualisée avant validation.
+        </p>
+
+      </div>
+
+    </ng-container>
+
+    <!-- ── TIPS ── -->
+    <div class="cover-tips">
+      <div class="cover-tip">
+        <div class="tip-icon tip-icon--blue"><i class="bi bi-aspect-ratio"></i></div>
+        <div>
+          <strong>Format paysage</strong>
+          <span>800&times;500&nbsp;px ou ratio 16:9 recommandé</span>
+        </div>
+      </div>
+      <div class="cover-tip">
+        <div class="tip-icon tip-icon--amber"><i class="bi bi-brightness-high"></i></div>
+        <div>
+          <strong>Bonne luminosité</strong>
+          <span>Évitez les images trop sombres ou trop contrastées</span>
+        </div>
+      </div>
+      <div class="cover-tip">
+        <div class="tip-icon tip-icon--green"><i class="bi bi-camera-fill"></i></div>
+        <div>
+          <strong>Photos authentiques</strong>
+          <span>Vos vrais plats ou l'ambiance de votre établissement</span>
+        </div>
+      </div>
+    </div>
+
+  </ng-container>
+
+</div>

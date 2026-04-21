@@ -1,358 +1,579 @@
+<!-- client-profile.component.html -->
 <div class="cp-page">
   <div class="cp-container">
 
-    <!-- ── HEADER ─────────────────────────────────────────────── -->
-    <div class="cp-header">
-      <div class="cp-avatar">
-        {{ currentUser?.first_name?.charAt(0) }}{{ currentUser?.last_name?.charAt(0) }}
-      </div>
+    <!-- ════════════════════════════════════════════════════════
+         HEADER — Bannière + avatar chevauchant + infos
+    ═════════════════════════════════════════════════════════ -->
+    <div class="cp-profile-card">
 
-      <div class="cp-header-info">
-        <h1>{{ currentUser?.first_name }} {{ currentUser?.last_name }}</h1>
-        <!-- ✅ Email et téléphone : lignes séparées, gap entre icône et texte -->
-        <div class="cp-contact-lines">
-          <div class="cp-contact-item">
-            <i class="bi bi-envelope-fill"></i>
-            <span>{{ currentUser?.email }}</span>
-          </div>
-          <div class="cp-contact-item" *ngIf="currentUser?.phone">
-            <i class="bi bi-telephone-fill"></i>
-            <span>{{ currentUser?.phone }}</span>
-          </div>
-        </div>
-      </div>
-
-      <div class="cp-header-actions">
-        <div *ngIf="unreadCount > 0" class="cp-notif-pill">
-          <i class="bi bi-bell-fill"></i>{{ unreadCount }} nouvelle(s)
-        </div>
-        <button class="cp-btn-edit" (click)="openEditProfile()" *ngIf="!editingProfile">
-          <i class="bi bi-pencil-fill"></i> Modifier
+      <!-- Bannière décorative -->
+      <div class="cp-banner">
+        <div class="cp-banner-pattern"></div>
+        <!-- Bouton modifier flottant sur la bannière -->
+        <button class="cp-btn-edit-float" (click)="openEditProfile()" *ngIf="!editingProfile">
+          <i class="bi bi-pencil-fill"></i>
+          <span>Modifier le profil</span>
         </button>
       </div>
-    </div>
 
-    <!-- ✅ FORMULAIRE D'ÉDITION ──────────────────────────────── -->
-    <div class="cp-edit-profile" *ngIf="editingProfile" [@slideDown]>
-      <div class="cp-edit-profile-header">
-        <h3><i class="bi bi-person-gear"></i> Modifier mes informations</h3>
-        <button class="cp-close-edit" (click)="cancelEditProfile()">
+      <!-- Zone infos : avatar chevauche la bannière -->
+      <div class="cp-profile-body">
+
+        <!-- Avatar initiales -->
+        <div class="cp-avatar-wrap">
+          <div class="cp-avatar">
+            {{ currentUser?.first_name?.charAt(0) }}{{ currentUser?.last_name?.charAt(0) }}
+          </div>
+          <!-- Pastille connecté -->
+          <div class="cp-avatar-dot"></div>
+        </div>
+
+        <div class="cp-profile-meta">
+          <!-- Nom -->
+          <h1 class="cp-name">
+            {{ currentUser?.first_name }} {{ currentUser?.last_name }}
+          </h1>
+
+          <!-- Email & téléphone — discrets, alignés -->
+          <div class="cp-contacts">
+            <span class="cp-contact-chip">
+              <i class="bi bi-envelope-fill"></i>
+              {{ currentUser?.email }}
+            </span>
+            <span class="cp-contact-chip" *ngIf="currentUser?.phone">
+              <i class="bi bi-telephone-fill"></i>
+              {{ currentUser?.phone }}
+            </span>
+          </div>
+        </div>
+
+        <!-- Badge notifs + stat rapides -->
+        <div class="cp-profile-aside">
+          <div class="cp-notif-pill" *ngIf="unreadCount > 0">
+            <i class="bi bi-bell-fill"></i>
+            {{ unreadCount }} non lue{{ unreadCount > 1 ? 's' : '' }}
+          </div>
+
+          <!-- 3 KPIs rapides, discrets -->
+          <div class="cp-quick-stats" *ngIf="!loading.profile && statistics">
+            <div class="cp-qs">
+              <span class="cp-qs-val">{{ statistics.total_orders || 0 }}</span>
+              <span class="cp-qs-lbl">Commandes</span>
+            </div>
+            <div class="cp-qs-sep"></div>
+            <div class="cp-qs">
+              <span class="cp-qs-val">{{ statistics.total_reservations || 0 }}</span>
+              <span class="cp-qs-lbl">Réservations</span>
+            </div>
+            <div class="cp-qs-sep"></div>
+            <div class="cp-qs">
+              <span class="cp-qs-val">{{ statistics.total_spent | currencyFormat }}</span>
+              <span class="cp-qs-lbl">Dépensé</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /cp-profile-card -->
+
+    <!-- ════════════════════════════════════════════════════════
+         FORMULAIRE ÉDITION PROFIL
+    ═════════════════════════════════════════════════════════ -->
+    <div class="cp-edit-panel" *ngIf="editingProfile">
+      <div class="cp-edit-panel-header">
+        <div class="cp-edit-panel-title">
+          <i class="bi bi-person-gear"></i>
+          Modifier mes informations
+        </div>
+        <button class="cp-icon-btn" (click)="cancelEditProfile()">
           <i class="bi bi-x-lg"></i>
         </button>
       </div>
       <form [formGroup]="profileForm" (ngSubmit)="saveProfile()" class="cp-edit-form">
         <div class="cp-form-row">
           <div class="cp-form-group">
-            <label for="first_name"><i class="bi bi-person"></i> Prénom <span class="req">*</span></label>
-            <input type="text" id="first_name" class="cp-input" formControlName="first_name" placeholder="Votre prénom"
+            <label><i class="bi bi-person"></i> Prénom *</label>
+            <input type="text" class="cp-input" formControlName="first_name" placeholder="Votre prénom"
               [class.error]="profileForm.get('first_name')?.invalid && profileForm.get('first_name')?.touched">
-            <span class="cp-field-error" *ngIf="profileForm.get('first_name')?.invalid && profileForm.get('first_name')?.touched">
-              Le prénom est requis (minimum 2 caractères)
+            <span class="cp-field-error"
+              *ngIf="profileForm.get('first_name')?.invalid && profileForm.get('first_name')?.touched">
+              Requis (2 caractères min.)
             </span>
           </div>
           <div class="cp-form-group">
-            <label for="last_name"><i class="bi bi-person"></i> Nom <span class="req">*</span></label>
-            <input type="text" id="last_name" class="cp-input" formControlName="last_name" placeholder="Votre nom"
+            <label><i class="bi bi-person"></i> Nom *</label>
+            <input type="text" class="cp-input" formControlName="last_name" placeholder="Votre nom"
               [class.error]="profileForm.get('last_name')?.invalid && profileForm.get('last_name')?.touched">
-            <span class="cp-field-error" *ngIf="profileForm.get('last_name')?.invalid && profileForm.get('last_name')?.touched">
-              Le nom est requis (minimum 2 caractères)
+            <span class="cp-field-error"
+              *ngIf="profileForm.get('last_name')?.invalid && profileForm.get('last_name')?.touched">
+              Requis (2 caractères min.)
             </span>
           </div>
         </div>
-
         <div class="cp-form-row">
           <div class="cp-form-group">
-            <label for="email_display"><i class="bi bi-envelope"></i> Email</label>
-            <input type="email" id="email_display" class="cp-input cp-input-disabled" [value]="currentUser?.email" disabled>
+            <label><i class="bi bi-envelope"></i> Email</label>
+            <input type="email" class="cp-input cp-input-disabled" [value]="currentUser?.email" disabled>
             <span class="cp-field-hint">L'email ne peut pas être modifié</span>
           </div>
           <div class="cp-form-group">
-            <label for="phone"><i class="bi bi-telephone"></i> Téléphone</label>
-            <input type="tel" id="phone" class="cp-input" formControlName="phone" placeholder="+228 90 12 34 56">
+            <label><i class="bi bi-telephone"></i> Téléphone</label>
+            <input type="tel" class="cp-input" formControlName="phone" placeholder="+228 90 12 34 56">
           </div>
         </div>
-
         <div class="cp-edit-actions">
-          <button type="button" class="cp-btn-cancel" (click)="cancelEditProfile()" [disabled]="savingProfile">
+          <button type="button" class="cp-btn-ghost" (click)="cancelEditProfile()" [disabled]="savingProfile">
             <i class="bi bi-x-circle"></i> Annuler
           </button>
-          <button type="submit" class="cp-btn-save" [disabled]="savingProfile || profileForm.invalid">
+          <button type="submit" class="cp-btn-primary" [disabled]="savingProfile || profileForm.invalid">
             <span *ngIf="savingProfile" class="spinner-border spinner-border-sm"></span>
             <i *ngIf="!savingProfile" class="bi bi-floppy-fill"></i>
-            {{ savingProfile ? 'Enregistrement...' : 'Enregistrer les modifications' }}
+            {{ savingProfile ? 'Enregistrement…' : 'Enregistrer' }}
           </button>
         </div>
       </form>
     </div>
 
-    <!-- ── TABS DESKTOP ───────────────────────────────────────── -->
+    <!-- ════════════════════════════════════════════════════════
+         TABS — desktop
+    ═════════════════════════════════════════════════════════ -->
     <div class="cp-tabs">
-      <button class="cp-tab" [class.active]="activeTab === 'overview'" (click)="switchTab('overview')">
+      <button class="cp-tab" [class.active]="activeTab === 'overview'"
+        (click)="switchTab('overview')">
         <i class="bi bi-grid-fill"></i><span>Vue d'ensemble</span>
       </button>
-      <button class="cp-tab" [class.active]="activeTab === 'orders'" (click)="switchTab('orders')">
+      <button class="cp-tab" [class.active]="activeTab === 'orders'"
+        (click)="switchTab('orders')">
         <i class="bi bi-cart-fill"></i><span>Commandes</span>
       </button>
-      <button class="cp-tab" [class.active]="activeTab === 'reservations'" (click)="switchTab('reservations')">
+      <button class="cp-tab" [class.active]="activeTab === 'reservations'"
+        (click)="switchTab('reservations')">
         <i class="bi bi-calendar-fill"></i><span>Réservations</span>
       </button>
-      <button class="cp-tab position-relative" [class.active]="activeTab === 'notifications'" (click)="switchTab('notifications')">
+      <button class="cp-tab position-relative" [class.active]="activeTab === 'notifications'"
+        (click)="switchTab('notifications')">
         <i class="bi bi-bell-fill"></i><span>Notifications</span>
         <span *ngIf="unreadCount > 0" class="cp-tab-badge">{{ unreadCount }}</span>
       </button>
-      <button class="cp-tab" [class.active]="activeTab === 'testimonial'" (click)="switchTab('testimonial')">
+      <button class="cp-tab" [class.active]="activeTab === 'testimonial'"
+        (click)="switchTab('testimonial')">
         <i class="bi bi-chat-quote-fill"></i><span>Témoignage</span>
       </button>
-      <button class="cp-tab" [class.active]="activeTab === 'settings'" (click)="switchTab('settings')">
+      <button class="cp-tab" [class.active]="activeTab === 'settings'"
+        (click)="switchTab('settings')">
         <i class="bi bi-gear-fill"></i><span>Paramètres</span>
       </button>
     </div>
 
-    <!-- ── TAB CONTENT ───────────────────────────────────────── -->
+    <!-- ════════════════════════════════════════════════════════
+         CONTENU DES TABS
+    ═════════════════════════════════════════════════════════ -->
     <div class="cp-content">
 
-      <!-- ═══ OVERVIEW ═══ -->
-      <div *ngIf="activeTab === 'overview'" class="cp-pane anim-fadein">
+      <!-- ═══ OVERVIEW ═══════════════════════════════════════ -->
+      <div *ngIf="activeTab === 'overview'" class="cp-pane">
 
+        <!-- Stats complètes -->
         <div *ngIf="loading.profile" class="cp-loading">
-          <div class="spinner-border" style="color:var(--rt-primary)"></div>
-          <p>Chargement des statistiques...</p>
+          <div class="spinner-border"></div><p>Chargement…</p>
         </div>
 
         <div *ngIf="!loading.profile && statistics" class="cp-stats-grid">
-          <div class="cp-stat-card"><div class="cp-stat-icon blue"><i class="bi bi-cart-fill"></i></div><div class="cp-stat-body"><h3>{{ statistics.total_orders || 0 }}</h3><p>Commandes</p></div></div>
-          <div class="cp-stat-card"><div class="cp-stat-icon green"><i class="bi bi-check-circle-fill"></i></div><div class="cp-stat-body"><h3>{{ statistics.completed_orders || 0 }}</h3><p>Livrées</p></div></div>
-          <div class="cp-stat-card"><div class="cp-stat-icon teal"><i class="bi bi-calendar-fill"></i></div><div class="cp-stat-body"><h3>{{ statistics.total_reservations || 0 }}</h3><p>Réservations</p></div></div>
-          <div class="cp-stat-card"><div class="cp-stat-icon gold"><i class="bi bi-cash-stack"></i></div><div class="cp-stat-body"><h3>{{ statistics.total_spent | currencyFormat }}</h3><p>Dépensé</p></div></div>
-          <div class="cp-stat-card"><div class="cp-stat-icon purple"><i class="bi bi-star-fill"></i></div><div class="cp-stat-body"><h3>{{ statistics.total_special_orders || 0 }}</h3><p>Spéciales</p></div></div>
-          <div class="cp-stat-card"><div class="cp-stat-icon green"><i class="bi bi-check-circle-fill"></i></div><div class="cp-stat-body"><h3>{{ statistics.confirmed_special_orders || 0 }}</h3><p>Spéciales confirmées</p></div></div>
-          <div class="cp-stat-card"><div class="cp-stat-icon gold"><i class="bi bi-clock-history"></i></div><div class="cp-stat-body"><h3>{{ statistics.pending_special_orders || 0 }}</h3><p>Spéciales en attente</p></div></div>
+          <div class="cp-stat-card">
+            <div class="cp-stat-icon blue"><i class="bi bi-cart-fill"></i></div>
+            <div class="cp-stat-body"><h3>{{ statistics.total_orders || 0 }}</h3><p>Commandes</p></div>
+          </div>
+          <div class="cp-stat-card">
+            <div class="cp-stat-icon green"><i class="bi bi-check-circle-fill"></i></div>
+            <div class="cp-stat-body"><h3>{{ statistics.completed_orders || 0 }}</h3><p>Livrées</p></div>
+          </div>
+          <div class="cp-stat-card">
+            <div class="cp-stat-icon teal"><i class="bi bi-calendar-fill"></i></div>
+            <div class="cp-stat-body"><h3>{{ statistics.total_reservations || 0 }}</h3><p>Réservations</p></div>
+          </div>
+          <div class="cp-stat-card">
+            <div class="cp-stat-icon gold"><i class="bi bi-cash-stack"></i></div>
+            <div class="cp-stat-body"><h3>{{ statistics.total_spent | currencyFormat }}</h3><p>Dépensé</p></div>
+          </div>
+          <div class="cp-stat-card">
+            <div class="cp-stat-icon purple"><i class="bi bi-stars"></i></div>
+            <div class="cp-stat-body"><h3>{{ statistics.total_special_orders || 0 }}</h3><p>Cmd spéciales</p></div>
+          </div>
+          <div class="cp-stat-card">
+            <div class="cp-stat-icon green"><i class="bi bi-patch-check-fill"></i></div>
+            <div class="cp-stat-body"><h3>{{ statistics.confirmed_special_orders || 0 }}</h3><p>Spéciales conf.</p></div>
+          </div>
         </div>
 
+        <!-- Commandes récentes -->
         <div class="cp-card">
           <div class="cp-card-header">
-            <h5><i class="bi bi-cart-fill me-2"></i>Commandes récentes</h5>
-            <button class="cp-btn-ghost" (click)="switchTab('orders')">Voir tout <i class="bi bi-arrow-right ms-1"></i></button>
+            <h5><i class="bi bi-cart-fill"></i> Commandes récentes</h5>
+            <button class="cp-btn-ghost" (click)="switchTab('orders')">
+              Voir tout <i class="bi bi-arrow-right ms-1"></i>
+            </button>
           </div>
           <div class="cp-card-body">
-            <div *ngIf="loading.orders" class="cp-loading"><div class="spinner-border" style="color:var(--rt-primary)"></div></div>
-            <div *ngIf="!loading.orders && recentOrders.length === 0" class="cp-empty"><i class="bi bi-cart-x"></i><p>Aucune commande récente</p></div>
-            <div *ngIf="!loading.orders && recentOrders.length > 0" class="table-responsive">
-              <table class="cp-table">
-                <thead><tr><th>N°</th><th>Restaurant</th><th>Montant</th><th>Statut</th><th>Date</th><th>Actions</th></tr></thead>
-                <tbody>
-                  <tr *ngFor="let order of recentOrders">
-                    <td><code>{{ order.id }}</code></td>
-                    <td><strong>{{ order.business_name }}</strong></td>
-                    <td class="fw-bold">{{ order.total_amount }} FCFA</td>
-                    <td><span class="stag" [ngClass]="{'s-pending':order.status==='pending','s-confirmed':order.status==='confirmed','s-preparing':order.status==='preparing','s-ready':order.status==='ready','s-delivered':order.status==='delivered','s-cancelled':order.status==='cancelled'}">{{ getOrderStatusLabel(order.status) }}</span></td>
-                    <td><small>{{ order.created_at | date:'dd/MM/yyyy HH:mm' }}</small></td>
-                    <td>
-                      <div class="cp-actions">
-                        <button *ngIf="order.status === 'delivered' && !order.delivery_confirmed" class="cp-btn-sm green" (click)="confirmDelivery(order.id)"><i class="bi bi-check-circle"></i> Confirmer</button>
-                        <span *ngIf="order.delivery_confirmed" class="cp-confirmed"><i class="bi bi-check-circle-fill"></i> Confirmée</span>
-                        <button *ngIf="order.payment_status === 'paid'" class="cp-btn-sm outline" (click)="downloadReceipt(order.id)"><i class="bi bi-file-earmark-pdf"></i> Reçu</button>
-                      </div>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
+            <div *ngIf="loading.orders" class="cp-loading">
+              <div class="spinner-border"></div>
             </div>
-          </div>
-        </div>
-
-        <div class="cp-card">
-          <div class="cp-card-header">
-            <h5><i class="bi bi-calendar-check-fill me-2"></i>Réservations à venir</h5>
-            <button class="cp-btn-ghost" (click)="switchTab('reservations')">Voir tout <i class="bi bi-arrow-right ms-1"></i></button>
-          </div>
-          <div class="cp-card-body">
-            <div *ngIf="loading.reservations" class="cp-loading"><div class="spinner-border" style="color:var(--rt-primary)"></div></div>
-            <div *ngIf="!loading.reservations && upcomingReservations.length === 0" class="cp-empty"><i class="bi bi-calendar-x"></i><p>Aucune réservation à venir</p></div>
-            <div *ngIf="!loading.reservations && upcomingReservations.length > 0" class="table-responsive">
-              <table class="cp-table">
-                <thead><tr><th>N°</th><th>Restaurant</th><th>Date</th><th>Heure</th><th>Personnes</th><th>Statut</th></tr></thead>
-                <tbody>
-                  <tr *ngFor="let r of upcomingReservations">
-                    <td><code>{{ r.id }}</code></td>
-                    <td><strong>{{ r.restaurant_name }}</strong></td>
-                    <td>{{ r.reservation_date | date:'dd/MM/yyyy' }}</td>
-                    <td>{{ r.time_slot }}</td>
-                    <td>{{ r.number_of_people }} pers.</td>
-                    <td><span class="stag" [ngClass]="{'r-pending':r.status==='pending','r-confirmed':r.status==='confirmed','r-cancelled':r.status==='cancelled'}">{{ getReservationStatusLabel(r.status) }}</span></td>
-                  </tr>
-                </tbody>
-              </table>
+            <div *ngIf="!loading.orders && recentOrders.length === 0" class="cp-empty">
+              <i class="bi bi-cart-x"></i><p>Aucune commande récente</p>
             </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- ═══ ORDERS ═══ -->
-      <div *ngIf="activeTab === 'orders'" class="cp-pane anim-fadein">
-        <div class="cp-card">
-          <div class="cp-card-header"><h5><i class="bi bi-cart-fill me-2"></i>Toutes mes commandes</h5></div>
-          <div class="cp-card-body">
-            <div *ngIf="loading.orders" class="cp-loading"><div class="spinner-border" style="color:var(--rt-primary)"></div></div>
-            <div *ngIf="!loading.orders && recentOrders.length === 0" class="cp-empty"><i class="bi bi-cart-x"></i><h5>Aucune commande</h5><p>Vous n'avez pas encore passé de commande</p></div>
             <div *ngIf="!loading.orders && recentOrders.length > 0" class="cp-order-list">
               <div class="cp-order-item" *ngFor="let order of recentOrders">
                 <div class="cp-order-top">
-                  <div><span class="cp-order-id">Commande {{ order.id }}</span><small>{{ order.created_at | date:'dd MMMM yyyy à HH:mm' }}</small></div>
-                  <div class="cp-order-badges"><span class="stag" [ngClass]="{'s-pending':order.status==='pending','s-confirmed':order.status==='confirmed','s-preparing':order.status==='preparing','s-ready':order.status==='ready','s-delivered':order.status==='delivered','s-cancelled':order.status==='cancelled'}">{{ getOrderStatusLabel(order.status) }}</span></div>
+                  <div>
+                    <span class="cp-order-id">Commande {{ order.id }}</span>
+                    <small>{{ order.created_at | date:'dd MMM yyyy · HH:mm' }}</small>
+                  </div>
+                  <span class="stag"
+                    [ngClass]="{
+                      's-pending':order.status==='pending',
+                      's-confirmed':order.status==='confirmed',
+                      's-preparing':order.status==='preparing',
+                      's-ready':order.status==='ready',
+                      's-delivered':order.status==='delivered',
+                      's-cancelled':order.status==='cancelled'
+                    }">{{ getOrderStatusLabel(order.status) }}</span>
                 </div>
                 <div class="cp-order-body">
                   <div class="cp-order-info">
-                    <span><strong>Restaurant :</strong> {{ order.business_name }}</span>
-                    <span><strong>Montant :</strong> {{ order.total_amount | number:'1.0-0' }} FCFA</span>
-                    <span><strong>Paiement :</strong> {{ order.payment_status }}</span>
+                    <span><i class="bi bi-shop"></i> {{ order.business_name }}</span>
+                    <span class="cp-order-amount">{{ order.total_amount | number:'1.0-0' }} FCFA</span>
                   </div>
                   <div class="cp-actions">
-                    <button *ngIf="order.status === 'delivered' && !order.delivery_confirmed" class="cp-btn-sm green" (click)="confirmDelivery(order.id)"><i class="bi bi-check-circle"></i> Confirmer réception</button>
-                    <span *ngIf="order.delivery_confirmed" class="cp-confirmed"><i class="bi bi-check-circle-fill"></i> Confirmée le {{ order.delivery_confirmed_at | date:'dd/MM/yyyy' }}</span>
-                    <button *ngIf="order.payment_status === 'paid'" class="cp-btn-sm outline" (click)="downloadReceipt(order.id)"><i class="bi bi-file-earmark-pdf"></i> Télécharger le reçu</button>
+                    <button *ngIf="order.status === 'delivered' && !order.delivery_confirmed"
+                      class="cp-btn-sm green" (click)="confirmDelivery(order.id)">
+                      <i class="bi bi-check-circle"></i> Confirmer réception
+                    </button>
+                    <span *ngIf="order.delivery_confirmed" class="cp-confirmed">
+                      <i class="bi bi-check-circle-fill"></i> Confirmée
+                    </span>
+                    <button *ngIf="order.payment_status === 'paid'"
+                      class="cp-btn-sm outline" (click)="downloadReceipt(order.id)">
+                      <i class="bi bi-file-earmark-pdf"></i> Reçu
+                    </button>
                   </div>
                 </div>
               </div>
             </div>
           </div>
         </div>
-      </div>
 
-      <!-- ═══ RESERVATIONS ═══ -->
-      <div *ngIf="activeTab === 'reservations'" class="cp-pane anim-fadein">
+        <!-- Réservations à venir -->
         <div class="cp-card">
-          <div class="cp-card-header"><h5><i class="bi bi-calendar-fill me-2"></i>Toutes mes réservations</h5></div>
+          <div class="cp-card-header">
+            <h5><i class="bi bi-calendar-check-fill"></i> Réservations à venir</h5>
+            <button class="cp-btn-ghost" (click)="switchTab('reservations')">
+              Voir tout <i class="bi bi-arrow-right ms-1"></i>
+            </button>
+          </div>
           <div class="cp-card-body">
-            <div *ngIf="loading.reservations" class="cp-loading"><div class="spinner-border" style="color:var(--rt-primary)"></div></div>
-            <div *ngIf="!loading.reservations && upcomingReservations.length === 0" class="cp-empty"><i class="bi bi-calendar-x"></i><h5>Aucune réservation</h5><p>Vous n'avez pas encore de réservation</p></div>
+            <div *ngIf="loading.reservations" class="cp-loading">
+              <div class="spinner-border"></div>
+            </div>
+            <div *ngIf="!loading.reservations && upcomingReservations.length === 0" class="cp-empty">
+              <i class="bi bi-calendar-x"></i><p>Aucune réservation à venir</p>
+            </div>
             <div *ngIf="!loading.reservations && upcomingReservations.length > 0" class="cp-resa-list">
               <div class="cp-resa-item" *ngFor="let r of upcomingReservations">
                 <div class="cp-resa-icon"><i class="bi bi-calendar-check-fill"></i></div>
                 <div class="cp-resa-info">
                   <strong>{{ r.restaurant_name }}</strong>
-                  <span><i class="bi bi-calendar3 me-1"></i>{{ r.reservation_date | date:'dd MMMM yyyy' }} <i class="bi bi-clock ms-2 me-1"></i>{{ r.time_slot }}</span>
-                  <span><i class="bi bi-people me-1"></i>{{ r.number_of_people }} personne(s)</span>
+                  <span>
+                    <i class="bi bi-calendar3"></i>
+                    {{ r.reservation_date | date:'dd MMMM yyyy' }}
+                    &nbsp;·&nbsp;
+                    <i class="bi bi-clock"></i> {{ r.time_slot }}
+                  </span>
+                  <span><i class="bi bi-people"></i> {{ r.number_of_people }} personne(s)</span>
                 </div>
-                <span class="stag" [ngClass]="{'r-pending':r.status==='pending','r-confirmed':r.status==='confirmed','r-cancelled':r.status==='cancelled'}">{{ getReservationStatusLabel(r.status) }}</span>
+                <span class="stag"
+                  [ngClass]="{
+                    'r-pending':r.status==='pending',
+                    'r-confirmed':r.status==='confirmed',
+                    'r-cancelled':r.status==='cancelled'
+                  }">{{ getReservationStatusLabel(r.status) }}</span>
               </div>
             </div>
           </div>
         </div>
       </div>
 
-      <!-- ═══ NOTIFICATIONS ═══ -->
-      <div *ngIf="activeTab === 'notifications'" class="cp-pane anim-fadein">
+      <!-- ═══ ORDERS ════════════════════════════════════════ -->
+      <div *ngIf="activeTab === 'orders'" class="cp-pane">
         <div class="cp-card">
           <div class="cp-card-header">
-            <h5><i class="bi bi-bell-fill me-2"></i>Mes notifications <span *ngIf="unreadCount > 0" class="cp-badge-danger ms-2">{{ unreadCount }}</span></h5>
-            <button *ngIf="unreadCount > 0" class="cp-btn-ghost" (click)="markAllNotificationsAsRead()"><i class="bi bi-check-all me-1"></i> Tout lire</button>
+            <h5><i class="bi bi-cart-fill"></i> Toutes mes commandes</h5>
           </div>
           <div class="cp-card-body">
-            <div *ngIf="loading.notifications" class="cp-loading"><div class="spinner-border" style="color:var(--rt-primary)"></div></div>
-            <div *ngIf="!loading.notifications && notifications.length === 0" class="cp-empty"><i class="bi bi-bell-slash"></i><h5>Aucune notification</h5><p>Vous n'avez pas encore de notification</p></div>
-            <div *ngIf="!loading.notifications && notifications.length > 0" class="cp-notif-list">
-              <div *ngFor="let n of notifications" class="cp-notif-item" [class.unread]="!n.is_read" (click)="markNotificationAsRead(n)">
-                <div class="cp-notif-icon" [ngClass]="getNotificationClass(n.type)"><i [class]="getNotificationIcon(n.type)"></i></div>
-                <div class="cp-notif-body"><h6>{{ n.title }}</h6><p>{{ n.message }}</p><small>{{ n.created_at | date:'dd/MM/yyyy à HH:mm' }}</small></div>
-                <button class="cp-notif-del" (click)="deleteNotification(n.id); $event.stopPropagation()" title="Supprimer"><i class="bi bi-trash3"></i></button>
+            <div *ngIf="loading.orders" class="cp-loading"><div class="spinner-border"></div></div>
+            <div *ngIf="!loading.orders && recentOrders.length === 0" class="cp-empty">
+              <i class="bi bi-cart-x"></i>
+              <h5>Aucune commande</h5>
+              <p>Vous n'avez pas encore passé de commande</p>
+            </div>
+            <div *ngIf="!loading.orders && recentOrders.length > 0" class="cp-order-list">
+              <div class="cp-order-item" *ngFor="let order of recentOrders">
+                <div class="cp-order-top">
+                  <div>
+                    <span class="cp-order-id">Commande {{ order.id }}</span>
+                    <small>{{ order.created_at | date:'dd MMMM yyyy à HH:mm' }}</small>
+                  </div>
+                  <span class="stag"
+                    [ngClass]="{
+                      's-pending':order.status==='pending',
+                      's-confirmed':order.status==='confirmed',
+                      's-preparing':order.status==='preparing',
+                      's-ready':order.status==='ready',
+                      's-delivered':order.status==='delivered',
+                      's-cancelled':order.status==='cancelled'
+                    }">{{ getOrderStatusLabel(order.status) }}</span>
+                </div>
+                <div class="cp-order-body">
+                  <div class="cp-order-info">
+                    <span><i class="bi bi-shop"></i> <strong>{{ order.business_name }}</strong></span>
+                    <span class="cp-order-amount">{{ order.total_amount | number:'1.0-0' }} FCFA</span>
+                    <span class="cp-order-pay">Paiement : {{ order.payment_status }}</span>
+                  </div>
+                  <div class="cp-actions">
+                    <button *ngIf="order.status === 'delivered' && !order.delivery_confirmed"
+                      class="cp-btn-sm green" (click)="confirmDelivery(order.id)">
+                      <i class="bi bi-check-circle"></i> Confirmer réception
+                    </button>
+                    <span *ngIf="order.delivery_confirmed" class="cp-confirmed">
+                      <i class="bi bi-check-circle-fill"></i>
+                      Confirmée le {{ order.delivery_confirmed_at | date:'dd/MM/yyyy' }}
+                    </span>
+                    <button *ngIf="order.payment_status === 'paid'"
+                      class="cp-btn-sm outline" (click)="downloadReceipt(order.id)">
+                      <i class="bi bi-file-earmark-pdf"></i> Télécharger le reçu
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
         </div>
       </div>
 
-      <!-- ═══ TESTIMONIAL ═══ -->
-      <div *ngIf="activeTab === 'testimonial'" class="cp-pane anim-fadein">
+      <!-- ═══ RESERVATIONS ══════════════════════════════════ -->
+      <div *ngIf="activeTab === 'reservations'" class="cp-pane">
         <div class="cp-card">
-          <div class="cp-card-header"><h5><i class="bi bi-chat-quote-fill me-2"></i>Mon Témoignage sur RestoTraiteur</h5></div>
-          <div class="cp-card-body"><app-submit-testimonial></app-submit-testimonial></div>
+          <div class="cp-card-header">
+            <h5><i class="bi bi-calendar-fill"></i> Toutes mes réservations</h5>
+          </div>
+          <div class="cp-card-body">
+            <div *ngIf="loading.reservations" class="cp-loading"><div class="spinner-border"></div></div>
+            <div *ngIf="!loading.reservations && upcomingReservations.length === 0" class="cp-empty">
+              <i class="bi bi-calendar-x"></i>
+              <h5>Aucune réservation</h5>
+              <p>Vous n'avez pas encore de réservation</p>
+            </div>
+            <div *ngIf="!loading.reservations && upcomingReservations.length > 0" class="cp-resa-list">
+              <div class="cp-resa-item" *ngFor="let r of upcomingReservations">
+                <div class="cp-resa-icon"><i class="bi bi-calendar-check-fill"></i></div>
+                <div class="cp-resa-info">
+                  <strong>{{ r.restaurant_name }}</strong>
+                  <span>
+                    <i class="bi bi-calendar3"></i> {{ r.reservation_date | date:'dd MMMM yyyy' }}
+                    &nbsp;·&nbsp;<i class="bi bi-clock"></i> {{ r.time_slot }}
+                  </span>
+                  <span><i class="bi bi-people"></i> {{ r.number_of_people }} personne(s)</span>
+                </div>
+                <span class="stag"
+                  [ngClass]="{
+                    'r-pending':r.status==='pending',
+                    'r-confirmed':r.status==='confirmed',
+                    'r-cancelled':r.status==='cancelled'
+                  }">{{ getReservationStatusLabel(r.status) }}</span>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
-      <!-- ═══ SETTINGS ═══ -->
-      <div *ngIf="activeTab === 'settings'" class="cp-pane anim-fadein">
+      <!-- ═══ NOTIFICATIONS ════════════════════════════════ -->
+      <div *ngIf="activeTab === 'notifications'" class="cp-pane">
         <div class="cp-card">
-          <div class="cp-card-header"><h5><i class="bi bi-gear-fill me-2"></i>Paramètres de notification</h5></div>
+          <div class="cp-card-header">
+            <h5>
+              <i class="bi bi-bell-fill"></i> Notifications
+              <span *ngIf="unreadCount > 0" class="cp-badge-danger ms-2">{{ unreadCount }}</span>
+            </h5>
+            <button *ngIf="unreadCount > 0" class="cp-btn-ghost"
+              (click)="markAllNotificationsAsRead()">
+              <i class="bi bi-check-all"></i> Tout lire
+            </button>
+          </div>
+          <div class="cp-card-body">
+            <div *ngIf="loading.notifications" class="cp-loading"><div class="spinner-border"></div></div>
+            <div *ngIf="!loading.notifications && notifications.length === 0" class="cp-empty">
+              <i class="bi bi-bell-slash"></i>
+              <h5>Aucune notification</h5>
+              <p>Vous n'avez pas encore de notification</p>
+            </div>
+            <div *ngIf="!loading.notifications && notifications.length > 0" class="cp-notif-list">
+              <div *ngFor="let n of notifications" class="cp-notif-item"
+                [class.unread]="!n.is_read" (click)="markNotificationAsRead(n)">
+                <div class="cp-notif-icon" [ngClass]="getNotificationClass(n.type)">
+                  <i [class]="getNotificationIcon(n.type)"></i>
+                </div>
+                <div class="cp-notif-body">
+                  <h6>{{ n.title }}</h6>
+                  <p>{{ n.message }}</p>
+                  <small>{{ n.created_at | date:'dd/MM/yyyy à HH:mm' }}</small>
+                </div>
+                <button class="cp-notif-del"
+                  (click)="deleteNotification(n.id); $event.stopPropagation()"
+                  title="Supprimer">
+                  <i class="bi bi-trash3"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══ TESTIMONIAL ══════════════════════════════════ -->
+      <div *ngIf="activeTab === 'testimonial'" class="cp-pane">
+        <div class="cp-card">
+          <div class="cp-card-header">
+            <h5><i class="bi bi-chat-quote-fill"></i> Mon Témoignage</h5>
+          </div>
+          <div class="cp-card-body">
+            <app-submit-testimonial></app-submit-testimonial>
+          </div>
+        </div>
+      </div>
+
+      <!-- ═══ SETTINGS ══════════════════════════════════════ -->
+      <div *ngIf="activeTab === 'settings'" class="cp-pane">
+        <div class="cp-card">
+          <div class="cp-card-header">
+            <h5><i class="bi bi-gear-fill"></i> Préférences de notification</h5>
+          </div>
           <div class="cp-card-body">
             <form [formGroup]="preferencesForm" (ngSubmit)="updatePreferences()">
               <div class="cp-settings-section">
-                <h6>Canaux de notification</h6>
-                <div class="cp-switch-row"><label for="email_notifications"><i class="bi bi-envelope-fill"></i> Notifications par email</label><div class="cp-switch"><input type="checkbox" id="email_notifications" formControlName="email_notifications"><span class="cp-slider"></span></div></div>
-                <div class="cp-switch-row"><label for="sms_notifications"><i class="bi bi-phone-fill"></i> Notifications par SMS</label><div class="cp-switch"><input type="checkbox" id="sms_notifications" formControlName="sms_notifications"><span class="cp-slider"></span></div></div>
-                <div class="cp-switch-row"><label for="push_notifications"><i class="bi bi-bell-fill"></i> Notifications push</label><div class="cp-switch"><input type="checkbox" id="push_notifications" formControlName="push_notifications"><span class="cp-slider"></span></div></div>
+                <h6>Canaux</h6>
+                <div class="cp-switch-row">
+                  <label><i class="bi bi-envelope-fill"></i> Email</label>
+                  <div class="cp-switch">
+                    <input type="checkbox" id="email_notif" formControlName="email_notifications">
+                    <span class="cp-slider"></span>
+                  </div>
+                </div>
+                <div class="cp-switch-row">
+                  <label><i class="bi bi-phone-fill"></i> SMS</label>
+                  <div class="cp-switch">
+                    <input type="checkbox" id="sms_notif" formControlName="sms_notifications">
+                    <span class="cp-slider"></span>
+                  </div>
+                </div>
+                <div class="cp-switch-row">
+                  <label><i class="bi bi-bell-fill"></i> Push</label>
+                  <div class="cp-switch">
+                    <input type="checkbox" id="push_notif" formControlName="push_notifications">
+                    <span class="cp-slider"></span>
+                  </div>
+                </div>
               </div>
+
               <div class="cp-settings-section">
-                <h6>Types de notifications</h6>
-                <div class="cp-switch-row"><label for="notify_order_confirmed">Commande confirmée</label><div class="cp-switch"><input type="checkbox" id="notify_order_confirmed" formControlName="notify_order_confirmed"><span class="cp-slider"></span></div></div>
-                <div class="cp-switch-row"><label for="notify_order_ready">Commande prête</label><div class="cp-switch"><input type="checkbox" id="notify_order_ready" formControlName="notify_order_ready"><span class="cp-slider"></span></div></div>
-                <div class="cp-switch-row"><label for="notify_order_delivered">Commande livrée</label><div class="cp-switch"><input type="checkbox" id="notify_order_delivered" formControlName="notify_order_delivered"><span class="cp-slider"></span></div></div>
-                <div class="cp-switch-row"><label for="notify_reservation_confirmed">Réservation confirmée</label><div class="cp-switch"><input type="checkbox" id="notify_reservation_confirmed" formControlName="notify_reservation_confirmed"><span class="cp-slider"></span></div></div>
-                <div class="cp-switch-row"><label for="notify_reservation_reminder">Rappel de réservation</label><div class="cp-switch"><input type="checkbox" id="notify_reservation_reminder" formControlName="notify_reservation_reminder"><span class="cp-slider"></span></div></div>
+                <h6>Types d'alertes</h6>
+                <div class="cp-switch-row">
+                  <label>Commande confirmée</label>
+                  <div class="cp-switch">
+                    <input type="checkbox" formControlName="notify_order_confirmed">
+                    <span class="cp-slider"></span>
+                  </div>
+                </div>
+                <div class="cp-switch-row">
+                  <label>Commande prête</label>
+                  <div class="cp-switch">
+                    <input type="checkbox" formControlName="notify_order_ready">
+                    <span class="cp-slider"></span>
+                  </div>
+                </div>
+                <div class="cp-switch-row">
+                  <label>Commande livrée</label>
+                  <div class="cp-switch">
+                    <input type="checkbox" formControlName="notify_order_delivered">
+                    <span class="cp-slider"></span>
+                  </div>
+                </div>
+                <div class="cp-switch-row">
+                  <label>Réservation confirmée</label>
+                  <div class="cp-switch">
+                    <input type="checkbox" formControlName="notify_reservation_confirmed">
+                    <span class="cp-slider"></span>
+                  </div>
+                </div>
+                <div class="cp-switch-row">
+                  <label>Rappel de réservation</label>
+                  <div class="cp-switch">
+                    <input type="checkbox" formControlName="notify_reservation_reminder">
+                    <span class="cp-slider"></span>
+                  </div>
+                </div>
               </div>
-              <button type="submit" class="cp-btn-primary" [disabled]="loading.preferences || preferencesForm.invalid">
+
+              <button type="submit" class="cp-btn-primary"
+                [disabled]="loading.preferences || preferencesForm.invalid">
                 <span *ngIf="loading.preferences" class="spinner-border spinner-border-sm"></span>
                 <i *ngIf="!loading.preferences" class="bi bi-floppy-fill"></i>
-                {{ loading.preferences ? 'Enregistrement...' : 'Enregistrer les préférences' }}
+                {{ loading.preferences ? 'Enregistrement…' : 'Enregistrer' }}
               </button>
             </form>
           </div>
         </div>
       </div>
 
-    </div>
-  </div>
-</div>
+    </div><!-- /cp-content -->
+  </div><!-- /cp-container -->
+</div><!-- /cp-page -->
 
-<!-- ════════════════════════════════════════════════════════════ -->
-<!-- BOTTOM NAV MOBILE — visible uniquement sur téléphone        -->
-<!-- ════════════════════════════════════════════════════════════ -->
+<!-- ════════════════════════════════════════════════════════════
+     BOTTOM NAV MOBILE
+═════════════════════════════════════════════════════════════ -->
 <nav class="cp-bottom-nav">
-  <button class="cp-bn-item" [class.active]="activeTab === 'overview'" (click)="switchTab('overview'); closeMoreMenu()">
-    <i class="bi bi-grid-fill"></i>
-    <span>Aperçu</span>
+  <button class="cp-bn-item" [class.active]="activeTab === 'overview'"
+    (click)="switchTab('overview'); closeMoreMenu()">
+    <i class="bi bi-grid-fill"></i><span>Aperçu</span>
   </button>
-  <button class="cp-bn-item" [class.active]="activeTab === 'orders'" (click)="switchTab('orders'); closeMoreMenu()">
-    <i class="bi bi-cart-fill"></i>
-    <span>Commandes</span>
+  <button class="cp-bn-item" [class.active]="activeTab === 'orders'"
+    (click)="switchTab('orders'); closeMoreMenu()">
+    <i class="bi bi-cart-fill"></i><span>Commandes</span>
   </button>
-  <button class="cp-bn-item" [class.active]="activeTab === 'reservations'" (click)="switchTab('reservations'); closeMoreMenu()">
-    <i class="bi bi-calendar-fill"></i>
-    <span>Réservations</span>
+  <button class="cp-bn-item" [class.active]="activeTab === 'reservations'"
+    (click)="switchTab('reservations'); closeMoreMenu()">
+    <i class="bi bi-calendar-fill"></i><span>Réservations</span>
   </button>
-  <button class="cp-bn-item" [class.active]="activeTab === 'notifications'" (click)="switchTab('notifications'); closeMoreMenu()">
-    <i class="bi bi-bell-fill"></i>
-    <span>Notifs</span>
-    <!-- Badge nombre de notifications non lues -->
+  <button class="cp-bn-item" [class.active]="activeTab === 'notifications'"
+    (click)="switchTab('notifications'); closeMoreMenu()">
+    <i class="bi bi-bell-fill"></i><span>Notifs</span>
     <span *ngIf="unreadCount > 0" class="cp-bn-badge">
       {{ unreadCount > 9 ? '9+' : unreadCount }}
     </span>
   </button>
-  <button class="cp-bn-item" [class.active]="activeTab === 'testimonial' || activeTab === 'settings'" (click)="toggleMoreMenu()">
-    <i class="bi bi-three-dots"></i>
-    <span>Plus</span>
+  <button class="cp-bn-item"
+    [class.active]="activeTab === 'testimonial' || activeTab === 'settings'"
+    (click)="toggleMoreMenu()">
+    <i class="bi bi-three-dots"></i><span>Plus</span>
   </button>
 </nav>
 
-<!-- BACKDROP -->
-<div class="cp-more-backdrop" 
-     *ngIf="showMoreMenu" 
-     (click)="closeMoreMenu()">
-</div>
+<div class="cp-more-backdrop" *ngIf="showMoreMenu" (click)="closeMoreMenu()"></div>
 
-<!-- MENU BOTTOM SHEET -->
 <div class="cp-more-sheet" *ngIf="showMoreMenu">
-
   <div class="cp-sheet-handle"></div>
-
   <button (click)="selectMoreTab('testimonial')">
-    <i class="bi bi-chat-quote-fill"></i>
-    <span>Témoignage</span>
+    <i class="bi bi-chat-quote-fill"></i><span>Témoignage</span>
   </button>
-
   <button (click)="selectMoreTab('settings')">
-    <i class="bi bi-gear-fill"></i>
-    <span>Paramètres</span>
+    <i class="bi bi-gear-fill"></i><span>Paramètres</span>
   </button>
-
 </div>

@@ -2,7 +2,7 @@
 
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { map, Observable } from 'rxjs';
 import { environment } from '../../../../environments/environment';
 import { Testimonial, TestimonialSubmission, TestimonialStats } from '../../models/testimonial.model';
 
@@ -28,25 +28,25 @@ export class TestimonialService {
     if (featured) {
       params.featured = 'true';
     }
-    return this.http.get<Testimonial[]>(`${this.apiUrl}/public`, { params });
+    return this.http.get<any>(`${this.apiUrl}/public`, { params }).pipe(
+      // ✅ Unwrap { success: true, data: [...] } → [...]
+      map(response => response.data || response)
+    );
   }
 
   /**
    * Vérifier l'éligibilité de l'utilisateur pour soumettre un témoignage
    */
-  checkEligibility(): Observable<{ 
-    eligible: boolean; 
-    accountAge?: number; 
-    deliveredOrders?: number;
-    message?: string;
-  }> {
-    return this.http.get<{ 
-      eligible: boolean; 
-      accountAge?: number; 
-      deliveredOrders?: number;
-      message?: string;
-    }>(`${this.apiUrl}/check-eligibility`);
-  }
+  checkEligibility(): Observable<{
+  eligible: boolean;
+  accountAge?: number;
+  deliveredOrders?: number;
+  message?: string;
+}> {
+  return this.http.get<any>(`${this.apiUrl}/check-eligibility`).pipe(
+    map(response => response.data || response)  // ✅ unwrap data si nécessaire
+  );
+}
 
   /**
    * Soumettre un nouveau témoignage (client authentifié)
@@ -86,38 +86,48 @@ export class TestimonialService {
    */
   getAllTestimonials(status?: string): Observable<Testimonial[]> {
     const params: any = {};
-    if (status) {
-      params.status = status;
-    }
-    return this.http.get<Testimonial[]>(`${this.apiUrl}/admin/all`, { params });
+    if (status) params.status = status;
+    return this.http.get<any>(`${this.apiUrl}/admin/all`, { params }).pipe(
+      // ✅ Unwrap { success, data: [...] } → [...]
+      map(response => response.data || response)
+    );
   }
 
   /**
    * Obtenir les statistiques des témoignages
    */
   getTestimonialStats(): Observable<TestimonialStats> {
-    return this.http.get<TestimonialStats>(`${this.apiUrl}/admin/stats`);
+    return this.http.get<any>(`${this.apiUrl}/admin/stats`).pipe(
+      // ✅ Unwrap { success, data: {...} } → {...}
+      map(response => response.data || response)
+    );
   }
 
   /**
    * Approuver un témoignage
    */
   approveTestimonial(id: number, featured: boolean = false): Observable<Testimonial> {
-    return this.http.put<Testimonial>(`${this.apiUrl}/admin/${id}/approve`, { featured });
+    return this.http.put<any>(`${this.apiUrl}/admin/${id}/approve`, { featured }).pipe(
+      map(response => response.data || response)
+    );
   }
 
   /**
    * Rejeter un témoignage
    */
   rejectTestimonial(id: number, reason?: string): Observable<Testimonial> {
-    return this.http.put<Testimonial>(`${this.apiUrl}/admin/${id}/reject`, { reason });
+    return this.http.put<any>(`${this.apiUrl}/admin/${id}/reject`, { reason }).pipe(
+      map(response => response.data || response)
+    );
   }
 
   /**
    * Basculer le statut "featured"
    */
   toggleFeatured(id: number): Observable<Testimonial> {
-    return this.http.patch<Testimonial>(`${this.apiUrl}/admin/${id}/toggle-featured`, {});
+    return this.http.patch<any>(`${this.apiUrl}/admin/${id}/toggle-featured`, {}).pipe(
+      map(response => response.data || response)
+    );
   }
 
   /**
@@ -126,4 +136,5 @@ export class TestimonialService {
   deleteTestimonial(id: number): Observable<void> {
     return this.http.delete<void>(`${this.apiUrl}/admin/${id}`);
   }
+
 }

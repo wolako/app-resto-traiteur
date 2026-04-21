@@ -81,7 +81,7 @@ exports.getCurrentSubscription = async (req, res) => {
 
 exports.subscribe = async (req, res) => {
   try {
-    const { plan_id, simulate_payment = true } = req.body;
+    const { plan_id } = req.body;
 
     let businessId = req.user.business_id;
     if (!businessId) businessId = await getBusinessIdFromUser(req.user.id);
@@ -90,7 +90,6 @@ exports.subscribe = async (req, res) => {
     const plan = await SubscriptionPlan.getById(plan_id);
     if (!plan) return res.status(404).json({ error: 'Plan non trouvé' });
 
-    // Annuler l'abonnement actuel
     const currentSub = await Subscription.getByBusinessId(businessId);
     if (currentSub) {
       await pool.query(
@@ -121,6 +120,12 @@ exports.subscribe = async (req, res) => {
       next_billing_date: nextBillingDate,
       auto_renew:        true
     });
+
+    // ✅ NOUVEAU : Réactiver le business si plan gratuit souscrit
+    await pool.query(
+      `UPDATE businesses SET is_active = true, updated_at = NOW() WHERE id = $1`,
+      [businessId]
+    );
 
     if (plan.price > 0) {
       await pool.query(
@@ -624,7 +629,15 @@ async function activateSubscriptionAfterPayment(payment, transactionId) {
     auto_renew:        true,
   });
 
-  // Marquer le paiement comme success et lier l'abonnement
+  // ✅ NOUVEAU : Réactiver le business automatiquement
+  await pool.query(
+    `UPDATE businesses SET is_active = true, updated_at = NOW() WHERE id = $1`,
+    [business_id]
+  );
+  logger.info ? logger.info(`[Sub] Business #${business_id} réactivé — nouvel abonnement ${plan.display_name}`)
+              : console.log(`[Sub] Business #${business_id} réactivé — plan ${plan.display_name}`);
+
+  // Marquer le paiement comme success
   await pool.query(
     `UPDATE subscription_payments
      SET payment_status = 'success',
@@ -636,7 +649,6 @@ async function activateSubscriptionAfterPayment(payment, transactionId) {
     [newSub.id, startDate, endDate, transactionId]
   );
 
-  // Si pas encore de ligne en base pour sandbox (INSERT au lieu de UPDATE)
   const existing = await pool.query(
     `SELECT id FROM subscription_payments WHERE transaction_id = $1`,
     [transactionId]
@@ -651,7 +663,7 @@ async function activateSubscriptionAfterPayment(payment, transactionId) {
     );
   }
 
-  console.log(`✅ Abonnement activé: business=${business_id} plan=${plan_id} sub=${newSub.id} tx=${transactionId}`);
+  console.log(`✅ Abonnement activé: business=${business_id} plan=${plan_id} sub=${newSub.id}`);
   return newSub;
 }
 

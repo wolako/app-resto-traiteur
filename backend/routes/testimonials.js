@@ -10,6 +10,8 @@ const {
   validateRejectTestimonial
 } = require('../middleware/testimonial');
 const { authenticateToken, requireRole } = require('../middleware/auth');
+const { USER_ROLES } = require('../config/constants');
+
 
 // =============================================
 // PUBLIC ROUTES
@@ -78,7 +80,7 @@ router.put(
 router.get(
   '/admin/all',
   authenticateToken,
-  requireRole('superadmin'),
+  requireRole(USER_ROLES.SUPER_ADMIN),
   testimonialController.getAllTestimonials
 );
 
@@ -90,8 +92,19 @@ router.get(
 router.get(
   '/admin/stats',
   authenticateToken,
-  requireRole('superadmin'),
+  requireRole(USER_ROLES.SUPER_ADMIN),
   testimonialController.getTestimonialStats
+);
+
+/**
+ * @route   GET /api/testimonials/check-eligibility
+ * @desc    Vérifier l'éligibilité de l'utilisateur
+ * @access  Private
+ */
+router.get(
+  '/check-eligibility',
+  authenticateToken,
+  testimonialController.checkEligibility
 );
 
 /**
@@ -104,7 +117,7 @@ router.get(
 router.put(
   '/admin/:id/approve',
   authenticateToken,
-  requireRole('superadmin'),
+  requireRole(USER_ROLES.SUPER_ADMIN),
   validateApproveTestimonial,
   testimonialController.approveTestimonial
 );
@@ -119,7 +132,7 @@ router.put(
 router.put(
   '/admin/:id/reject',
   authenticateToken,
-  requireRole('superadmin'),
+  requireRole(USER_ROLES.SUPER_ADMIN),
   validateRejectTestimonial,
   testimonialController.rejectTestimonial
 );
@@ -133,7 +146,7 @@ router.put(
 router.patch(
   '/admin/:id/toggle-featured',
   authenticateToken,
-  requireRole('superadmin'),
+  requireRole(USER_ROLES.SUPER_ADMIN),
   testimonialController.toggleFeatured
 );
 
@@ -146,7 +159,7 @@ router.patch(
 router.delete(
   '/admin/:id',
   authenticateToken,
-  requireRole('superadmin'),
+  requireRole(USER_ROLES.SUPER_ADMIN),
   testimonialController.deleteTestimonial
 );
 

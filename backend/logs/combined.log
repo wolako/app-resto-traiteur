@@ -4035,3 +4035,53 @@
 {"level":"info","message":"Service email Gmail initialisé avec succès","timestamp":"2026-04-18T21:12:27.142Z"}
 {"email":"admin@restotraiteur.com","level":"info","message":"Super-admin already exists","timestamp":"2026-04-18T21:12:27.785Z"}
 {"environment":"development","level":"info","message":"Server started","nodeVersion":"v20.18.3","port":"3000","timestamp":"2026-04-18T21:12:27.825Z"}
+{"level":"info","message":"Service SMS initialisé","timestamp":"2026-04-18T21:42:17.521Z"}
+{"level":"info","message":"[SubExpiry] Crons planifiés — URL : https://jason-overbulky-hazardously.ngrok-free.dev/restaurant/dashboard?tab=subscription","timestamp":"2026-04-18T21:42:23.638Z"}
+{"email":"admin@restotraiteur.com","level":"info","message":"Super-admin already exists","timestamp":"2026-04-18T21:42:23.652Z"}
+{"environment":"development","level":"info","message":"Server started","nodeVersion":"v20.18.3","port":"3000","timestamp":"2026-04-18T21:42:23.666Z"}
+{"level":"info","message":"Service email Gmail initialisé avec succès","timestamp":"2026-04-18T21:42:24.803Z"}
+{"email":"kbdzahini@gmail.com","level":"info","message":"Utilisateur connecté","role":"restaurant","timestamp":"2026-04-18T21:50:51.029Z","userId":14}
+{"email":"wocadigital@gmail.com","level":"info","message":"Utilisateur connecté","role":"client","timestamp":"2026-04-18T21:52:14.670Z","userId":16}
+{"level":"info","message":"[SubExpiry] Cron 00:05 — expiration","timestamp":"2026-04-19T00:05:00.194Z"}
+{"level":"info","message":"[SubExpiry] Aucun abonnement à expirer","timestamp":"2026-04-19T00:05:01.310Z"}
+{"email":"benowola@gmail.com","level":"info","message":"Utilisateur connecté","role":"restaurant","timestamp":"2026-04-19T01:27:06.901Z","userId":12}
+{"level":"info","message":"Service SMS initialisé","timestamp":"2026-04-19T02:20:35.947Z"}
+{"level":"info","message":"[SubExpiry] Crons planifiés — URL : https://jason-overbulky-hazardously.ngrok-free.dev/restaurant/dashboard?tab=subscription","timestamp":"2026-04-19T02:20:47.852Z"}
+{"email":"admin@restotraiteur.com","level":"info","message":"Super-admin already exists","timestamp":"2026-04-19T02:20:47.894Z"}
+{"environment":"development","level":"info","message":"Server started","nodeVersion":"v20.18.3","port":"3000","timestamp":"2026-04-19T02:20:47.908Z"}
+{"level":"info","message":"Service email Gmail initialisé avec succès","timestamp":"2026-04-19T02:20:48.677Z"}
+{"level":"info","message":"Service SMS initialisé","timestamp":"2026-04-19T15:59:19.060Z"}
+{"level":"info","message":"[SubExpiry] Crons planifiés — URL : https://jason-overbulky-hazardously.ngrok-free.dev/restaurant/dashboard?tab=subscription","timestamp":"2026-04-19T15:59:36.025Z"}
+{"level":"info","message":"Service email Gmail initialisé avec succès","timestamp":"2026-04-19T15:59:36.378Z"}
+{"email":"admin@restotraiteur.com","level":"info","message":"Super-admin already exists","timestamp":"2026-04-19T15:59:37.373Z"}
+{"environment":"development","level":"info","message":"Server started","nodeVersion":"v20.18.3","port":"3000","timestamp":"2026-04-19T15:59:37.423Z"}
+{"level":"info","message":"Service SMS initialisé","timestamp":"2026-04-19T16:36:59.813Z"}
+{"code":"EDNS","command":"CONN","errno":-3008,"hostname":"smtp.gmail.com","level":"error","message":"Erreur de vérification Gmail: getaddrinfo ENOTFOUND smtp.gmail.com","stack":"Error: getaddrinfo ENOTFOUND smtp.gmail.com\n    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:120:26)","syscall":"getaddrinfo","timestamp":"2026-04-19T16:37:12.116Z"}
+{"level":"info","message":"[SubExpiry] Crons planifiés — URL : https://jason-overbulky-hazardously.ngrok-free.dev/restaurant/dashboard?tab=subscription","timestamp":"2026-04-19T16:37:24.145Z"}
+{"email":"admin@restotraiteur.com","level":"info","message":"Super-admin already exists","timestamp":"2026-04-19T16:37:25.910Z"}
+{"environment":"development","level":"info","message":"Server started","nodeVersion":"v20.18.3","port":"3000","timestamp":"2026-04-19T16:37:26.001Z"}
+{"level":"info","message":"Service SMS initialisé","timestamp":"2026-04-19T19:10:34.621Z"}
+{"level":"info","message":"[SubExpiry] Crons planifiés — URL : https://jason-overbulky-hazardously.ngrok-free.dev/restaurant/dashboard?tab=subscription","timestamp":"2026-04-19T19:10:43.724Z"}
+{"email":"admin@restotraiteur.com","level":"info","message":"Super-admin already exists","timestamp":"2026-04-19T19:10:43.743Z"}
+{"environment":"development","level":"info","message":"Server started","nodeVersion":"v20.18.3","port":"3000","timestamp":"2026-04-19T19:10:43.761Z"}
+{"level":"info","message":"Service email Gmail initialisé avec succès","timestamp":"2026-04-19T19:10:44.564Z"}
+{"email":"wocadigital@gmail.com","level":"info","message":"Utilisateur connecté","role":"client","timestamp":"2026-04-19T22:01:00.584Z","userId":16}
+{"level":"info","message":"[SubExpiry] Cron 00:05 — expiration","timestamp":"2026-04-20T00:05:00.658Z"}
+{"level":"info","message":"[SubExpiry] Aucun abonnement à expirer","timestamp":"2026-04-20T00:05:00.760Z"}
+{"email":"benowola@gmail.com","level":"info","message":"Utilisateur connecté","role":"restaurant","timestamp":"2026-04-20T01:07:21.670Z","userId":12}
+{"level":"info","message":"Service SMS initialisé","timestamp":"2026-04-20T02:39:51.261Z"}
+{"level":"info","message":"[SubExpiry] Crons planifiés — URL : https://jason-overbulky-hazardously.ngrok-free.dev/restaurant/dashboard?tab=subscription","timestamp":"2026-04-20T02:39:58.568Z"}
+{"email":"admin@restotraiteur.com","level":"info","message":"Super-admin already exists","timestamp":"2026-04-20T02:39:58.584Z"}
+{"environment":"development","level":"info","message":"Server started","nodeVersion":"v20.18.3","port":"3000","timestamp":"2026-04-20T02:39:58.607Z"}
+{"level":"info","message":"Service email Gmail initialisé avec succès","timestamp":"2026-04-20T02:39:59.328Z"}
+{"email":"wocadigital@gmail.com","level":"info","message":"Utilisateur connecté","role":"client","timestamp":"2026-04-20T02:40:40.569Z","userId":16}
+{"level":"info","message":"Service SMS initialisé","timestamp":"2026-04-20T14:55:22.975Z"}
+{"level":"info","message":"[SubExpiry] Crons planifiés — URL : https://jason-overbulky-hazardously.ngrok-free.dev/restaurant/dashboard?tab=subscription","timestamp":"2026-04-20T14:56:09.426Z"}
+{"code":"ESOCKET","command":"CONN","host":"192.178.223.108","level":"error","message":"Erreur de vérification Gmail: Client network socket disconnected before secure TLS connection was established","port":465,"stack":"Error: Client network socket disconnected before secure TLS connection was established\n    at TLSSocket.onConnectEnd (node:_tls_wrap:1730:19)\n    at TLSSocket.emit (node:events:530:35)\n    at endReadableNT (node:internal/streams/readable:1698:12)\n    at process.processTicksAndRejections (node:internal/process/task_queues:82:21)","timestamp":"2026-04-20T14:56:09.721Z"}
+{"email":"admin@restotraiteur.com","level":"info","message":"Super-admin already exists","timestamp":"2026-04-20T14:56:10.258Z"}
+{"environment":"development","level":"info","message":"Server started","nodeVersion":"v20.18.3","port":"3000","timestamp":"2026-04-20T14:56:10.327Z"}
+{"level":"info","message":"Service SMS initialisé","timestamp":"2026-04-21T21:28:03.023Z"}
+{"level":"info","message":"Service email Gmail initialisé avec succès","timestamp":"2026-04-21T21:28:08.237Z"}
+{"level":"info","message":"[SubExpiry] Crons planifiés — URL : https://jason-overbulky-hazardously.ngrok-free.dev/restaurant/dashboard?tab=subscription","timestamp":"2026-04-21T21:28:09.784Z"}
+{"email":"admin@restotraiteur.com","level":"info","message":"Super-admin already exists","timestamp":"2026-04-21T21:28:10.785Z"}
+{"environment":"development","level":"info","message":"Server started","nodeVersion":"v20.18.3","port":"3000","timestamp":"2026-04-21T21:28:10.832Z"}

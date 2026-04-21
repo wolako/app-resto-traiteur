@@ -26,7 +26,7 @@ async function expireOverdueSubscriptions() {
       return expired;
     }
 
-    logger.info(`[SubExpiry] ${expired.length} abonnement(s) expiré(s) et mis à jour en base`);
+    logger.info(`[SubExpiry] ${expired.length} abonnement(s) expiré(s)`);
 
     for (const sub of expired) {
       try {
@@ -39,6 +39,7 @@ async function expireOverdueSubscriptions() {
           continue;
         }
 
+        // ✅ Rétrograder au plan gratuit
         await pool.query(
           `INSERT INTO business_subscriptions
            (business_id, plan_id, status, start_date, end_date, auto_renew)
@@ -46,18 +47,24 @@ async function expireOverdueSubscriptions() {
           [sub.business_id, freePlanResult.rows[0].id]
         );
 
-        logger.info(`[SubExpiry] Business #${sub.business_id} rétrogradé au plan gratuit`);
+        // ✅ NOUVEAU : Désactiver le compte établissement
+        await pool.query(
+          `UPDATE businesses SET is_active = false, updated_at = NOW() WHERE id = $1`,
+          [sub.business_id]
+        );
+
+        logger.info(`[SubExpiry] Business #${sub.business_id} désactivé — abonnement expiré`);
 
         await notifyExpiredSubscription(sub);
 
       } catch (err) {
-        logger.error(`[SubExpiry] Erreur rétrogradation business #${sub.business_id}:`, err.message);
+        logger.error(`[SubExpiry] Erreur business #${sub.business_id}:`, err.message);
       }
     }
 
     return expired;
   } catch (error) {
-    logger.error('[SubExpiry] Erreur expiration abonnements:', error);
+    logger.error('[SubExpiry] Erreur expiration:', error);
     return [];
   }
 }

@@ -20,14 +20,17 @@ export interface Testimonial {
     last_name: string;
     email: string;
     photo?: string;
+    role?: string;
   };
 }
 
 export interface TestimonialSubmission {
   rating: number;
   comment: string;
-  display_name?: string;
-  allow_photo: boolean;
+  displayName?: string;   
+  display_name?: string;  
+  allowPhoto?: boolean;   
+  allow_photo?: boolean; 
 }
 
 export interface TestimonialStats {

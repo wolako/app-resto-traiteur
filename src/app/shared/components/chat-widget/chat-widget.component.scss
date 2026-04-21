@@ -1,5 +1,7 @@
 // ════════════════════════════════════════════════════════════
-// CHAT WIDGET — RestoTraiteur
+// CHAT WIDGET
+// Variables de couleur originales CONSERVÉES (var(--rt-*))
+// Seules corrections : overlay bloquant + bottom sheet mobile
 // ════════════════════════════════════════════════════════════
 
 // ─── BOUTON FLOTTANT ──────────────────────────────────────────
@@ -32,17 +34,35 @@
     padding: 0 4px; border: 2px solid #fff;
   }
 
-  // ✅ Sur mobile : au-dessus du bottom nav (64px) + marge de 10px
   @media (max-width: 768px) {
-    bottom: 78px;
+    bottom: calc(64px + env(safe-area-inset-bottom, 0px) + 14px);
     right: 16px;
-    width: 48px;
-    height: 48px;
+    width: 48px; height: 48px;
     font-size: 1.15rem;
   }
 }
 
-// ─── WIDGET ───────────────────────────────────────────────────
+// ─── OVERLAY BLOQUANT (mobile uniquement) ─────────────────────
+// Nouveau : couvre la page derrière le bottom sheet.
+// Empêche le scroll de "traverser" le widget.
+// Cliquer dessus ferme le chat.
+.cw-overlay {
+  display: none;
+
+  @media (max-width: 768px) {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 1048; // juste en dessous du widget (1050)
+    background: rgba(26,10,0,0.48);
+    backdrop-filter: blur(2px);
+    -webkit-backdrop-filter: blur(2px);
+    animation: cwOverlayIn .22s ease;
+  }
+}
+@keyframes cwOverlayIn { from { opacity: 0; } to { opacity: 1; } }
+
+// ─── WIDGET — Desktop ─────────────────────────────────────────
 .cw-widget {
   position: fixed;
   bottom: 28px; right: 28px;
@@ -56,28 +76,59 @@
   overflow: hidden;
   z-index: 1050;
 
-  // ✅ Sur mobile : prend toute la hauteur disponible AU-DESSUS du bottom nav
+  // ─── MOBILE — Bottom Sheet corrigé ───────────────────────────
+  // Corrections vs version précédente :
+  // • bottom: 0 (ancré tout en bas, pas de "trou")
+  // • height: 90dvh (couvre presque tout l'écran)
+  // • L'overlay (ci-dessus) couvre le reste de la page
   @media (max-width: 768px) {
-    // Le bottom nav fait 64px → on positionne le widget juste au-dessus
-    bottom: 64px;
-    right: 0;
+    bottom: 0;
     left: 0;
+    right: 0;
     width: 100%;
-    // Hauteur = tout l'écran sauf le bottom nav (64px) + la navbar en haut (~56px)
-    height: calc(100dvh - 64px - 56px);
-    max-height: 560px;
-    border-radius: 0;
-    border-left: none;
-    border-right: none;
-    border-bottom: none;
+
+    height: 90dvh;
+    max-height: 90dvh;
+    min-height: 320px;
+
+    border-radius: 20px 20px 0 0;
     border-top: 1px solid var(--rt-bdr-hi);
-    // Ombre vers le bas uniquement
-    box-shadow: 0 -8px 32px rgba(92,61,46,0.15);
+    border-left: 1px solid var(--rt-bdr);
+    border-right: 1px solid var(--rt-bdr);
+    border-bottom: none;
+
+    box-shadow:
+      0 -6px 24px rgba(92,61,46,0.12),
+      0 -2px 8px rgba(92,61,46,0.06);
+
+    padding-bottom: env(safe-area-inset-bottom, 0px);
   }
 
-  // ✅ Très petits écrans
   @media (max-width: 420px) {
-    max-height: 480px;
+    height: 92dvh;
+    max-height: 92dvh;
+  }
+}
+
+// ─── DRAG HANDLE ──────────────────────────────────────────────
+.cw-drag-handle {
+  display: none;
+
+  @media (max-width: 768px) {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 8px 0 4px;
+    background: var(--rt-sfc);
+    flex-shrink: 0;
+
+    &::after {
+      content: '';
+      width: 36px;
+      height: 4px;
+      border-radius: 2px;
+      background: var(--rt-bdr-hi);
+    }
   }
 }
 
@@ -89,12 +140,16 @@
   border-bottom: 1px solid var(--rt-bdr);
   flex-shrink: 0;
 
-  // Filet rouge en haut
   position: relative;
   &::before {
     content: ''; position: absolute;
     top: 0; left: 0; right: 0; height: 2px;
     background: var(--g-primary);
+  }
+
+  @media (max-width: 768px) {
+    padding: 11px 16px;
+    &::before { display: none; }
   }
 }
 
@@ -167,6 +222,8 @@
   scrollbar-color: rgba(180,100,60,0.18) transparent;
   &::-webkit-scrollbar { width: 4px; }
   &::-webkit-scrollbar-thumb { background: rgba(180,100,60,0.18); border-radius: 2px; }
+  // Empêche le scroll de se propager à la page derrière sur mobile
+  overscroll-behavior: contain;
 }
 
 .cw-messages-body {
@@ -354,9 +411,9 @@
   background: var(--rt-sfc);
   flex-shrink: 0;
 
-  // ✅ Sur mobile : marge supplémentaire pour ne pas coller au bas
   @media (max-width: 768px) {
-    padding: 10px 14px;
+    padding: 10px 16px;
+    padding-bottom: calc(10px + env(safe-area-inset-bottom, 0px));
   }
 }
 

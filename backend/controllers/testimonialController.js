@@ -306,6 +306,68 @@ const deleteTestimonial = async (req, res) => {
   }
 };
 
+
+/**
+ * GET /api/testimonials/check-eligibility
+ */
+const checkEligibility = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const userResult = await require('../config/db').pool.query(
+      'SELECT * FROM users WHERE id = $1', [userId]
+    );
+    const user = userResult.rows[0];
+    if (!user) return res.status(404).json({ success: false, message: 'Utilisateur non trouvé' });
+
+    const accountAgeDays = Math.floor(
+      (new Date() - new Date(user.created_at)) / (1000 * 60 * 60 * 24)
+    );
+
+    // ✅ Vérifier si l'utilisateur est un établissement
+    const isBusinessOwner = ['restaurant', 'traiteur'].includes(user.role);
+
+    let deliveredOrders = 0;
+    if (!isBusinessOwner) {
+      const ordersResult = await require('../config/db').pool.query(
+        `SELECT COUNT(*) as count FROM orders WHERE client_id = $1 AND status = 'delivered'`,
+        [userId]
+      );
+      deliveredOrders = parseInt(ordersResult.rows[0].count);
+    }
+
+    // ✅ Les établissements sont éligibles avec juste l'ancienneté du compte
+    const eligible = isBusinessOwner
+      ? accountAgeDays >= 30
+      : accountAgeDays >= 30 && deliveredOrders >= 3;
+
+    if (!eligible) {
+      return res.json({
+        success: true,
+        eligible: false,
+        accountAge: accountAgeDays,
+        deliveredOrders,
+        message: isBusinessOwner
+          ? `Votre compte doit être actif depuis 30 jours (${accountAgeDays} jours actuellement)`
+          : accountAgeDays < 30
+            ? `Votre compte doit être actif depuis 30 jours (${accountAgeDays} jours actuellement)`
+            : `Vous devez avoir au moins 3 commandes livrées (${deliveredOrders} actuellement)`
+      });
+    }
+
+    res.json({
+      success: true,
+      eligible: true,
+      accountAge: accountAgeDays,
+      deliveredOrders,
+    });
+
+  } catch (error) {
+    console.error('Error checking eligibility:', error);
+    res.status(500).json({ success: false, message: 'Erreur serveur' });
+  }
+};
+
+
 module.exports = {
   getPublicTestimonials,
   submitTestimonial,
@@ -316,5 +378,6 @@ module.exports = {
   approveTestimonial,
   rejectTestimonial,
   toggleFeatured,
-  deleteTestimonial
+  deleteTestimonial,
+  checkEligibility
 };

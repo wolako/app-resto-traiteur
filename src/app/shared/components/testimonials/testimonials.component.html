@@ -1,70 +1,85 @@
-<!-- src/app/shared/components/testimonials/testimonials.component.html -->
-
 <section class="testimonials-section" *ngIf="!isLoading && testimonials.length > 0">
   <div class="container">
+
+    <!-- ── Header ─────────────────────────────────────────── -->
     <div class="section-header">
       <span class="section-badge">
-        <i class="bi bi-chat-quote"></i>
+        <i class="bi bi-chat-quote-fill"></i>
         Témoignages
       </span>
       <h2 class="section-title">
-        Ce Que Nos Clients Disent
+        Ce Que la Communauté RestoTraiteur Dit
       </h2>
       <p class="section-subtitle">
-        Plus de 5000 clients satisfaits font confiance à RestoTraiteur
+        Clients, restaurants et traiteurs partagent leur expérience sur notre plateforme
       </p>
     </div>
 
+    <!-- ── Carousel ───────────────────────────────────────── -->
     <div class="testimonials-carousel">
-      <!-- Navigation Gauche -->
-      <button 
-        class="carousel-nav carousel-prev" 
+
+      <button
+        class="carousel-nav carousel-prev"
         (click)="prevSlide()"
-        [disabled]="testimonials.length <= visibleCount"
-        *ngIf="testimonials.length > visibleCount">
+        [disabled]="testimonials.length <= 1"
+        *ngIf="testimonials.length > 1">
         <i class="bi bi-chevron-left"></i>
       </button>
 
-      <!-- Testimonials Container -->
       <div class="testimonials-container">
         <div class="testimonials-track">
-          <div 
-            class="testimonial-card" 
-            *ngFor="let testimonial of visibleTestimonials"
-            [@slideIn]>
-            
-            <!-- Stars -->
-            <div class="testimonial-stars">
-              <i 
-                class="bi bi-star-fill" 
-                *ngFor="let star of getStars(testimonial.rating).filled">
-              </i>
-              <i 
-                class="bi bi-star" 
-                *ngFor="let star of getStars(testimonial.rating).empty">
-              </i>
+          <div class="testimonial-card" *ngFor="let testimonial of visibleTestimonials">
+
+            <!-- Badge vedette -->
+            <div class="featured-corner" *ngIf="testimonial.is_featured">
+              <i class="bi bi-star-fill"></i>
             </div>
 
-            <!-- Quote -->
+            <!-- Étoiles -->
+            <div class="testimonial-stars">
+              <i class="bi bi-star-fill"
+                *ngFor="let star of getStars(testimonial.rating).filled"></i>
+              <i class="bi bi-star"
+                *ngFor="let star of getStars(testimonial.rating).empty"></i>
+            </div>
+
+            <!-- Citation -->
             <div class="testimonial-quote">
               <i class="bi bi-quote quote-icon"></i>
               <p>{{ testimonial.comment }}</p>
             </div>
 
-            <!-- Author -->
+            <!-- Auteur -->
             <div class="testimonial-author">
               <div class="author-avatar">
-                <img 
-                  [src]="getDisplayPhoto(testimonial)" 
+                <img
+                  *ngIf="testimonial.display_photo"
+                  [src]="testimonial.display_photo"
                   [alt]="getDisplayName(testimonial)"
                   (error)="onImageError($event)">
+                <div class="avatar-initials" *ngIf="!testimonial.display_photo">
+                  {{ (testimonial.user?.first_name || testimonial.display_name || 'U').charAt(0).toUpperCase() }}
+                </div>
               </div>
+
               <div class="author-info">
                 <h4 class="author-name">{{ getDisplayName(testimonial) }}</h4>
                 <p class="author-meta">
-                  <span class="verified-badge">
-                    <i class="bi bi-patch-check-fill"></i>
-                    Client Vérifié
+                  <span class="verified-badge" [ngClass]="{
+                    'badge-client':     !testimonial.user?.role || testimonial.user?.role === 'client',
+                    'badge-restaurant': testimonial.user?.role === 'restaurant',
+                    'badge-traiteur':   testimonial.user?.role === 'traiteur'
+                  }">
+                    <i class="bi" [ngClass]="{
+                      'bi-patch-check-fill': !testimonial.user?.role || testimonial.user?.role === 'client',
+                      'bi-building-check':   testimonial.user?.role === 'restaurant',
+                      'bi-shop':             testimonial.user?.role === 'traiteur'
+                    }"></i>
+                    <ng-container [ngSwitch]="testimonial.user?.role">
+                      <span *ngSwitchCase="'restaurant'">Restaurant vérifié</span>
+                      <span *ngSwitchCase="'traiteur'">Traiteur vérifié</span>
+                      <span *ngSwitchDefault>Client vérifié</span>
+                    </ng-container>
                   </span>
                   <span class="separator">•</span>
                   <span class="date">{{ getTimeSince(testimonial.created_at) }}</span>
@@ -72,52 +87,38 @@
               </div>
             </div>
 
-            <!-- Featured Badge -->
-            <div class="featured-corner" *ngIf="testimonial.is_featured">
-              <i class="bi bi-star-fill"></i>
-            </div>
           </div>
         </div>
       </div>
 
-      <!-- Navigation Droite -->
-      <button 
-        class="carousel-nav carousel-next" 
+      <button
+        class="carousel-nav carousel-next"
         (click)="nextSlide()"
-        [disabled]="testimonials.length <= visibleCount"
-        *ngIf="testimonials.length > visibleCount">
+        [disabled]="testimonials.length <= 1"
+        *ngIf="testimonials.length > 1">
         <i class="bi bi-chevron-right"></i>
       </button>
+
     </div>
 
-    <!-- Dots Navigation -->
-    <div class="carousel-dots" *ngIf="testimonials.length > visibleCount">
-      <button 
-        class="dot" 
+    <!-- ── Dots ───────────────────────────────────────────── -->
+    <div class="carousel-dots" *ngIf="testimonials.length > 1">
+      <button
+        class="dot"
         *ngFor="let testimonial of testimonials; let i = index"
         [class.active]="i === currentIndex"
         (click)="goToSlide(i)">
       </button>
     </div>
 
-    <!-- CTA Button -->
-    <div class="testimonials-cta">
-      <p class="cta-text">
-        Vous aussi, partagez votre expérience avec RestoTraiteur
-      </p>
-      <a routerLink="/profile" class="btn btn-primary btn-cta">
-        <i class="bi bi-chat-heart"></i>
-        Laisser un Témoignage
-      </a>
-    </div>
   </div>
 </section>
 
-<!-- Loading State -->
+<!-- ── Loading ────────────────────────────────────────────── -->
 <section class="testimonials-section" *ngIf="isLoading">
   <div class="container">
     <div class="section-header">
-      <h2 class="section-title">Ce Que Nos Clients Disent</h2>
+      <h2 class="section-title">Ce Que la Communauté Dit</h2>
     </div>
     <div class="testimonials-loading">
       <div class="spinner-border text-primary" role="status">
@@ -128,11 +129,11 @@
   </div>
 </section>
 
-<!-- Error State -->
+<!-- ── Erreur ──────────────────────────────────────────────── -->
 <section class="testimonials-section" *ngIf="error && !isLoading">
   <div class="container">
     <div class="section-header">
-      <h2 class="section-title">Ce Que Nos Clients Disent</h2>
+      <h2 class="section-title">Ce Que la Communauté Dit</h2>
     </div>
     <div class="testimonials-error">
       <i class="bi bi-exclamation-triangle"></i>

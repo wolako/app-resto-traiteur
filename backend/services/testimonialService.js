@@ -13,12 +13,12 @@ class TestimonialService {
   async checkEligibility(userId) {
     const userResult = await pool.query('SELECT * FROM users WHERE id = $1', [userId]);
     const user = userResult.rows[0];
-
     if (!user) throw { status: 404, message: 'Utilisateur non trouvé' };
 
     const accountAgeDays = Math.floor(
       (new Date() - new Date(user.created_at)) / (1000 * 60 * 60 * 24)
     );
+
     if (accountAgeDays < 30) {
       throw {
         status: 400,
@@ -26,23 +26,24 @@ class TestimonialService {
       };
     }
 
-    const ordersResult = await pool.query(
-      `SELECT COUNT(*) as count FROM orders WHERE client_id = $1 AND status = 'delivered'`,
-      [userId]
-    );
-    const deliveredOrdersCount = parseInt(ordersResult.rows[0].count);
-    if (deliveredOrdersCount < 3) {
-      throw {
-        status: 400,
-        message: `Vous devez avoir au moins 3 commandes livrées. Vous en avez ${deliveredOrdersCount}.`
-      };
+    // ✅ Les établissements (restaurant/traiteur) n'ont pas besoin de commandes livrées
+    const isBusinessOwner = ['restaurant', 'traiteur'].includes(user.role);
+
+    if (!isBusinessOwner) {
+      const ordersResult = await pool.query(
+        `SELECT COUNT(*) as count FROM orders WHERE client_id = $1 AND status = 'delivered'`,
+        [userId]
+      );
+      const deliveredOrdersCount = parseInt(ordersResult.rows[0].count);
+      if (deliveredOrdersCount < 3) {
+        throw {
+          status: 400,
+          message: `Vous devez avoir au moins 3 commandes livrées. Vous en avez ${deliveredOrdersCount}.`
+        };
+      }
     }
 
-    const existingResult = await pool.query('SELECT id FROM testimonials WHERE user_id = $1', [userId]);
-    if (existingResult.rows.length > 0) {
-      throw { status: 409, message: 'Vous avez déjà soumis un témoignage' };
-    }
-
+    // ✅ Vérifier si témoignage existant SEULEMENT lors de la soumission, pas ici
     return true;
   }
 
@@ -69,7 +70,8 @@ class TestimonialService {
         u.first_name,
         u.last_name,
         u.email,
-        u.phone
+        u.phone,
+        u.role
       FROM testimonials t
       LEFT JOIN users u ON t.user_id = u.id
       WHERE t.status = 'approved'
@@ -120,7 +122,7 @@ class TestimonialService {
       `SELECT
          t.id, t.user_id, t.rating, t.comment, t.status, t.is_featured,
          t.display_name, t.display_photo, t.rejection_reason, t.created_at, t.updated_at,
-         u.first_name, u.last_name, u.email, u.phone
+         u.first_name, u.last_name, u.email, u.phone, u.role
        FROM testimonials t
        LEFT JOIN users u ON t.user_id = u.id
        WHERE t.user_id = $1`,
@@ -185,7 +187,7 @@ class TestimonialService {
       SELECT
         t.id, t.user_id, t.rating, t.comment, t.status, t.is_featured,
         t.display_name, t.display_photo, t.rejection_reason, t.created_at, t.updated_at,
-        u.first_name, u.last_name, u.email, u.phone
+        u.first_name, u.last_name, u.email, u.phone, u.role
       FROM testimonials t
       LEFT JOIN users u ON t.user_id = u.id
     `;
@@ -282,7 +284,8 @@ class TestimonialService {
         first_name: row.first_name,
         last_name:  row.last_name,
         email:      row.email,
-        phone:      row.phone         // ← phone (pas photo)
+        phone:      row.phone,
+        role:       row.role, 
       } : null
     };
   }

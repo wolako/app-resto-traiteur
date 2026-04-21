@@ -61,23 +61,26 @@ export class TestimonialsComponent implements OnInit {
   get visibleTestimonials(): Testimonial[] {
     if (this.testimonials.length === 0) return [];
     
+    // ✅ Ne jamais retourner plus de témoignages qu'il n'en existe
+    const count = Math.min(this.visibleCount, this.testimonials.length);
     const visible: Testimonial[] = [];
-    for (let i = 0; i < this.visibleCount; i++) {
+    for (let i = 0; i < count; i++) {
       const index = (this.currentIndex + i) % this.testimonials.length;
       visible.push(this.testimonials[index]);
     }
     return visible;
   }
 
+  // ✅ Corriger aussi nextSlide/prevSlide pour ne pas naviguer si 1 seul témoignage
   nextSlide(): void {
-    if (this.testimonials.length > this.visibleCount) {
+    if (this.testimonials.length > 1) {
       this.currentIndex = (this.currentIndex + 1) % this.testimonials.length;
       this.resetAutoPlay();
     }
   }
 
   prevSlide(): void {
-    if (this.testimonials.length > this.visibleCount) {
+    if (this.testimonials.length > 1) {
       this.currentIndex = (this.currentIndex - 1 + this.testimonials.length) % this.testimonials.length;
       this.resetAutoPlay();
     }
@@ -89,9 +92,12 @@ export class TestimonialsComponent implements OnInit {
   }
 
   startAutoPlay(): void {
-    this.autoPlayTimer = setInterval(() => {
-      this.nextSlide();
-    }, this.autoPlayInterval);
+    // ✅ N'activer l'auto-play que si plus d'un témoignage
+    if (this.testimonials.length > 1) {
+      this.autoPlayTimer = setInterval(() => {
+        this.nextSlide();
+      }, this.autoPlayInterval);
+    }
   }
 
   resetAutoPlay(): void {
@@ -120,12 +126,11 @@ export class TestimonialsComponent implements OnInit {
   }
 
   getDisplayPhoto(testimonial: Testimonial): string {
+    // ✅ display_photo en priorité (sauvegardé lors de la soumission)
     if (testimonial.display_photo) {
       return testimonial.display_photo;
     }
-    if (testimonial.user?.photo) {
-      return testimonial.user.photo;
-    }
+    // ✅ user.photo n'existe pas en DB — générer un avatar avec initiales
     return 'assets/images/default-avatar.png';
   }
 
@@ -149,4 +154,17 @@ export class TestimonialsComponent implements OnInit {
     if (diffDays < 365) return `Il y a ${Math.floor(diffDays / 30)} mois`;
     return `Il y a ${Math.floor(diffDays / 365)} an${Math.floor(diffDays / 365) > 1 ? 's' : ''}`;
   }
+
+  getVerifiedBadge(testimonial: Testimonial): { label: string; icon: string } {
+    const role = testimonial.user?.role;
+    if (role === 'restaurant') {
+      return { label: 'Restaurant vérifié', icon: 'bi-building-check' };
+    }
+    if (role === 'traiteur') {
+      return { label: 'Traiteur vérifié', icon: 'bi-patch-check-fill' };
+    }
+    // client ou pas de role
+    return { label: 'Client vérifié', icon: 'bi-patch-check-fill' };
+  }
+
 }
