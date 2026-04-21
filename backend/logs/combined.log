@@ -4085,3 +4085,8 @@
 {"level":"info","message":"[SubExpiry] Crons planifiés — URL : https://jason-overbulky-hazardously.ngrok-free.dev/restaurant/dashboard?tab=subscription","timestamp":"2026-04-21T21:28:09.784Z"}
 {"email":"admin@restotraiteur.com","level":"info","message":"Super-admin already exists","timestamp":"2026-04-21T21:28:10.785Z"}
 {"environment":"development","level":"info","message":"Server started","nodeVersion":"v20.18.3","port":"3000","timestamp":"2026-04-21T21:28:10.832Z"}
+{"level":"info","message":"Service SMS initialisé","timestamp":"2026-04-21T22:23:20.695Z"}
+{"level":"info","message":"[SubExpiry] Crons planifiés — URL : https://jason-overbulky-hazardously.ngrok-free.dev/restaurant/dashboard?tab=subscription","timestamp":"2026-04-21T22:23:25.092Z"}
+{"email":"admin@restotraiteur.com","level":"info","message":"Super-admin already exists","timestamp":"2026-04-21T22:23:25.105Z"}
+{"environment":"development","level":"info","message":"Server started","nodeVersion":"v20.18.3","port":"3000","timestamp":"2026-04-21T22:23:25.118Z"}
+{"level":"info","message":"Service email Gmail initialisé avec succès","timestamp":"2026-04-21T22:23:25.877Z"}
