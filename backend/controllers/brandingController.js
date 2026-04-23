@@ -87,6 +87,36 @@ exports.updateBranding = async (req, res) => {
   try {
     const businessId = req.business.id;
 
+    // ✅ 1. Traiter cover_image_url EN PREMIER — sans check Premium
+    // Si la requête ne contient QUE cover_image_url, on la traite et on sort
+    if (req.body.cover_image_url !== undefined && Object.keys(req.body).length === 1) {
+      const coverUrl = req.body.cover_image_url || null;
+
+      if (coverUrl && !coverUrl.startsWith('/') && !coverUrl.startsWith('http')) {
+        return res.status(400).json({ success: false, error: 'URL cover invalide' });
+      }
+
+      await pool.query(
+        `INSERT INTO business_branding (business_id, cover_image_url)
+         VALUES ($1, $2)
+         ON CONFLICT (business_id) DO UPDATE 
+         SET cover_image_url = $2, updated_at = NOW()`,
+        [businessId, coverUrl]
+      );
+
+      await pool.query(
+        `UPDATE businesses SET cover_image_url = $1, updated_at = NOW() WHERE id = $2`,
+        [coverUrl, businessId]
+      );
+
+      const coverResult = await pool.query(
+        'SELECT * FROM business_branding WHERE business_id = $1',
+        [businessId]
+      );
+      return res.json({ success: true, data: coverResult.rows[0] });
+    }
+
+    // ✅ 2. Pour tout le reste — check Premium obligatoire
     const sub = await getBusinessSubscription(businessId);
     if (!sub || !sub.custom_branding) {
       return res.status(403).json({
@@ -99,9 +129,10 @@ exports.updateBranding = async (req, res) => {
     const allowed = [
       'primary_color', 'secondary_color', 'accent_color',
       'logo_url', 'logo_square_url',
-      'banner_url',         // ✅ Bannière profil uniquement
+      'banner_url',
       'banner_mobile_url',
-      'cover_image_url',    // ✅ Image carte home uniquement
+      // ✅ cover_image_url retiré de la liste Premium
+      // Il est géré séparément ci-dessus sans restriction de plan
       'gallery_urls',
       'tagline', 'footer_text', 'footer_links',
       'practical_note',
@@ -124,9 +155,9 @@ exports.updateBranding = async (req, res) => {
     // Validation URLs
     const urlFields = [
       'logo_url', 'logo_square_url',
-      'banner_url', 'banner_mobile_url',  // ✅ bannière profil
-      'cover_image_url',                   // ✅ carte home
+      'banner_url', 'banner_mobile_url',
       'facebook_url', 'instagram_url', 'tiktok_url',
+      // ✅ cover_image_url retiré — géré séparément
     ];
     for (const f of urlFields) {
       if (req.body[f] && req.body[f] !== '' && !req.body[f].startsWith('/') && !req.body[f].startsWith('http')) {
@@ -147,7 +178,10 @@ exports.updateBranding = async (req, res) => {
       );
       const maxPhotos = plan.rows[0]?.max_photos ?? 50;
       if (req.body.gallery_urls.length > maxPhotos) {
-        return res.status(400).json({ success: false, error: `Maximum ${maxPhotos} photos dans la galerie` });
+        return res.status(400).json({
+          success: false,
+          error: `Maximum ${maxPhotos} photos dans la galerie`
+        });
       }
     }
 
@@ -161,12 +195,12 @@ exports.updateBranding = async (req, res) => {
       return res.status(400).json({ success: false, error: 'Aucun champ à mettre à jour' });
     }
 
-    // ✅ GUARD : empêcher qu'une cover_image_url soit stockée comme banner_url
+    // ✅ GUARD : empêcher qu'une cover soit stockée comme banner
     if (updates.banner_url && typeof updates.banner_url === 'string') {
       const bUrl = updates.banner_url.trim();
       if (bUrl.includes('/covers/') || bUrl.includes('cover-business-')) {
-        console.warn(`[updateBranding] GUARD: tentative de stocker une cover comme banner pour business ${businessId}`);
-        delete updates.banner_url; // ignorer silencieusement
+        console.warn(`[updateBranding] GUARD banner_url contient une cover — ignoré pour business ${businessId}`);
+        delete updates.banner_url;
       }
     }
     if (updates.banner_mobile_url && typeof updates.banner_mobile_url === 'string') {
@@ -181,6 +215,11 @@ exports.updateBranding = async (req, res) => {
     if (updates.footer_links    !== undefined) updates.footer_links    = JSON.stringify(updates.footer_links);
     if (updates.payment_methods !== undefined) updates.payment_methods = JSON.stringify(updates.payment_methods);
     if (updates.highlights      !== undefined) updates.highlights      = JSON.stringify(updates.highlights);
+
+    // Re-vérifier qu'il reste des champs après les guards
+    if (Object.keys(updates).length === 0) {
+      return res.status(400).json({ success: false, error: 'Aucun champ valide à mettre à jour' });
+    }
 
     // UPSERT
     const existing = await pool.query(
@@ -205,33 +244,13 @@ exports.updateBranding = async (req, res) => {
       );
     }
 
-    // ✅ cover_image_url est traité AVANT le check Premium
-    if (req.body.cover_image_url !== undefined && Object.keys(req.body).length === 1) {
-      // Requête qui ne concerne que la cover — pas besoin de Premium
-      const coverUrl = req.body.cover_image_url || null;
-      if (coverUrl && !coverUrl.startsWith('/') && !coverUrl.startsWith('http')) {
-        return res.status(400).json({ success: false, error: 'URL cover invalide' });
-      }
-      await pool.query(
-        `INSERT INTO business_branding (business_id, cover_image_url)
-         VALUES ($1, $2)
-         ON CONFLICT (business_id) DO UPDATE SET cover_image_url = $2, updated_at = NOW()`,
-        [businessId, coverUrl]
-      );
-      await pool.query(
-        `UPDATE businesses SET cover_image_url = $1, updated_at = NOW() WHERE id = $2`,
-        [coverUrl, businessId]
-      );
-      const result = await pool.query('SELECT * FROM business_branding WHERE business_id = $1', [businessId]);
-      return res.json({ success: true, data: result.rows[0] });
-    }
-
     const branding = result.rows[0];
     branding.gallery_urls    = branding.gallery_urls    || [];
     branding.footer_links    = branding.footer_links    || [];
     branding.payment_methods = branding.payment_methods || [];
 
     return res.json({ success: true, data: branding });
+
   } catch (err) {
     console.error('[updateBranding]', err);
     return res.status(500).json({ success: false, error: 'Erreur serveur' });

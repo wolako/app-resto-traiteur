@@ -858,6 +858,378 @@ class EmailService {
     return this.sendEmail({ to: toEmail, subject: `Re: ${subjectLabel} — ${appName}`, html,
       text: `Bonjour ${toName},\n\n${reply}\n\n---\nVotre message :\n${originalMessage}\n\nContact : ${supportEmail}` });
   }
+
+  /**
+   * Email de confirmation de commande au CLIENT
+   * Appelé par clientNotificationService → type 'order_confirmed'
+   */
+  async sendOrderConfirmationToClient(order, business, email, firstName) {
+    const appName = process.env.APP_NAME || 'RestoTraiteur';
+    const amount = Number(order.total_amount || 0).toLocaleString('fr-FR');
+    const date = new Date(order.created_at || Date.now())
+      .toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' });
+
+    const html = `
+    <!DOCTYPE html><html><head><meta charset="utf-8"></head>
+    <body style="margin:0;padding:0;background:#F4F6F8;font-family:'Segoe UI',Arial,sans-serif;">
+    <table width="100%" cellpadding="0" cellspacing="0" style="padding:28px 12px;">
+    <tr><td align="center">
+    <table width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;">
+
+      <!-- En-tête vert -->
+      <tr><td style="background:#1A1A2E;border-radius:12px 12px 0 0;padding:22px 28px;">
+        <span style="font-size:20px;font-weight:800;">
+          <span style="color:#C94040;">Resto</span><span style="color:#2A9D5C;">Traiteur</span>
+        </span>
+      </td></tr>
+
+      <!-- Bannière -->
+      <tr><td style="background:#2A9D5C;padding:14px 28px;">
+        <span style="color:#fff;font-size:15px;font-weight:700;">✅ Commande confirmée !</span>
+      </td></tr>
+
+      <!-- Corps -->
+      <tr><td style="background:#fff;padding:26px 28px;">
+        <p style="font-size:15px;color:#1A1A2E;margin:0 0 18px;">
+          Bonjour <strong>${firstName || 'cher client'}</strong>,<br>
+          votre commande a été confirmée par <strong>${business?.name || 'le restaurant'}</strong> ! 🎉
+        </p>
+
+        <table width="100%" cellpadding="0" cellspacing="0"
+              style="border:1px solid #E9ECEF;border-radius:8px;border-collapse:collapse;margin-bottom:20px;">
+          <tr style="background:#1A1A2E;">
+            <td colspan="2" style="padding:10px 16px;font-size:11px;color:#9CA3AF;
+                                  font-weight:700;text-transform:uppercase;letter-spacing:.5px;">
+              Récapitulatif
+            </td>
+          </tr>
+          <tr><td style="padding:10px 16px;font-size:13px;font-weight:700;color:#6C757D;width:45%;border-bottom:1px solid #F0F0F0;">Commande n°</td>
+              <td style="padding:10px 16px;font-size:13px;color:#1A1A2E;border-bottom:1px solid #F0F0F0;">#${order.id}</td></tr>
+          <tr style="background:#F8F9FA;">
+              <td style="padding:10px 16px;font-size:13px;font-weight:700;color:#6C757D;border-bottom:1px solid #F0F0F0;">Restaurant</td>
+              <td style="padding:10px 16px;font-size:13px;color:#1A1A2E;border-bottom:1px solid #F0F0F0;">${business?.name || 'N/A'}</td></tr>
+          <tr><td style="padding:10px 16px;font-size:13px;font-weight:700;color:#6C757D;">Date</td>
+              <td style="padding:10px 16px;font-size:13px;color:#1A1A2E;">${date}</td></tr>
+        </table>
+
+        <!-- Montant -->
+        <table width="100%" cellpadding="0" cellspacing="0"
+              style="background:#C94040;border-radius:8px;margin-bottom:20px;">
+          <tr>
+            <td style="padding:14px 20px;font-size:14px;font-weight:700;color:#fff;">💰 Total</td>
+            <td style="padding:14px 20px;font-size:19px;font-weight:800;color:#fff;text-align:right;">${amount} FCFA</td>
+          </tr>
+        </table>
+
+        <p style="font-size:12px;color:#6C757D;text-align:center;margin:0;">
+          Des questions ? <a href="mailto:support@restotraiteur.com" style="color:#C94040;font-weight:600;">support@restotraiteur.com</a>
+        </p>
+      </td></tr>
+
+      <!-- Pied -->
+      <tr><td style="background:#F8F9FA;border:1px solid #E9ECEF;border-top:none;
+                    border-radius:0 0 12px 12px;padding:14px 28px;
+                    font-size:11px;color:#ADB5BD;text-align:center;">
+        RestoTraiteur © ${new Date().getFullYear()}
+      </td></tr>
+
+    </table>
+    </td></tr></table>
+    </body></html>`;
+
+    return this.sendEmail({
+      to: email,
+      subject: `✅ Commande #${order.id} confirmée — ${business?.name || 'RestoTraiteur'}`,
+      html,
+      text: `Bonjour ${firstName || 'cher client'},\n\nVotre commande #${order.id} chez ${business?.name} a été confirmée !\nMontant : ${amount} FCFA\n\nL'équipe ${appName}`
+    });
+  }
+
+  /**
+   * Email "commande prête" au client
+   * Appelé par clientNotificationService → type 'order_ready'
+   */
+  async sendOrderReadyNotification(order, business, email, firstName) {
+    const appName = process.env.APP_NAME || 'RestoTraiteur';
+
+    const html = `
+    <!DOCTYPE html><html><head><meta charset="utf-8"></head>
+    <body style="margin:0;padding:0;background:#F4F6F8;font-family:'Segoe UI',Arial,sans-serif;">
+    <table width="100%" cellpadding="0" cellspacing="0" style="padding:28px 12px;">
+    <tr><td align="center">
+    <table width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;">
+
+      <tr><td style="background:#1A1A2E;border-radius:12px 12px 0 0;padding:22px 28px;">
+        <span style="font-size:20px;font-weight:800;">
+          <span style="color:#C94040;">Resto</span><span style="color:#2A9D5C;">Traiteur</span>
+        </span>
+      </td></tr>
+
+      <tr><td style="background:#2A9D5C;padding:14px 28px;">
+        <span style="color:#fff;font-size:15px;font-weight:700;">🍽️ Votre commande est prête !</span>
+      </td></tr>
+
+      <tr><td style="background:#fff;padding:26px 28px;">
+        <p style="font-size:15px;color:#1A1A2E;margin:0 0 18px;">
+          Bonjour <strong>${firstName || 'cher client'}</strong>,<br>
+          votre commande <strong>#${order.id}</strong> est prête chez <strong>${business?.name}</strong> !
+        </p>
+
+        <table width="100%" cellpadding="0" cellspacing="0"
+              style="background:#EAF6EF;border:1px solid #A8DBC0;border-radius:8px;margin-bottom:20px;">
+          <tr>
+            <td style="padding:20px;text-align:center;">
+              <div style="font-size:40px;margin-bottom:8px;">🛍️</div>
+              <p style="margin:0;font-size:15px;color:#1A3A2A;font-weight:700;">
+                Vous pouvez venir récupérer votre commande
+              </p>
+              ${business?.address ? `<p style="margin:8px 0 0;font-size:13px;color:#2A9D5C;">📍 ${business.address}</p>` : ''}
+              ${business?.phone ? `<p style="margin:4px 0 0;font-size:13px;color:#2A9D5C;">📞 ${business.phone}</p>` : ''}
+            </td>
+          </tr>
+        </table>
+
+        <p style="font-size:12px;color:#6C757D;text-align:center;margin:0;">
+          <a href="mailto:support@restotraiteur.com" style="color:#C94040;font-weight:600;">support@restotraiteur.com</a>
+        </p>
+      </td></tr>
+
+      <tr><td style="background:#F8F9FA;border:1px solid #E9ECEF;border-top:none;
+                    border-radius:0 0 12px 12px;padding:14px 28px;
+                    font-size:11px;color:#ADB5BD;text-align:center;">
+        RestoTraiteur © ${new Date().getFullYear()}
+      </td></tr>
+    </table>
+    </td></tr></table>
+    </body></html>`;
+
+    return this.sendEmail({
+      to: email,
+      subject: `🍽️ Commande #${order.id} prête — ${business?.name || 'RestoTraiteur'}`,
+      html,
+      text: `Bonjour ${firstName || 'cher client'},\n\nVotre commande #${order.id} est prête chez ${business?.name}.\n\nL'équipe ${appName}`
+    });
+  }
+
+  /**
+   * Email "commande livrée" au client
+   * Appelé par clientNotificationService → type 'order_delivered'
+   */
+  async sendOrderDeliveredNotification(order, business, email, firstName) {
+    const appName = process.env.APP_NAME || 'RestoTraiteur';
+    const frontendUrl = process.env.FRONTEND_URL || 'https://restotraiteur.com';
+
+    const html = `
+    <!DOCTYPE html><html><head><meta charset="utf-8"></head>
+    <body style="margin:0;padding:0;background:#F4F6F8;font-family:'Segoe UI',Arial,sans-serif;">
+    <table width="100%" cellpadding="0" cellspacing="0" style="padding:28px 12px;">
+    <tr><td align="center">
+    <table width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;">
+
+      <tr><td style="background:#1A1A2E;border-radius:12px 12px 0 0;padding:22px 28px;">
+        <span style="font-size:20px;font-weight:800;">
+          <span style="color:#C94040;">Resto</span><span style="color:#2A9D5C;">Traiteur</span>
+        </span>
+      </td></tr>
+
+      <tr><td style="background:#2A9D5C;padding:14px 28px;">
+        <span style="color:#fff;font-size:15px;font-weight:700;">📦 Commande livrée !</span>
+      </td></tr>
+
+      <tr><td style="background:#fff;padding:26px 28px;">
+        <p style="font-size:15px;color:#1A1A2E;margin:0 0 18px;">
+          Bonjour <strong>${firstName || 'cher client'}</strong>,<br>
+          votre commande <strong>#${order.id}</strong> a été livrée par <strong>${business?.name}</strong>. Merci de votre confiance ! 🙏
+        </p>
+
+        <table width="100%" cellpadding="0" cellspacing="0"
+              style="background:#EAF6EF;border:1px solid #A8DBC0;border-radius:8px;margin-bottom:20px;">
+          <tr><td style="padding:18px 20px;text-align:center;">
+            <p style="margin:0;font-size:14px;color:#1A3A2A;font-weight:700;">
+              ✅ Confirmez la réception depuis votre profil
+            </p>
+            <p style="margin:8px 0 0;font-size:13px;color:#2A9D5C;">
+              Votre confirmation aide le restaurant à clôturer la commande.
+            </p>
+            <a href="${frontendUrl}/client/profile?tab=orders"
+              style="display:inline-block;margin-top:14px;padding:10px 24px;
+                      background:#2A9D5C;color:#fff;text-decoration:none;
+                      border-radius:20px;font-weight:700;font-size:13px;">
+              Confirmer la réception
+            </a>
+          </td></tr>
+        </table>
+
+        <p style="font-size:12px;color:#6C757D;text-align:center;margin:0;">
+          <a href="mailto:support@restotraiteur.com" style="color:#C94040;font-weight:600;">support@restotraiteur.com</a>
+        </p>
+      </td></tr>
+
+      <tr><td style="background:#F8F9FA;border:1px solid #E9ECEF;border-top:none;
+                    border-radius:0 0 12px 12px;padding:14px 28px;
+                    font-size:11px;color:#ADB5BD;text-align:center;">
+        RestoTraiteur © ${new Date().getFullYear()}
+      </td></tr>
+    </table>
+    </td></tr></table>
+    </body></html>`;
+
+    return this.sendEmail({
+      to: email,
+      subject: `📦 Commande #${order.id} livrée — Confirmez la réception`,
+      html,
+      text: `Bonjour ${firstName || 'cher client'},\n\nVotre commande #${order.id} a été livrée.\nConfirmez la réception : ${frontendUrl}/client/profile?tab=orders\n\nL'équipe ${appName}`
+    });
+  }
+
+  /**
+   * Email "commande annulée" au client
+   * Appelé par clientNotificationService → type 'order_cancelled'
+   */
+  async sendOrderCancelledNotification(order, business, email, firstName) {
+    const appName = process.env.APP_NAME || 'RestoTraiteur';
+    const supportEmail = process.env.SUPPORT_EMAIL || 'support@restotraiteur.com';
+
+    const html = `
+    <!DOCTYPE html><html><head><meta charset="utf-8"></head>
+    <body style="margin:0;padding:0;background:#F4F6F8;font-family:'Segoe UI',Arial,sans-serif;">
+    <table width="100%" cellpadding="0" cellspacing="0" style="padding:28px 12px;">
+    <tr><td align="center">
+    <table width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;">
+
+      <tr><td style="background:#1A1A2E;border-radius:12px 12px 0 0;padding:22px 28px;">
+        <span style="font-size:20px;font-weight:800;">
+          <span style="color:#C94040;">Resto</span><span style="color:#2A9D5C;">Traiteur</span>
+        </span>
+      </td></tr>
+
+      <tr><td style="background:#C94040;padding:14px 28px;">
+        <span style="color:#fff;font-size:15px;font-weight:700;">❌ Commande annulée</span>
+      </td></tr>
+
+      <tr><td style="background:#fff;padding:26px 28px;">
+        <p style="font-size:15px;color:#1A1A2E;margin:0 0 18px;">
+          Bonjour <strong>${firstName || 'cher client'}</strong>,<br>
+          nous vous informons que votre commande <strong>#${order.id}</strong> chez <strong>${business?.name}</strong> a été annulée.
+        </p>
+
+        <table width="100%" cellpadding="0" cellspacing="0"
+              style="background:#F9ECEC;border:1px solid #F0A0A0;border-radius:8px;margin-bottom:20px;">
+          <tr><td style="padding:16px 20px;">
+            <p style="margin:0;font-size:13px;color:#7A2020;font-weight:600;">
+              Si vous avez été débité, le remboursement sera traité dans 3 à 5 jours ouvrés.
+            </p>
+            <p style="margin:8px 0 0;font-size:13px;color:#7A2020;">
+              Pour toute réclamation : <a href="mailto:${supportEmail}" style="color:#C94040;">${supportEmail}</a>
+            </p>
+          </td></tr>
+        </table>
+
+        <p style="font-size:12px;color:#6C757D;text-align:center;margin:0;">
+          Nous espérons vous retrouver très prochainement sur RestoTraiteur.
+        </p>
+      </td></tr>
+
+      <tr><td style="background:#F8F9FA;border:1px solid #E9ECEF;border-top:none;
+                    border-radius:0 0 12px 12px;padding:14px 28px;
+                    font-size:11px;color:#ADB5BD;text-align:center;">
+        RestoTraiteur © ${new Date().getFullYear()}
+      </td></tr>
+    </table>
+    </td></tr></table>
+    </body></html>`;
+
+    return this.sendEmail({
+      to: email,
+      subject: `❌ Commande #${order.id} annulée — ${business?.name || 'RestoTraiteur'}`,
+      html,
+      text: `Bonjour ${firstName || 'cher client'},\n\nVotre commande #${order.id} chez ${business?.name} a été annulée.\nContact : ${supportEmail}\n\nL'équipe ${appName}`
+    });
+  }
+
+  /**
+   * Rappel de réservation 24h avant
+   * Appelé par clientNotificationService → type 'reservation_reminder'
+   */
+  async sendReservationReminder(reservation, restaurant, email, firstName) {
+    const appName = process.env.APP_NAME || 'RestoTraiteur';
+    const date = new Date(reservation.reservation_date).toLocaleDateString('fr-FR', {
+      weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+    });
+
+    const html = `
+    <!DOCTYPE html><html><head><meta charset="utf-8"></head>
+    <body style="margin:0;padding:0;background:#F4F6F8;font-family:'Segoe UI',Arial,sans-serif;">
+    <table width="100%" cellpadding="0" cellspacing="0" style="padding:28px 12px;">
+    <tr><td align="center">
+    <table width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;">
+
+      <tr><td style="background:#1A1A2E;border-radius:12px 12px 0 0;padding:22px 28px;">
+        <span style="font-size:20px;font-weight:800;">
+          <span style="color:#C94040;">Resto</span><span style="color:#2A9D5C;">Traiteur</span>
+        </span>
+      </td></tr>
+
+      <tr><td style="background:#D4A843;padding:14px 28px;">
+        <span style="color:#fff;font-size:15px;font-weight:700;">⏰ Rappel : réservation demain !</span>
+      </td></tr>
+
+      <tr><td style="background:#fff;padding:26px 28px;">
+        <p style="font-size:15px;color:#1A1A2E;margin:0 0 18px;">
+          Bonjour <strong>${firstName || 'cher client'}</strong>,<br>
+          n'oubliez pas votre réservation demain au <strong>${restaurant?.name}</strong> !
+        </p>
+
+        <table width="100%" cellpadding="0" cellspacing="0"
+              style="border:1px solid #E9ECEF;border-radius:8px;border-collapse:collapse;margin-bottom:20px;">
+          <tr style="background:#1A1A2E;">
+            <td colspan="2" style="padding:10px 16px;font-size:11px;color:#9CA3AF;font-weight:700;text-transform:uppercase;letter-spacing:.5px;">
+              Détails de la réservation
+            </td>
+          </tr>
+          <tr><td style="padding:10px 16px;font-size:13px;font-weight:700;color:#6C757D;width:45%;border-bottom:1px solid #F0F0F0;">Restaurant</td>
+              <td style="padding:10px 16px;font-size:13px;color:#1A1A2E;border-bottom:1px solid #F0F0F0;">${restaurant?.name}</td></tr>
+          <tr style="background:#F8F9FA;">
+              <td style="padding:10px 16px;font-size:13px;font-weight:700;color:#6C757D;border-bottom:1px solid #F0F0F0;">Date</td>
+              <td style="padding:10px 16px;font-size:13px;color:#1A1A2E;border-bottom:1px solid #F0F0F0;">${date}</td></tr>
+          <tr><td style="padding:10px 16px;font-size:13px;font-weight:700;color:#6C757D;border-bottom:1px solid #F0F0F0;">Heure</td>
+              <td style="padding:10px 16px;font-size:13px;color:#1A1A2E;border-bottom:1px solid #F0F0F0;">${reservation.time_slot}</td></tr>
+          <tr style="background:#F8F9FA;">
+              <td style="padding:10px 16px;font-size:13px;font-weight:700;color:#6C757D;">Personnes</td>
+              <td style="padding:10px 16px;font-size:13px;color:#1A1A2E;">${reservation.number_of_people}</td></tr>
+        </table>
+
+        ${restaurant?.address ? `
+        <table width="100%" cellpadding="0" cellspacing="0"
+              style="background:#FFF8E7;border:1px solid #F0D080;border-radius:8px;margin-bottom:16px;">
+          <tr><td style="padding:14px 18px;font-size:13px;color:#5A4000;">
+            📍 <strong>${restaurant.address}</strong>
+            ${restaurant?.phone ? `<br>📞 ${restaurant.phone}` : ''}
+          </td></tr>
+        </table>` : ''}
+
+        <p style="font-size:12px;color:#6C757D;text-align:center;margin:0;">
+          En cas d'empêchement, prévenez le restaurant le plus tôt possible.
+        </p>
+      </td></tr>
+
+      <tr><td style="background:#F8F9FA;border:1px solid #E9ECEF;border-top:none;
+                    border-radius:0 0 12px 12px;padding:14px 28px;
+                    font-size:11px;color:#ADB5BD;text-align:center;">
+        RestoTraiteur © ${new Date().getFullYear()}
+      </td></tr>
+    </table>
+    </td></tr></table>
+    </body></html>`;
+
+    return this.sendEmail({
+      to: email,
+      subject: `⏰ Rappel : réservation demain au ${restaurant?.name}`,
+      html,
+      text: `Bonjour ${firstName || 'cher client'},\n\nRappel : réservation demain au ${restaurant?.name} le ${date} à ${reservation.time_slot} pour ${reservation.number_of_people} personne(s).\n\nL'équipe ${appName}`
+    });
+  }
+
 }
 
 const emailService = new EmailService();

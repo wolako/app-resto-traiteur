@@ -163,12 +163,40 @@ const updateOrderStatus = asyncHandler(async (req, res) => {
     const business = await Business.findById(order.business_id);
 
     if (order.client_id) {
-      const clientUser = await User.findById(order.client_id);
-      if (clientUser) {
-        const clientInfo = { user_id: clientUser.id, email: clientUser.email, phone: clientUser.phone, first_name: clientUser.first_name };
-        if (status === 'confirmed') await clientNotificationService.notifyOrderConfirmed(order, business, clientInfo);
-        else if (status === 'ready')     await clientNotificationService.notifyOrderReady(order, business, clientInfo);
-        else if (status === 'delivered') await clientNotificationService.notifyOrderDelivered(order, business, clientInfo);
+      try {
+        const clientUser = await User.findById(order.client_id);
+        if (clientUser) {
+          const clientInfo = {
+            user_id:    clientUser.id,
+            email:      clientUser.email,
+            phone:      clientUser.phone,
+            first_name: clientUser.first_name
+          };
+ 
+          switch (status) {
+            case 'confirmed':
+              await clientNotificationService.notifyOrderConfirmed(order, business, clientInfo);
+              break;
+            case 'ready':
+              await clientNotificationService.notifyOrderReady(order, business, clientInfo);
+              break;
+            case 'delivered':
+              await clientNotificationService.notifyOrderDelivered(order, business, clientInfo);
+              break;
+            case 'cancelled':
+              // ✅ FIX — notifier le client de l'annulation (était manquant)
+              await clientNotificationService.notifyOrderCancelled(order, business, clientInfo);
+              break;
+            // 'preparing' et autres : pas de notif client pour l'instant
+          }
+        }
+      } catch (notifError) {
+        // Ne jamais bloquer la réponse API si la notif échoue
+        logger.error('Erreur notification client (non bloquant)', {
+          error: notifError.message,
+          orderId: id,
+          newStatus: status
+        });
       }
     }
 

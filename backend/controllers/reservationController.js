@@ -11,7 +11,6 @@ const { emailService } = require('../services/emailService');
 const { smsService } = require('../services/smsService');
 const { calculateDepositFees } = require('../utils/feeCalculator');
 const { cinetpayService } = require('../services/cinetpayService');
-// ✅ AJOUT
 const { getSettings } = require('../utils/settingsHelper');
 
 /**
@@ -165,7 +164,7 @@ const createReservation = asyncHandler(async (req, res) => {
     const payment = await cinetpayService.initiatePayment({
       amount: amountInt, currency: 'XOF',
       transaction_id: `RESERVATION-${reservation.id}-${Date.now()}`,
-      description: `Acompte réservation #${reservation.id}`,
+      description: `Acompte réservation ${reservation.id}`,
       customer_name: reservationData.client_name,
       customer_phone_number: reservationData.client_phone || '',
       customer_email: reservationData.client_email || '',
@@ -266,52 +265,121 @@ const updateReservationStatus = asyncHandler(async (req, res) => {
   }
 
   if (status === 'confirmed') {
+ 
+    // 1. Notification restaurant
     try {
       await notificationService.createNotification({
-        business_id: business.id, type: 'reservation_confirmed',
-        title: 'Réservation confirmée',
-        message: `Vous avez confirmé la réservation de ${reservation.client_name} pour le ${new Date(reservation.reservation_date).toLocaleDateString('fr-FR')} à ${reservation.time_slot}`,
-        reference_id: reservation.id, reference_type: 'reservation', priority: 'normal',
+        business_id:    business.id,
+        type:           'reservation_confirmed',
+        title:          'Réservation confirmée',
+        message:        `Vous avez confirmé la réservation de ${reservation.client_name} pour le ${new Date(reservation.reservation_date).toLocaleDateString('fr-FR')} à ${reservation.time_slot}`,
+        reference_id:   reservation.id,
+        reference_type: 'reservation',
+        priority:       'normal',
       });
     } catch (error) {
       logger.error('Erreur notification restaurant', { error: error.message });
     }
-
-    if (reservation.client_email?.trim()) {
+ 
+    // 2. Notification client
+    if (reservation.client_id) {
+      // Client connecté → via le service centralisé (respecte les préférences)
       try {
-        await emailService.sendReservationConfirmation(reservation, business);
+        const clientUser = await User.findById(reservation.client_id);
+        if (clientUser) {
+          const clientInfo = {
+            user_id:    clientUser.id,
+            email:      clientUser.email,
+            phone:      clientUser.phone,
+            first_name: clientUser.first_name
+          };
+          await clientNotificationService.notifyReservationConfirmed(reservation, business, clientInfo);
+        }
       } catch (error) {
-        logger.error('Erreur envoi email confirmation', { reservationId: reservation.id, error: error.message });
+        logger.error('Erreur notification client réservation confirmée (non bloquant)', {
+          error: error.message, reservationId: reservation.id
+        });
       }
-    }
-
-    if (reservation.client_phone?.trim()) {
-      try {
-        const reservationDate = new Date(reservation.reservation_date).toLocaleDateString('fr-FR');
-        const smsMessage = `Réservation confirmée au ${business.name} ! ${reservationDate} à ${reservation.time_slot} pour ${reservation.number_of_people} personne${reservation.number_of_people > 1 ? 's' : ''}. À bientôt !`;
-        await smsService.sendSMS(reservation.client_phone, smsMessage);
-      } catch (error) {
-        logger.error('Erreur envoi SMS confirmation', { reservationId: reservation.id, error: error.message });
+    } else {
+      // Client invité → envoi direct (pas de compte = pas de préférences)
+      if (reservation.client_email?.trim()) {
+        try {
+          await emailService.sendReservationConfirmation(reservation, business);
+        } catch (error) {
+          logger.error('Erreur email confirmation réservation (invité)', {
+            reservationId: reservation.id, error: error.message
+          });
+        }
+      }
+      if (reservation.client_phone?.trim()) {
+        try {
+          const reservationDate = new Date(reservation.reservation_date).toLocaleDateString('fr-FR');
+          await smsService.sendSMS(
+            reservation.client_phone,
+            `Réservation confirmée au ${business.name} ! ${reservationDate} à ${reservation.time_slot} pour ${reservation.number_of_people} personne${reservation.number_of_people > 1 ? 's' : ''}. À bientôt !`
+          );
+        } catch (error) {
+          logger.error('Erreur SMS confirmation réservation (invité)', {
+            reservationId: reservation.id, error: error.message
+          });
+        }
       }
     }
   }
 
   if (status === 'cancelled') {
+ 
+    // 1. Notification restaurant (inchangée)
     await notificationService.createNotification({
-      business_id: business.id, type: 'reservation_cancelled',
-      title: 'Réservation annulée',
-      message: `La réservation de ${reservation.client_name} pour le ${new Date(reservation.reservation_date).toLocaleDateString('fr-FR')} à ${reservation.time_slot} a été annulée`,
-      reference_id: reservation.id, reference_type: 'reservation', priority: 'normal',
+      business_id:    business.id,
+      type:           'reservation_cancelled',
+      title:          'Réservation annulée',
+      message:        `La réservation de ${reservation.client_name} pour le ${new Date(reservation.reservation_date).toLocaleDateString('fr-FR')} à ${reservation.time_slot} a été annulée`,
+      reference_id:   reservation.id,
+      reference_type: 'reservation',
+      priority:       'normal',
     });
-
-    if (reservation.client_email) {
-      await emailService.sendReservationCancellation(reservation, business);
-    }
-
-    if (reservation.client_phone) {
-      const reservationDate = new Date(reservation.reservation_date).toLocaleDateString('fr-FR');
-      const smsMessage = `Réservation annulée au ${business.name}. ${reservationDate} à ${reservation.time_slot}. Pour toute question, contactez-nous.`;
-      await smsService.sendSMS(reservation.client_phone, smsMessage);
+ 
+    // 2. ✅ FIX — notification client via le service centralisé
+    // → respecte les préférences email/sms/push du client
+    // → avant : emailService + smsService appelés directement = bypass des préférences
+    if (reservation.client_id) {
+      try {
+        const clientUser = await User.findById(reservation.client_id);
+        if (clientUser) {
+          const clientInfo = {
+            user_id:    clientUser.id,
+            email:      clientUser.email,
+            phone:      clientUser.phone,
+            first_name: clientUser.first_name
+          };
+          await clientNotificationService.notifyReservationCancelled(reservation, business, clientInfo);
+        }
+      } catch (notifError) {
+        logger.error('Erreur notification client annulation réservation (non bloquant)', {
+          error: notifError.message, reservationId: reservation.id
+        });
+      }
+    } else {
+      // Client invité (pas de compte) : envoi direct car pas de préférences stockées
+      if (reservation.client_email) {
+        try {
+          await emailService.sendReservationCancellation(reservation, business);
+        } catch (err) {
+          logger.error('Erreur email annulation (invité)', { error: err.message });
+        }
+      }
+      if (reservation.client_phone) {
+        try {
+          const reservationDate = new Date(reservation.reservation_date).toLocaleDateString('fr-FR');
+          await smsService.sendSMS(
+            reservation.client_phone,
+            `Réservation annulée au ${business.name}. ${reservationDate} à ${reservation.time_slot}. Pour toute question, contactez-nous.`
+          );
+        } catch (err) {
+          logger.error('Erreur SMS annulation (invité)', { error: err.message });
+        }
+      }
     }
   }
 

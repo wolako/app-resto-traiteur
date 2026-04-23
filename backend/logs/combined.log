@@ -4096,3 +4096,34 @@
 {"environment":"development","level":"info","message":"Server started","nodeVersion":"v20.18.3","port":"3000","timestamp":"2026-04-21T22:54:07.006Z"}
 {"level":"info","message":"Service email Gmail initialisé avec succès","timestamp":"2026-04-21T22:54:08.095Z"}
 {"level":"info","message":"Préférences de notification mises à jour","preferences":{"email_notifications":true,"notify_order_confirmed":true,"notify_order_delivered":true,"notify_order_ready":true,"notify_reservation_confirmed":true,"notify_reservation_reminder":true,"push_notifications":true,"sms_notifications":true},"timestamp":"2026-04-21T23:07:17.933Z","userId":16}
+{"level":"info","message":"Service SMS initialisé","timestamp":"2026-04-21T23:32:26.689Z"}
+{"level":"info","message":"Service email Gmail initialisé avec succès","timestamp":"2026-04-21T23:32:36.770Z"}
+{"level":"info","message":"[SubExpiry] Crons planifiés — URL : https://jason-overbulky-hazardously.ngrok-free.dev/restaurant/dashboard?tab=subscription","timestamp":"2026-04-21T23:32:36.978Z"}
+{"email":"admin@restotraiteur.com","level":"info","message":"Super-admin already exists","timestamp":"2026-04-21T23:32:37.467Z"}
+{"environment":"development","level":"info","message":"Server started","nodeVersion":"v20.18.3","port":"3000","timestamp":"2026-04-21T23:32:37.501Z"}
+{"level":"info","message":"Service SMS initialisé","timestamp":"2026-04-21T23:44:06.604Z"}
+{"level":"info","message":"[SubExpiry] Crons planifiés — URL : https://jason-overbulky-hazardously.ngrok-free.dev/restaurant/dashboard?tab=subscription","timestamp":"2026-04-21T23:44:09.829Z"}
+{"email":"admin@restotraiteur.com","level":"info","message":"Super-admin already exists","timestamp":"2026-04-21T23:44:09.842Z"}
+{"environment":"development","level":"info","message":"Server started","nodeVersion":"v20.18.3","port":"3000","timestamp":"2026-04-21T23:44:09.854Z"}
+{"level":"info","message":"Service email Gmail initialisé avec succès","timestamp":"2026-04-21T23:44:10.935Z"}
+{"level":"info","message":"Service SMS initialisé","timestamp":"2026-04-21T23:50:01.686Z"}
+{"level":"info","message":"[SubExpiry] Crons planifiés — URL : https://jason-overbulky-hazardously.ngrok-free.dev/restaurant/dashboard?tab=subscription","timestamp":"2026-04-21T23:50:02.539Z"}
+{"email":"admin@restotraiteur.com","level":"info","message":"Super-admin already exists","timestamp":"2026-04-21T23:50:02.552Z"}
+{"environment":"development","level":"info","message":"Server started","nodeVersion":"v20.18.3","port":"3000","timestamp":"2026-04-21T23:50:02.563Z"}
+{"level":"info","message":"Service email Gmail initialisé avec succès","timestamp":"2026-04-21T23:50:03.647Z"}
+{"level":"info","message":"Service SMS initialisé","timestamp":"2026-04-21T23:56:25.030Z"}
+{"level":"info","message":"[SubExpiry] Crons planifiés — URL : https://jason-overbulky-hazardously.ngrok-free.dev/restaurant/dashboard?tab=subscription","timestamp":"2026-04-21T23:56:29.840Z"}
+{"email":"admin@restotraiteur.com","level":"info","message":"Super-admin already exists","timestamp":"2026-04-21T23:56:29.923Z"}
+{"environment":"development","level":"info","message":"Server started","nodeVersion":"v20.18.3","port":"3000","timestamp":"2026-04-21T23:56:29.934Z"}
+{"level":"info","message":"Service email Gmail initialisé avec succès","timestamp":"2026-04-21T23:56:31.054Z"}
+{"email":"benowola@gmail.com","level":"info","message":"Utilisateur connecté","role":"restaurant","timestamp":"2026-04-22T00:02:23.463Z","userId":12}
+{"level":"info","message":"[SubExpiry] Cron 00:05 — expiration","timestamp":"2026-04-22T00:05:00.057Z"}
+{"level":"info","message":"[SubExpiry] Aucun abonnement à expirer","timestamp":"2026-04-22T00:05:00.079Z"}
+{"level":"info","message":"Service SMS initialisé","timestamp":"2026-04-22T00:27:04.742Z"}
+{"level":"info","message":"[SubExpiry] Crons planifiés — URL : https://jason-overbulky-hazardously.ngrok-free.dev/restaurant/dashboard?tab=subscription","timestamp":"2026-04-22T00:27:05.578Z"}
+{"email":"admin@restotraiteur.com","level":"info","message":"Super-admin already exists","timestamp":"2026-04-22T00:27:05.660Z"}
+{"environment":"development","level":"info","message":"Server started","nodeVersion":"v20.18.3","port":"3000","timestamp":"2026-04-22T00:27:05.670Z"}
+{"level":"info","message":"Service email Gmail initialisé avec succès","timestamp":"2026-04-22T00:27:06.506Z"}
+{"level":"info","message":"Service SMS initialisé","timestamp":"2026-04-22T22:41:47.223Z"}
+{"level":"info","message":"Service email Gmail initialisé avec succès","timestamp":"2026-04-22T22:43:02.422Z"}
+{"error":"Connection terminated due to connection timeout","level":"error","message":"Database connection error","timestamp":"2026-04-22T22:43:07.883Z"}

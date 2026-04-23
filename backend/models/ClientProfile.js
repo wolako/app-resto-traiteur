@@ -36,6 +36,7 @@ class ClientProfile {
   /**
    * Mettre à jour les préférences de notification
    */
+  
   static async updateNotificationPreferences(userId, preferences) {
     const {
       email_notifications,
@@ -48,19 +49,31 @@ class ClientProfile {
       notify_reservation_reminder
     } = preferences;
 
+    // ✅ UPSERT — crée la ligne si elle n'existe pas encore
     const query = `
-      UPDATE client_notification_preferences
-      SET 
-        email_notifications = COALESCE($2, email_notifications),
-        sms_notifications = COALESCE($3, sms_notifications),
-        push_notifications = COALESCE($4, push_notifications),
-        notify_order_confirmed = COALESCE($5, notify_order_confirmed),
-        notify_order_ready = COALESCE($6, notify_order_ready),
-        notify_order_delivered = COALESCE($7, notify_order_delivered),
-        notify_reservation_confirmed = COALESCE($8, notify_reservation_confirmed),
-        notify_reservation_reminder = COALESCE($9, notify_reservation_reminder),
-        updated_at = CURRENT_TIMESTAMP
-      WHERE user_id = $1
+      INSERT INTO client_notification_preferences (
+        user_id,
+        email_notifications,
+        sms_notifications,
+        push_notifications,
+        notify_order_confirmed,
+        notify_order_ready,
+        notify_order_delivered,
+        notify_reservation_confirmed,
+        notify_reservation_reminder,
+        updated_at
+      )
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, CURRENT_TIMESTAMP)
+      ON CONFLICT (user_id) DO UPDATE SET
+        email_notifications          = COALESCE(EXCLUDED.email_notifications,          client_notification_preferences.email_notifications),
+        sms_notifications            = COALESCE(EXCLUDED.sms_notifications,            client_notification_preferences.sms_notifications),
+        push_notifications           = COALESCE(EXCLUDED.push_notifications,           client_notification_preferences.push_notifications),
+        notify_order_confirmed       = COALESCE(EXCLUDED.notify_order_confirmed,       client_notification_preferences.notify_order_confirmed),
+        notify_order_ready           = COALESCE(EXCLUDED.notify_order_ready,           client_notification_preferences.notify_order_ready),
+        notify_order_delivered       = COALESCE(EXCLUDED.notify_order_delivered,       client_notification_preferences.notify_order_delivered),
+        notify_reservation_confirmed = COALESCE(EXCLUDED.notify_reservation_confirmed, client_notification_preferences.notify_reservation_confirmed),
+        notify_reservation_reminder  = COALESCE(EXCLUDED.notify_reservation_reminder,  client_notification_preferences.notify_reservation_reminder),
+        updated_at                   = CURRENT_TIMESTAMP
       RETURNING *
     `;
 
