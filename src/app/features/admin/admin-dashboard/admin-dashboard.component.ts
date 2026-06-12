@@ -118,6 +118,11 @@ export class AdminDashboardComponent implements OnInit {
 
   today = new Date();
 
+  // ── Drivers ───────────────────────────────────────
+  drivers: any[] = [];
+  filteredDrivers: any[] = [];
+  driverFilter = '';
+
   constructor(
     private adminService: AdminService,
     private toastService: ToastService,
@@ -155,6 +160,7 @@ export class AdminDashboardComponent implements OnInit {
       case 'subscriptions': this.loadSubscriptions();  break;
       case 'commissions':   this.loadCommissions();    break;
       case 'contacts':      this.loadContacts();       break;
+      case 'drivers':       this.loadAllDrivers();     break;
       case 'analytics':
       case 'plans':
       case 'settings':
@@ -811,6 +817,39 @@ export class AdminDashboardComponent implements OnInit {
         this.geocodingLoading = false;
         this.toastService.showError('Erreur', 'Impossible de géocoder l\'adresse');
       }
+    });
+  }
+
+  // ═══════════════════════════════════════════════════════════
+  // DRIVERS
+  // ═══════════════════════════════════════════════════════════
+  loadAllDrivers(): void {
+    this.http.get<any>(`${environment.apiUrl}/drivers`).subscribe({
+      next: (res) => {
+        this.drivers = res.data || [];
+        this.filterDriversAdmin();
+      },
+      error: () => this.toastService.showError('Erreur', 'Impossible de charger les livreurs')
+    });
+  }
+
+  filterDriversAdmin(): void {
+    this.filteredDrivers = this.driverFilter
+      ? this.drivers.filter(d => d.business_name?.toLowerCase().includes(this.driverFilter.toLowerCase())
+          || d.real_status === this.driverFilter)
+      : [...this.drivers];
+  }
+
+  async deactivateDriverAdmin(driver: any): Promise<void> {
+    const ok = await this.confirmationService.confirm(
+      'Désactiver le livreur ?',
+      `Désactiver ${driver.first_name} ${driver.last_name} — ${driver.business_name} ?`,
+      { confirmText: 'Désactiver', cancelText: 'Annuler', type: 'warning' }
+    );
+    if (!ok) return;
+    this.http.delete<any>(`${environment.apiUrl}/drivers/${driver.id}`).subscribe({
+      next: () => { this.loadAllDrivers(); this.toastService.showSuccess('Désactivé', ''); },
+      error: () => this.toastService.showError('Erreur', 'Impossible de désactiver')
     });
   }
 

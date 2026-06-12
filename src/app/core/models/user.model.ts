@@ -3,7 +3,7 @@ import { Business } from "./business.model";
 export interface User {
   id?: number;
   email: string;
-  role: 'client' | 'restaurant' | 'traiteur' | 'superadmin';
+  role: 'client' | 'restaurant' | 'traiteur' | 'superadmin' | 'driver';
   first_name?: string;
   last_name?: string;
   phone?: string;

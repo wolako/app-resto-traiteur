@@ -520,3 +520,100 @@
     i { color: var(--rt-green); font-size: .9rem; }
   }
 }
+
+// ══════════════════════════════════════════════════════════════
+// DRIVER CARDS — Traiteur
+// ══════════════════════════════════════════════════════════════
+
+.menu-card {
+  .mc-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 14px 8px;
+    border-bottom: 1px solid var(--rt-bdr);
+
+    h5 {
+      font-family: 'Playfair Display', serif;
+      font-size: .9rem;
+      font-weight: 600;
+      color: var(--rt-t1);
+      margin: 0;
+    }
+  }
+
+  .mc-body {
+    padding: 10px 14px;
+    p { font-size: .78rem; color: var(--rt-t3); margin: 0 0 6px; }
+    .mc-stats { font-size: .72rem; color: var(--rt-t4); i { margin-right: 4px; } }
+  }
+
+  .mc-acts {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 12px;
+    border-top: 1px solid var(--rt-bdr);
+    background: var(--rt-sfc);
+  }
+}
+
+// ── Driver card spécifique ────────────────────────────────────
+.driver-card-traiteur {
+  background: var(--rt-sfc);
+  border: 1px solid var(--rt-bdr);
+  border-radius: var(--rt-rl);
+  overflow: hidden;
+  transition: var(--rt-tr);
+
+  &:hover {
+    border-color: var(--rt-bdr-hi);
+    box-shadow: var(--shadow-md);
+  }
+}
+
+.drc-status-dot-sm {
+  width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0;
+  &.green  { background: var(--rt-green);  box-shadow: 0 0 0 3px rgba(42,157,92,.15); }
+  &.orange { background: var(--rt-accent); }
+  &.gray   { background: var(--rt-t4); }
+}
+
+// ── Assign modal driver list ──────────────────────────────────
+.assign-drv-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  background: var(--rt-raised);
+  border: 2px solid var(--rt-bdr);
+  border-radius: var(--rt-r);
+  cursor: pointer;
+  transition: var(--rt-tr);
+
+  &:hover:not(.unavailable) {
+    border-color: var(--rt-green);
+    background: var(--rt-green-s);
+  }
+  &.selected {
+    border-color: var(--rt-green);
+    background: var(--rt-green-s);
+  }
+  &.unavailable {
+    opacity: .5;
+    cursor: not-allowed;
+  }
+}
+
+.dav-avatar {
+  width: 32px; height: 32px; border-radius: 50%;
+  background: var(--rt-green-s); color: var(--rt-green);
+  display: flex; align-items: center; justify-content: center;
+  font-weight: 700; font-size: .75rem; flex-shrink: 0;
+}
+
+.dav-info {
+  flex: 1; min-width: 0;
+  .dav-name { font-size: .84rem; font-weight: 600; color: var(--rt-t1); }
+  .dav-meta { font-size: .71rem; color: var(--rt-t3); display: flex; align-items: center; gap: 4px; }
+}

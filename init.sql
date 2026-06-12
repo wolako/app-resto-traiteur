@@ -1135,3 +1135,147 @@ CREATE INDEX IF NOT EXISTS idx_businesses_geo
 CREATE INDEX IF NOT EXISTS idx_businesses_district
   ON businesses(district)
   WHERE district IS NOT NULL;
+
+
+-- ============================================================
+-- MIGRATION : Système de livraison
+-- À exécuter sur la base PostgreSQL existante
+-- ============================================================
+
+-- 1. Ajouter le rôle 'driver' aux utilisateurs
+-- ─────────────────────────────────────────────
+ALTER TABLE users DROP CONSTRAINT IF EXISTS users_role_check;
+ALTER TABLE users ADD CONSTRAINT users_role_check
+  CHECK (role IN ('client','restaurant','traiteur','superadmin','driver'));
+
+-- 2. Table drivers (profil livreur)
+-- ─────────────────────────────────
+CREATE TABLE IF NOT EXISTS drivers (
+  id                    SERIAL PRIMARY KEY,
+  user_id               INTEGER NOT NULL UNIQUE REFERENCES users(id) ON DELETE CASCADE,
+  business_id           INTEGER REFERENCES businesses(id) ON DELETE SET NULL,
+
+  -- Qui a créé ce livreur
+  created_by_type       VARCHAR(20) NOT NULL DEFAULT 'establishment'
+                          CHECK (created_by_type IN ('admin','establishment')),
+  created_by_id         INTEGER NOT NULL,
+
+  -- Infos livreur
+  vehicle_type          VARCHAR(20) DEFAULT 'moto'
+                          CHECK (vehicle_type IN ('moto','velo','voiture','pied')),
+
+  -- Capacité & statut opérationnel
+  max_concurrent_orders INTEGER NOT NULL DEFAULT 3,
+  status                VARCHAR(20) NOT NULL DEFAULT 'offline'
+                          CHECK (status IN ('offline','available','at_capacity')),
+
+  is_active             BOOLEAN NOT NULL DEFAULT true,
+  last_seen_at          TIMESTAMP WITH TIME ZONE,
+  temp_password_used    BOOLEAN NOT NULL DEFAULT true, -- doit changer mdp au 1er login
+  created_at            TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at            TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- 3. Table delivery_assignments
+-- ─────────────────────────────
+CREATE TABLE IF NOT EXISTS delivery_assignments (
+  id               SERIAL PRIMARY KEY,
+  order_id         INTEGER NOT NULL REFERENCES orders(id) ON DELETE CASCADE,
+  driver_id        INTEGER NOT NULL REFERENCES drivers(id) ON DELETE RESTRICT,
+
+  assigned_by_type VARCHAR(20) NOT NULL
+                     CHECK (assigned_by_type IN ('admin','establishment')),
+  assigned_by_id   INTEGER NOT NULL,
+
+  status           VARCHAR(20) NOT NULL DEFAULT 'assigned'
+                     CHECK (status IN ('assigned','picked_up','delivered','failed')),
+
+  assigned_at      TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  picked_up_at     TIMESTAMP WITH TIME ZONE,
+  delivered_at     TIMESTAMP WITH TIME ZONE,
+  failed_at        TIMESTAMP WITH TIME ZONE,
+  failure_reason   TEXT,
+  proof_photo_url  TEXT,
+  notes            TEXT,
+
+  -- Une commande active = une seule assignation
+  CONSTRAINT unique_active_order UNIQUE (order_id)
+);
+
+-- 4. Champs livraison dans orders
+-- ────────────────────────────────
+ALTER TABLE orders
+  ADD COLUMN IF NOT EXISTS delivery_status VARCHAR(30) DEFAULT 'pending'
+    CHECK (delivery_status IN (
+      'pending',          -- commande reçue, pas encore prête
+      'ready_for_pickup', -- prête, attend un livreur
+      'assigned',         -- livreur assigné, pas parti
+      'in_transit',       -- en route
+      'delivered',        -- livré
+      'failed'            -- échec
+    )),
+  ADD COLUMN IF NOT EXISTS current_assignment_id INTEGER
+    REFERENCES delivery_assignments(id) ON DELETE SET NULL;
+
+-- 5. Vue de disponibilité des livreurs
+-- ─────────────────────────────────────
+CREATE OR REPLACE VIEW driver_availability AS
+SELECT
+  d.id,
+  d.user_id,
+  d.business_id,
+  d.vehicle_type,
+  d.status                  AS raw_status,
+  d.max_concurrent_orders,
+  d.is_active,
+  d.last_seen_at,
+  u.first_name,
+  u.last_name,
+  u.phone,
+  u.email,
+  COUNT(da.id)              AS active_orders_count,
+  d.max_concurrent_orders - COUNT(da.id) AS remaining_slots,
+  CASE
+    WHEN d.is_active = false              THEN 'inactive'
+    WHEN d.status = 'offline'             THEN 'offline'
+    WHEN COUNT(da.id) >= d.max_concurrent_orders THEN 'at_capacity'
+    ELSE 'available'
+  END                       AS real_status
+FROM drivers d
+JOIN users u ON d.user_id = u.id
+LEFT JOIN delivery_assignments da
+  ON da.driver_id = d.id
+  AND da.status IN ('assigned','picked_up')
+GROUP BY d.id, u.first_name, u.last_name, u.phone, u.email;
+
+-- 6. Index de performance
+-- ────────────────────────
+CREATE INDEX IF NOT EXISTS idx_drivers_business     ON drivers(business_id);
+CREATE INDEX IF NOT EXISTS idx_drivers_status       ON drivers(status) WHERE is_active = true;
+CREATE INDEX IF NOT EXISTS idx_assignments_order    ON delivery_assignments(order_id);
+CREATE INDEX IF NOT EXISTS idx_assignments_driver   ON delivery_assignments(driver_id);
+CREATE INDEX IF NOT EXISTS idx_assignments_active   ON delivery_assignments(driver_id)
+  WHERE status IN ('assigned','picked_up');
+CREATE INDEX IF NOT EXISTS idx_orders_delivery_status ON orders(delivery_status)
+  WHERE delivery_status IN ('ready_for_pickup','assigned','in_transit');
+
+-- 7. Trigger updated_at drivers
+-- ───────────────────────────────
+CREATE TRIGGER update_drivers_updated_at
+  BEFORE UPDATE ON drivers
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+-- 8. Types de notifications supplémentaires
+-- ──────────────────────────────────────────
+ALTER TABLE notifications DROP CONSTRAINT IF EXISTS notifications_type_check;
+ALTER TABLE notifications ADD CONSTRAINT notifications_type_check
+  CHECK (type IN (
+    'new_order','new_reservation','payment_success','payment_failed',
+    'delivery_confirmed','order_cancelled','reservation_cancelled',
+    'driver_assigned','driver_picked_up','delivery_failed','payment_received'
+  ));
+
+-- Commentaires
+COMMENT ON TABLE drivers              IS 'Livreurs (compte user + profil)';
+COMMENT ON TABLE delivery_assignments IS 'Assignations livreur ↔ commande (historique complet)';
+COMMENT ON VIEW  driver_availability  IS 'Disponibilité temps réel des livreurs';

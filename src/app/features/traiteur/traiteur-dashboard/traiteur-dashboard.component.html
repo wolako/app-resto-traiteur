@@ -30,7 +30,12 @@
       <button class="sb-btn" [class.active]="activeTab==='orders'" (click)="activeTab='orders'; loadOrders(); markOrdersAsSeen()"><span class="sb-ico-w"><i class="bi bi-cart-check-fill"></i></span><span class="sb-lbl">Commandes</span><span class="sb-badge red" *ngIf="hasNewOrders">{{ orders.length }}</span></button>
       <button class="sb-btn" [class.active]="activeTab==='special-orders'" (click)="activeTab='special-orders'; loadSpecialOrders()"><span class="sb-ico-w"><i class="bi bi-stars"></i></span><span class="sb-lbl">Cmd Spéciales</span><span class="sb-badge orange" *ngIf="hasNewSpecialOrders">{{ specialOrders.length }}</span></button>
       <button class="sb-btn" [class.active]="activeTab==='menus'" (click)="activeTab='menus'; loadMenus()"><span class="sb-ico-w"><i class="bi bi-journal-richtext"></i></span><span class="sb-lbl">Menus</span></button>
-
+      <button class="sb-btn" [class.active]="activeTab==='drivers'"
+        (click)="activeTab='drivers'; loadDrivers()">
+        <span class="sb-ico-w"><i class="bi bi-bicycle"></i></span>
+        <span class="sb-lbl">Livreurs</span>
+        <span class="sb-badge green" *ngIf="drivers.length > 0">{{ drivers.length }}</span>
+      </button>
       <div class="sb-section-label">Réglages</div>
       <button class="sb-btn" [class.active]="activeTab==='profile'" (click)="activeTab='profile'"><span class="sb-ico-w"><i class="bi bi-person-circle"></i></span><span class="sb-lbl">Mon Profil</span></button>
       <button class="sb-btn" [class.active]="activeTab==='location'"
@@ -236,15 +241,39 @@
                 <td class="t-sub d-none d-md-table-cell">{{ order.client_phone }}</td>
                 <td class="t-amt">{{ order.total_amount | number:'1.0-0' }} <small style="font-size:.62rem;font-weight:400;color:var(--rt-t3)">FCFA</small></td>
                 <td>
-                  <span class="stag" [ngClass]="{'s-pending': order.status==='pending','s-confirmed': order.status==='confirmed','s-preparing': order.status==='preparing','s-ready': order.status==='ready','s-delivered': order.status==='delivered','r-cancelled': order.status==='cancelled'}">{{ getOrderStatusLabel(order.status) }}</span>
+                  <span class="stag" [ngClass]="{'s-pending': order.status==='pending','s-confirmed': 
+                    order.status==='confirmed','s-preparing': order.status==='preparing','s-ready': 
+                    order.status==='ready','s-delivered': order.status==='delivered','r-cancelled': 
+                    order.status==='cancelled'}">{{ getOrderStatusLabel(order.status) }}
+                  </span>
                 </td>
                 <td class="d-none d-md-table-cell">
-                  <span class="stag" [ngClass]="{'p-pending': order.payment_status==='pending','p-paid': order.payment_status==='paid','p-failed': order.payment_status==='failed'}">{{ getPaymentStatusLabel(order.payment_status) }}</span>
+                  <span class="stag" [ngClass]="{'p-pending': order.payment_status==='pending','p-paid': 
+                    order.payment_status==='paid','p-failed': order.payment_status==='failed'}">
+                    {{ getPaymentStatusLabel(order.payment_status) }}
+                  </span>
                 </td>
                 <td class="t-date d-none d-md-table-cell">{{ order.created_at | date:'dd/MM HH:mm' }}</td>
                 <td>
                   <div class="row-acts">
                     <button class="ico-btn" title="Détails" (click)="viewOrder(order)"><i class="bi bi-eye-fill"></i></button>
+                    <!-- Bouton Assigner — visible si commande prête -->
+                    <button class="ico-btn"
+                      *ngIf="order.status === 'ready' && !order.current_assignment_id"
+                      title="Assigner un livreur"
+                      (click)="openAssignModal(order)"
+                      style="background:var(--rt-blue-s);color:var(--rt-blue);border-color:rgba(43,127,191,.3);">
+                      <i class="bi bi-bicycle"></i>
+                    </button>
+
+                    <!-- Indicateur si déjà assigné -->
+                    <span class="stag s-confirmed"
+                      *ngIf="order.current_assignment_id"
+                      style="font-size:.62rem; cursor:pointer;"
+                      (click)="openAssignModal(order)"
+                      title="Changer de livreur">
+                      <i class="bi bi-bicycle"></i> Livraison
+                    </span>
                     <button class="ico-btn" *ngIf="order.payment_status !== 'paid'" title="Payer" (click)="openPaymentModal(order)">
                       <i class="bi bi-credit-card-fill"></i>
                       <span *ngIf="isSandbox" style="font-size:.5rem;background:var(--rt-accent-s);color:var(--rt-accent);padding:1px 4px;border-radius:3px;margin-left:2px;">SB</span>
@@ -570,6 +599,73 @@
       </div>
     </div>
 
+    <!-- ════════════════ DRIVERS ════════════════ -->
+    <div class="dash-tab" *ngIf="activeTab==='drivers'">
+      <div class="d-card">
+        <div class="dc-head">
+          <span class="dc-title"><i class="bi bi-bicycle"></i> Livreurs</span>
+          <button class="btn-d sm" (click)="openCreateDriverModal()">
+            <i class="bi bi-plus-lg"></i> Nouveau livreur
+          </button>
+        </div>
+        <div class="dc-body">
+          <div class="menu-grid">
+            <div class="menu-card" *ngFor="let d of drivers">
+              <div class="mc-head">
+                <div style="display:flex;align-items:center;gap:10px;">
+                  <div style="width:34px;height:34px;border-radius:50%;background:var(--rt-green-s);color:var(--rt-green);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.82rem;flex-shrink:0;">
+                    {{ d.first_name?.charAt(0) }}{{ d.last_name?.charAt(0) }}
+                  </div>
+                  <div>
+                    <div style="font-size:.86rem;font-weight:600;color:var(--rt-t1);">{{ d.first_name }} {{ d.last_name }}</div>
+                    <div style="font-size:.73rem;color:var(--rt-t3);">{{ d.phone }}</div>
+                  </div>
+                </div>
+                <div style="width:10px;height:10px;border-radius:50%;flex-shrink:0;"
+                  [style.background]="d.real_status === 'available' ? 'var(--rt-green)'
+                    : d.real_status === 'at_capacity' ? 'var(--rt-accent)' : 'var(--rt-t4)'"
+                  [title]="d.real_status">
+                </div>
+              </div>
+              <div class="mc-body">
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+                  <span class="stag"
+                    [ngClass]="{
+                      'b-active':  d.real_status === 'available',
+                      's-preparing': d.real_status === 'at_capacity',
+                      'b-inactive': d.real_status === 'offline' || d.real_status === 'inactive'
+                    }">
+                    {{ d.real_status === 'available' ? 'Disponible'
+                      : d.real_status === 'at_capacity' ? 'Complet'
+                      : d.real_status === 'offline' ? 'Hors ligne' : 'Inactif' }}
+                  </span>
+                  <span style="font-size:.75rem;color:var(--rt-t3);">
+                    {{ d.active_orders_count || 0 }}/{{ d.max_concurrent_orders }}
+                    <i class="bi bi-box-seam"></i>
+                  </span>
+                </div>
+                <div class="mc-stats">
+                  <i class="bi bi-truck"></i> {{ vehicleLabel(d.vehicle_type) }}
+                </div>
+              </div>
+              <div class="mc-acts">
+                <button class="btn-ghost-d sm" (click)="editDriver(d)">
+                  <i class="bi bi-pencil-fill"></i> Modifier
+                </button>
+                <button class="ico-btn danger" (click)="confirmDeleteDriver(d)">
+                  <i class="bi bi-person-x-fill"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+          <div class="empty-blk" *ngIf="drivers.length === 0">
+            <i class="bi bi-bicycle"></i>
+            <p>Aucun livreur. Ajoutez votre premier livreur !</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- ════════════════ COMPOSANTS DÉLÉGUÉS ════ -->
     <div class="dash-tab" *ngIf="activeTab==='subscription'"><app-subscription-management></app-subscription-management></div>
     <div class="dash-tab" *ngIf="activeTab==='commissions'"><app-commissions-view [pageTitle]="'Mes Commissions Traiteur'" [businessType]="'traiteur'"></app-commissions-view></div>
@@ -675,7 +771,12 @@
     <button class="mmd-item" [class.active]="activeTab==='menus'" (click)="activeTab='menus'; loadMenus(); mobileMoreOpen=false">
       <i class="bi bi-journal-richtext"></i><span>Menus</span>
     </button>
-  
+    <button class="mmd-item" [class.active]="activeTab==='drivers'"
+      (click)="activeTab='drivers'; loadDrivers(); mobileMoreOpen=false">
+      <i class="bi bi-bicycle"></i><span>Livreurs</span>
+      <span class="mmd-badge green" *ngIf="drivers.length > 0">{{ drivers.length }}</span>
+    </button>
+
     <p class="mmd-section-label">Gestion</p>
     <button class="mmd-item" [class.active]="activeTab==='profile'" (click)="activeTab='profile'; mobileMoreOpen=false">
       <i class="bi bi-person-circle"></i><span>Mon Profil</span>
@@ -861,3 +962,147 @@
 <app-menu-items-modal [menu]="selectedMenuForItems" [show]="showItemsModal" (closed)="closeItemsModal()"></app-menu-items-modal>
 <app-order-details-modal [order]="selectedOrder" [show]="showOrderDetailsModal" [loading]="loadingOrderUpdate" (closed)="onOrderModalClosed()" (statusChanged)="onOrderStatusChanged($event)"></app-order-details-modal>
 <app-special-order-details-modal [specialOrder]="selectedSpecialOrder" [show]="showSpecialOrderDetailsModal" (closed)="onSpecialOrderModalClosed()" (statusChanged)="onSpecialOrderStatusChanged($event)"></app-special-order-details-modal>
+
+<!-- Modal Livreur — Traiteur -->
+<div class="modal-ov" [class.on]="showDriverModal" (click)="closeDriverModal()">
+  <div class="mbox" (click)="$event.stopPropagation()">
+    <div class="mb-head">
+      <h4><i class="bi bi-bicycle"></i> {{ editingDriver ? 'Modifier' : 'Nouveau livreur' }}</h4>
+      <button class="ico-btn" (click)="closeDriverModal()"><i class="bi bi-x-lg"></i></button>
+    </div>
+    <div class="mb-body">
+      <div class="f-2col">
+        <div class="f-grp">
+          <label class="f-lbl">Prénom *</label>
+          <input type="text" class="f-inp" [(ngModel)]="driverForm.first_name" placeholder="Koffi">
+        </div>
+        <div class="f-grp">
+          <label class="f-lbl">Nom *</label>
+          <input type="text" class="f-inp" [(ngModel)]="driverForm.last_name" placeholder="Amevor">
+        </div>
+      </div>
+      <div class="f-grp">
+        <label class="f-lbl">Téléphone *</label>
+        <input type="tel" class="f-inp" [(ngModel)]="driverForm.phone"
+          placeholder="+228 90 12 34 56" [disabled]="!!editingDriver">
+        <span class="f-hint" *ngIf="editingDriver">Non modifiable</span>
+      </div>
+      <div class="f-grp">
+        <label class="f-lbl">Email <small style="color:var(--rt-t4)">(optionnel)</small></label>
+        <input type="email" class="f-inp" [(ngModel)]="driverForm.email"
+          [disabled]="!!editingDriver">
+      </div>
+      <div class="f-2col">
+        <div class="f-grp">
+          <label class="f-lbl">Véhicule</label>
+          <select class="f-inp" [(ngModel)]="driverForm.vehicle_type">
+            <option value="moto">🏍️ Moto</option>
+            <option value="velo">🚲 Vélo</option>
+            <option value="voiture">🚗 Voiture</option>
+            <option value="pied">🚶 À pied</option>
+          </select>
+        </div>
+        <div class="f-grp">
+          <label class="f-lbl">Commandes max simultanées</label>
+          <input type="number" class="f-inp" [(ngModel)]="driverForm.max_concurrent_orders" min="1" max="10">
+        </div>
+      </div>
+
+      <!-- Credentials après création -->
+      <div class="info-banner success" *ngIf="newDriverCredentials">
+        <i class="bi bi-shield-lock-fill"></i>
+        <div>
+          <strong>Identifiants à communiquer au livreur :</strong>
+          <div style="font-family:monospace;margin-top:6px;">
+            <div>📱 Téléphone : <strong>{{ newDriverCredentials.phone }}</strong></div>
+            <div>🔑 Mot de passe : <strong>{{ newDriverCredentials.temp_password }}</strong></div>
+          </div>
+          <small style="display:block;margin-top:6px;color:var(--rt-t3);">
+            ⚠️ Notez ces informations, elles ne seront plus affichées.
+          </small>
+        </div>
+      </div>
+    </div>
+    <div class="mb-foot">
+      <button class="btn-ghost-d sm" (click)="closeDriverModal()">
+        {{ newDriverCredentials ? 'Fermer' : 'Annuler' }}
+      </button>
+      <button class="btn-d sm" (click)="saveDriver()"
+        [disabled]="driverLoading || !!newDriverCredentials || !driverForm.first_name || !driverForm.phone">
+        <span *ngIf="driverLoading" class="spinner-border spinner-border-sm"></span>
+        <i class="bi bi-check-circle-fill" *ngIf="!driverLoading"></i>
+        {{ editingDriver ? 'Mettre à jour' : 'Créer le livreur' }}
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Assigner livreur — Traiteur -->
+<div class="modal-ov" [class.on]="showAssignModal" (click)="closeAssignModal()">
+  <div class="mbox" (click)="$event.stopPropagation()">
+    <div class="mb-head">
+      <h4><i class="bi bi-bicycle"></i> Assigner — Commande #{{ orderToAssign?.id }}</h4>
+      <button class="ico-btn" (click)="closeAssignModal()"><i class="bi bi-x-lg"></i></button>
+    </div>
+    <div class="mb-body" *ngIf="orderToAssign">
+      <div style="display:flex;align-items:center;gap:12px;padding:12px;background:var(--rt-raised);border:1px solid var(--rt-bdr);border-radius:var(--rt-r);">
+        <i class="bi bi-person-fill" style="color:var(--rt-green);font-size:1.1rem;"></i>
+        <div>
+          <strong>{{ orderToAssign.client_name }}</strong>
+          <small class="d-block" style="color:var(--rt-t3);">
+            {{ orderToAssign.delivery_address || 'Adresse non précisée' }}
+          </small>
+        </div>
+        <span style="margin-left:auto;font-family:'Playfair Display',serif;font-weight:700;color:var(--rt-green);">
+          {{ orderToAssign.total_amount | number:'1.0-0' }} FCFA
+        </span>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:6px;max-height:280px;overflow-y:auto;">
+        <div *ngFor="let d of drivers"
+          style="display:flex;align-items:center;gap:10px;padding:10px 12px;border:2px solid var(--rt-bdr);border-radius:var(--rt-r);cursor:pointer;transition:var(--rt-tr);"
+          [style.border-color]="selectedDriverId === d.id ? 'var(--rt-green)' : ''"
+          [style.background]="selectedDriverId === d.id ? 'var(--rt-green-s)' : ''"
+          [style.opacity]="d.real_status !== 'available' ? '0.5' : '1'"
+          [style.cursor]="d.real_status !== 'available' ? 'not-allowed' : 'pointer'"
+          (click)="d.real_status === 'available' ? selectedDriverId = (d.id ?? null) : null">
+
+          <div style="width:32px;height:32px;border-radius:50%;background:var(--rt-green-s);color:var(--rt-green);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.75rem;">
+            {{ d.first_name?.charAt(0) }}{{ d.last_name?.charAt(0) }}
+          </div>
+          <div style="flex:1;">
+            <div style="font-size:.84rem;font-weight:600;color:var(--rt-t1);">{{ d.first_name }} {{ d.last_name }}</div>
+            <div style="font-size:.71rem;color:var(--rt-t3);">
+              {{ vehicleLabel(d.vehicle_type) }} · {{ d.active_orders_count }}/{{ d.max_concurrent_orders }} cmds
+            </div>
+          </div>
+          <span class="stag"
+            [ngClass]="{
+              'b-active':    d.real_status === 'available',
+              's-preparing': d.real_status === 'at_capacity',
+              'b-inactive':  d.real_status === 'offline'
+            }"
+            style="font-size:.65rem;">
+            {{ d.real_status === 'available' ? 'Dispo'
+               : d.real_status === 'at_capacity' ? 'Complet' : 'Hors ligne' }}
+          </span>
+        </div>
+
+        <div class="empty-blk" style="padding:20px;" *ngIf="drivers.length === 0">
+          <i class="bi bi-bicycle"></i>
+          <p>Aucun livreur. <button class="btn-ghost-d sm" style="display:inline;"
+            (click)="closeAssignModal(); openCreateDriverModal()">Créer un livreur</button></p>
+        </div>
+      </div>
+    </div>
+    <div class="mb-foot">
+      <button class="btn-ghost-d sm" (click)="closeAssignModal()">Annuler</button>
+      <button class="btn-d sm" (click)="confirmAssign()"
+        [disabled]="!selectedDriverId || assignLoading">
+        <span *ngIf="assignLoading" class="spinner-border spinner-border-sm"></span>
+        <i class="bi bi-bicycle" *ngIf="!assignLoading"></i>
+        Assigner
+      </button>
+    </div>
+  </div>
+</div>

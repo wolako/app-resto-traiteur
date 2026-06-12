@@ -34,7 +34,8 @@ const reviewRoutes        = require('./routes/reviews');
 const testimonialRoutes   = require('./routes/testimonials');
 const analyticsRoutes     = require('./routes/analytics');
 const contactRoutes       = require('./routes/contact');
-const paymentAccountRoutes = require('./routes/paymentAccounts'); // ✅ NOUVEAU
+const paymentAccountRoutes = require('./routes/paymentAccounts');
+const driverRoutes        = require('./routes/drivers');
 
 // Utilitaires
 const { logger }                      = require('./utils/logger');
@@ -242,6 +243,7 @@ app.use('/api/testimonials',     testimonialRoutes);
 app.use('/api/analytics',        analyticsRoutes);
 app.use('/api/contact',          contactRoutes);
 app.use('/api/payment-accounts', paymentAccountRoutes); 
+app.use('/api/drivers',          driverRoutes);
 
 // ─────────────────────────────────────────────────────────────
 // Frontend Angular (production build)

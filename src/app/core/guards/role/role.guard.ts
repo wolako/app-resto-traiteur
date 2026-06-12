@@ -50,6 +50,9 @@ export const roleGuard: CanActivateFn = (route: ActivatedRouteSnapshot) => {
       console.log('→ Redirecting to /admin/dashboard');
       router.navigate(['/admin/dashboard']);
       break;
+    case 'driver':                             
+      router.navigate(['/driver/dashboard']);
+      break;
     default:
       console.log('→ Unknown role, redirecting to home');
       router.navigate(['/']);

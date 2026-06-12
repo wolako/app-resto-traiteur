@@ -4,6 +4,7 @@ module.exports = {
     RESTAURANT: 'restaurant',
     TRAITEUR: 'traiteur',
     SUPER_ADMIN: 'superadmin',
+    DRIVER:      'driver',
   },
 
   BUSINESS_TYPES: {

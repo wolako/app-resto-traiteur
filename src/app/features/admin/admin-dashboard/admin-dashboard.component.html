@@ -16,6 +16,9 @@
       <button class="nav-item" [class.active]="activeTab === 'overview'" (click)="activeTab = 'overview'"><i class="bi bi-speedometer2"></i><span>Aperçu</span></button>
       <button class="nav-item" [class.active]="activeTab === 'users'" (click)="switchTab('users')"><i class="bi bi-people"></i><span>Clients</span></button>
       <button class="nav-item" [class.active]="activeTab === 'businesses'" (click)="switchTab('businesses')"><i class="bi bi-shop"></i><span>Établissements</span></button>
+      <button class="nav-item" [class.active]="activeTab === 'drivers'" (click)="switchTab('drivers')">
+        <i class="bi bi-bicycle"></i><span>Livreurs</span>
+      </button>
       <p class="nav-section-label">Transactions</p>
       <button class="nav-item" [class.active]="activeTab === 'orders'" (click)="switchTab('orders')"><i class="bi bi-cart-check"></i><span>Commandes</span></button>
       <button class="nav-item" [class.active]="activeTab === 'reservations'" (click)="switchTab('reservations')"><i class="bi bi-calendar-check"></i><span>Réservations</span></button>
@@ -477,7 +480,7 @@
       <div *ngIf="activeTab === 'payment-accounts'" class="tab-pane-custom">
         <app-payment-accounts-admin></app-payment-accounts-admin>
       </div>
-      <!-- ══ CONTACTS ═══════════════════════════════════════════ -->
+      <!-- ══ CONTACTS ══ -->
       <div *ngIf="activeTab === 'contacts'" class="tab-pane-custom">
 
         <!-- Filtre + refresh -->
@@ -645,7 +648,61 @@
 
           </div><!-- /selectedContact -->
         </ng-container>
-      </div><!-- /contacts tab -->
+      </div>
+
+      <!-- ══ DRIVERS ══ -->
+      <div *ngIf="activeTab === 'drivers'" class="tab-pane-custom">
+        <div class="content-header">
+          <h4><i class="bi bi-bicycle"></i> Tous les livreurs</h4>
+          <div class="filters">
+            <input type="text" class="form-control" [(ngModel)]="driverFilter"
+              (input)="filterDriversAdmin()" placeholder="Filtrer par établissement...">
+          </div>
+        </div>
+        <div class="table-responsive">
+          <table class="table custom-table">
+            <thead><tr>
+              <th>Livreur</th>
+              <th>Téléphone</th>
+              <th>Établissement</th>
+              <th>Véhicule</th>
+              <th>Statut</th>
+              <th>Commandes actives</th>
+              <th>Actions</th>
+            </tr></thead>
+            <tbody>
+              <tr *ngFor="let d of filteredDrivers">
+                <td><strong>{{ d.first_name }} {{ d.last_name }}</strong></td>
+                <td>{{ d.phone }}</td>
+                <td><small>{{ d.business_name || '—' }}</small></td>
+                <td>{{ d.vehicle_type }}</td>
+                <td>
+                  <span class="stag"
+                    [ngClass]="{
+                      'b-active':   d.real_status === 'available',
+                      's-preparing': d.real_status === 'at_capacity',
+                      'b-inactive': d.real_status === 'offline',
+                      'r-cancelled': d.real_status === 'inactive'
+                    }">
+                    {{ d.real_status }}
+                  </span>
+                </td>
+                <td>{{ d.active_orders_count }}/{{ d.max_concurrent_orders }}</td>
+                <td>
+                  <button class="btn btn-sm btn-outline-warning" (click)="deactivateDriverAdmin(d)">
+                    <i class="bi bi-person-x"></i>
+                  </button>
+                </td>
+              </tr>
+              <tr *ngIf="filteredDrivers.length === 0">
+                <td colspan="7" class="text-center text-muted py-4">
+                  <i class="bi bi-bicycle fs-1 d-block mb-2 opacity-25"></i> Aucun livreur
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
 
     </div><!-- /tab-content -->
   </main>

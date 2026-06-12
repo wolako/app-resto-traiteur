@@ -31,6 +31,10 @@ import { BusinessAnalyticsComponent } from '../../../shared/components/business-
 import { PaymentAccountComponent } from '../../../shared/components/payment-account/payment-account.component';
 import { CoverImageSettingComponent } from '../../../shared/components/cover-image-setting/cover-image-setting.component';
 
+import { Driver } from '../../../core/models/driver.model';
+import { DriverService } from '../../../core/services/driver/driver.service';
+
+
 interface SubscriptionLimits {
   max_menu_items: number | null;
   max_orders_per_month: number | null;
@@ -179,6 +183,34 @@ export class RestaurantDashboardComponent implements OnInit {
   geocodingLoading = false;
   gettingPosition = false;
 
+  // ── Livreurs ────────────────────────────────────────────────
+  drivers: Driver[] = [];
+  showDriverModal  = false;
+  editingDriver: Driver | null = null;
+  driverLoading    = false;
+  newDriverCredentials: any = null;
+  driverForm: {
+    first_name: string;
+    last_name: string;
+    phone: string;
+    email: string;
+    vehicle_type: 'moto' | 'velo' | 'voiture' | 'pied';
+    max_concurrent_orders: number;
+  } = {
+    first_name: '',
+    last_name: '',
+    phone: '',
+    email: '',
+    vehicle_type: 'moto',
+    max_concurrent_orders: 3
+  };
+
+  // ── Assignation livreur ─────────────────────────────────────
+  showAssignModal   = false;
+  orderToAssign:  any = null;
+  selectedDriverId: number | null | undefined = null;
+  assignLoading     = false;
+
   readonly lomeDistricts = [
     { value: 'Lomé Centre',   label: 'Lomé Centre' },
     { value: 'Adidogomé',     label: 'Adidogomé' },
@@ -205,6 +237,7 @@ export class RestaurantDashboardComponent implements OnInit {
     private toastService: ToastService,
     private confirmationService: ConfirmationModalService,
     private paymentService: PaymentService,
+    private driverService: DriverService,
     private router: Router
   ) {}
 
@@ -994,6 +1027,150 @@ export class RestaurantDashboardComponent implements OnInit {
         this.locationLoading = false;
         console.error('[saveLocation] erreur:', err);
         this.toastService.showError('Erreur', err.error?.message || 'Impossible d\'enregistrer');
+      }
+    });
+  }
+
+  // ══════════════════════════════════════════════════════════
+  // GESTION LIVREURS
+  // ══════════════════════════════════════════════════════════
+
+  loadDrivers(): void {
+    if (!this.business?.id) return;
+    this.driverService.getBusinessDrivers(this.business.id).subscribe({
+      next: (res) => { this.drivers = res.data || []; },
+      error: () => this.toastService.showError('Erreur', 'Impossible de charger les livreurs')
+    });
+  }
+
+  vehicleLabel(type: string): string {
+    const l: Record<string, string> = {
+      moto: '🏍️ Moto', velo: '🚲 Vélo', voiture: '🚗 Voiture', pied: '🚶 À pied'
+    };
+    return l[type] || type;
+  }
+
+  openCreateDriverModal(): void {
+    this.editingDriver = null;
+    this.newDriverCredentials = null;
+    this.driverForm = {
+      first_name: '', last_name: '', phone: '', email: '',
+      vehicle_type: 'moto', max_concurrent_orders: 3
+    };
+    this.showDriverModal = true;
+  }
+
+  editDriver(driver: Driver): void {
+    this.editingDriver = driver;
+    this.newDriverCredentials = null;
+    this.driverForm = {
+      first_name: driver.first_name,
+      last_name:  driver.last_name,
+      phone:      driver.phone,
+      email:      driver.email || '',
+      vehicle_type: driver.vehicle_type,
+      max_concurrent_orders: driver.max_concurrent_orders
+    };
+    this.showDriverModal = true;
+  }
+
+  closeDriverModal(): void {
+    this.showDriverModal = false;
+    this.editingDriver   = null;
+    this.newDriverCredentials = null;
+  }
+
+  saveDriver(): void {
+    if (!this.driverForm.first_name || !this.driverForm.phone) {
+      this.toastService.showError('Erreur', 'Prénom et téléphone sont requis');
+      return;
+    }
+    this.driverLoading = true;
+
+    if (this.editingDriver) {
+      this.driverService.updateDriver(this.editingDriver.id!, {
+        first_name: this.driverForm.first_name,
+        last_name:  this.driverForm.last_name,
+        vehicle_type: this.driverForm.vehicle_type,
+        max_concurrent_orders: this.driverForm.max_concurrent_orders
+      }).subscribe({
+        next: () => {
+          this.driverLoading = false;
+          this.closeDriverModal();
+          this.loadDrivers();
+          this.toastService.showSuccess('Livreur mis à jour', '');
+        },
+        error: (err) => {
+          this.driverLoading = false;
+          this.toastService.showError('Erreur', err.error?.error || 'Impossible de modifier');
+        }
+      });
+    } else {
+      this.driverService.createDriver(this.driverForm).subscribe({
+        next: (res) => {
+          this.driverLoading = false;
+          this.newDriverCredentials = res.credentials;
+          this.loadDrivers();
+          this.toastService.showSuccess(
+            'Livreur créé',
+            `Identifiants générés pour ${this.driverForm.first_name}`
+          );
+        },
+        error: (err) => {
+          this.driverLoading = false;
+          this.toastService.showError('Erreur', err.error?.error || 'Impossible de créer');
+        }
+      });
+    }
+  }
+
+  async confirmDeleteDriver(driver: Driver): Promise<void> {
+    const ok = await this.confirmationService.confirm(
+      'Désactiver le livreur ?',
+      `Voulez-vous désactiver ${driver.first_name} ${driver.last_name} ?`,
+      { confirmText: 'Désactiver', cancelText: 'Annuler', type: 'warning' }
+    );
+    if (!ok) return;
+    this.driverService.deleteDriver(driver.id!).subscribe({
+      next: () => { this.loadDrivers(); this.toastService.showSuccess('Livreur désactivé', ''); },
+      error: () => this.toastService.showError('Erreur', 'Impossible de désactiver')
+    });
+  }
+
+  // ══════════════════════════════════════════════════════════
+  // ASSIGNATION LIVREUR
+  // ══════════════════════════════════════════════════════════
+
+  openAssignModal(order: any): void {
+    this.orderToAssign    = order;
+    this.selectedDriverId = null;
+    this.showAssignModal  = true;
+    this.loadDrivers();
+  }
+
+  closeAssignModal(): void {
+    this.showAssignModal  = false;
+    this.orderToAssign    = null;
+    this.selectedDriverId = null;
+  }
+
+  confirmAssign(): void {
+    if (!this.orderToAssign || !this.selectedDriverId) return;
+    this.assignLoading = true;
+    this.driverService.assignDriver(this.orderToAssign.id, this.selectedDriverId).subscribe({
+      next: () => {
+        this.assignLoading = false;
+        const d = this.drivers.find(dr => dr.id === this.selectedDriverId);
+        this.toastService.showSuccess(
+          'Livreur assigné',
+          `${d?.first_name} ${d?.last_name} prend en charge la commande #${this.orderToAssign?.id}`
+        );
+        this.closeAssignModal();
+        this.loadOrders();
+      },
+      error: (err) => {
+        this.assignLoading = false;
+        this.toastService.showError('Erreur', err.error?.error || 'Impossible d\'assigner');
       }
     });
   }

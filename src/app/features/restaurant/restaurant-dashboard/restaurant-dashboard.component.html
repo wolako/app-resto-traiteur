@@ -53,6 +53,13 @@
         <span class="nav-badge info" *ngIf="hasNewReviews">{{ currentReviewsCount }}</span>
       </button>
 
+      <button class="sb-btn" [class.active]="activeTab==='drivers'"
+        (click)="activeTab='drivers'; loadDrivers()">
+        <span class="sb-ico-w"><i class="bi bi-bicycle"></i></span>
+        <span class="sb-lbl">Livreurs</span>
+        <span class="sb-badge green" *ngIf="drivers.length > 0">{{ drivers.length }}</span>
+      </button>
+
       <p class="nav-section-label">Finance</p>
 
       <button class="nav-item" [class.active]="activeTab === 'commissions'" (click)="activeTab = 'commissions'">
@@ -605,6 +612,18 @@
               <td>
                 <div class="d-flex gap-1 align-items-center">
                   <button class="btn btn-sm btn-outline-info" (click)="viewOrder(order)" title="Voir détails"><i class="bi bi-eye"></i></button>
+                  <button class="btn btn-sm btn-outline-secondary" *ngIf="order.status === 'ready' && !order.current_assignment_id"
+                    (click)="openAssignModal(order)" title="Assigner un livreur">
+                    <i class="bi bi-bicycle"></i>
+                  </button>
+                  <!-- Afficher le livreur assigné si déjà assigné -->
+                  <span class="stag s-confirmed"
+                    *ngIf="order.current_assignment_id"
+                    style="font-size:.65rem; cursor:pointer;"
+                    (click)="openAssignModal(order)"
+                    title="Changer de livreur">
+                    <i class="bi bi-bicycle"></i> Assigné
+                  </span>
                   <button *ngIf="order.payment_status !== 'paid'" class="btn btn-sm btn-outline-success" (click)="openPaymentModal(order)" title="Payer">
                     <i class="bi bi-credit-card"></i>
                     <span *ngIf="isSandbox" class="ms-1 badge" style="background:var(--rt-accent-s);color:var(--rt-accent);font-size:9px;">SB</span>
@@ -860,6 +879,83 @@
       </div>
     </div>
 
+    <!-- ─── DRIVERS ───────────────────────────────────────────── -->
+    <div *ngIf="activeTab === 'drivers'" class="tab-pane-custom">
+      <div class="page-header">
+        <div>
+          <h2>Livreurs</h2>
+          <p>Gérez votre équipe de livraison</p>
+        </div>
+        <button class="btn btn-primary" (click)="openCreateDriverModal()">
+          <i class="bi bi-plus-lg"></i> Nouveau livreur
+        </button>
+      </div>
+
+      <!-- Grille des livreurs -->
+      <div class="row g-3">
+        <div class="col-sm-6 col-md-4" *ngFor="let d of drivers">
+          <div class="driver-card">
+            <div class="drc-header">
+              <div class="drc-avatar">
+                {{ d.first_name?.charAt(0) }}{{ d.last_name?.charAt(0) }}
+              </div>
+              <div class="drc-info">
+                <div class="drc-name">{{ d.first_name }} {{ d.last_name }}</div>
+                <div class="drc-phone">{{ d.phone }}</div>
+              </div>
+              <div class="drc-status-dot"
+                [class.green]="d.real_status === 'available'"
+                [class.orange]="d.real_status === 'at_capacity'"
+                [class.gray]="d.real_status === 'offline' || d.real_status === 'inactive'"
+                [title]="d.real_status">
+              </div>
+            </div>
+            <div class="drc-stats">
+              <span class="stag"
+                [ngClass]="{
+                  'b-active':   d.real_status === 'available',
+                  's-preparing': d.real_status === 'at_capacity',
+                  'b-inactive': d.real_status === 'offline' || d.real_status === 'inactive'
+                }">
+                <i class="bi bi-circle-fill" style="font-size:.45rem;"></i>
+                {{ d.real_status === 'available' ? 'Disponible'
+                  : d.real_status === 'at_capacity' ? 'Complet'
+                  : d.real_status === 'offline' ? 'Hors ligne' : 'Inactif' }}
+              </span>
+              <span class="drc-capacity">
+                {{ d.active_orders_count || 0 }}/{{ d.max_concurrent_orders }}
+                <i class="bi bi-box-seam ms-1" style="color:var(--rt-t4)"></i>
+              </span>
+            </div>
+            <div class="drc-vehicle">
+              <i class="bi"
+                [class.bi-bicycle]="d.vehicle_type === 'velo'"
+                [class.bi-motorbike]="d.vehicle_type === 'moto'"
+                [class.bi-car-front]="d.vehicle_type === 'voiture'"
+                [class.bi-person-walking]="d.vehicle_type === 'pied'">
+              </i>
+              <span>{{ vehicleLabel(d.vehicle_type) }}</span>
+            </div>
+            <div class="drc-actions">
+              <button class="btn btn-sm btn-outline-secondary"
+                (click)="editDriver(d)" title="Modifier">
+                <i class="bi bi-pencil"></i>
+              </button>
+              <button class="btn btn-sm btn-outline-danger"
+                (click)="confirmDeleteDriver(d)" title="Désactiver">
+                <i class="bi bi-person-x"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="empty-state" *ngIf="drivers.length === 0">
+        <i class="bi bi-bicycle"></i>
+        <p>Aucun livreur. Ajoutez votre premier livreur !</p>
+      </div>
+    </div>
+
   </main>
 
   <!-- ══════════════════════════════════════════════════════════
@@ -878,7 +974,12 @@
       <i class="bi bi-star-half"></i><span>Avis Clients</span>
       <span class="mmd-badge warning" *ngIf="hasNewReviews">{{ currentReviewsCount }}</span>
     </button>
-  
+    <button class="mmd-item" [class.active]="activeTab==='drivers'"
+      (click)="activeTab='drivers'; loadDrivers(); mobileMoreOpen=false">
+      <i class="bi bi-bicycle"></i><span>Livreurs</span>
+      <span class="mmd-badge green" *ngIf="drivers.length > 0">{{ drivers.length }}</span>
+    </button>
+
     <p class="mmd-section-label">Finance</p>
     <button class="mmd-item" [class.active]="activeTab==='commissions'" (click)="activeTab='commissions'; mobileMoreOpen=false">
       <i class="bi bi-percent"></i><span>Commissions</span>
@@ -1078,3 +1179,162 @@
 <app-menu-items-modal [menu]="selectedMenuForItems" [show]="showItemsModal" (closed)="closeItemsModal()"></app-menu-items-modal>
 <app-order-details-modal [order]="selectedOrder" [show]="showOrderDetailsModal" [loading]="loadingOrderUpdate" (closed)="onOrderModalClosed()" (statusChanged)="onOrderStatusChanged($event)"></app-order-details-modal>
 <app-reservation-details-modal [reservation]="selectedReservation" [show]="showReservationDetailsModal" (closed)="closeReservationDetailsModal()"></app-reservation-details-modal>
+
+<!-- Modal Livreur -->
+<div class="modal" [class.show]="showDriverModal" [style.display]="showDriverModal ? 'block' : 'none'">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">
+          <i class="bi bi-bicycle"></i>
+          {{ editingDriver ? 'Modifier le livreur' : 'Nouveau livreur' }}
+        </h5>
+        <button type="button" class="btn-close" (click)="closeDriverModal()"></button>
+      </div>
+      <div class="modal-body">
+        <div class="row g-3">
+          <div class="col-6">
+            <label class="form-label">Prénom *</label>
+            <input type="text" class="form-control" [(ngModel)]="driverForm.first_name"
+              placeholder="Ex: Koffi">
+          </div>
+          <div class="col-6">
+            <label class="form-label">Nom *</label>
+            <input type="text" class="form-control" [(ngModel)]="driverForm.last_name"
+              placeholder="Ex: Amevor">
+          </div>
+          <div class="col-12">
+            <label class="form-label">Téléphone *</label>
+            <input type="tel" class="form-control" [(ngModel)]="driverForm.phone"
+              placeholder="+228 90 12 34 56" [disabled]="!!editingDriver">
+            <small class="text-muted" *ngIf="editingDriver">Le téléphone ne peut pas être modifié</small>
+          </div>
+          <div class="col-12">
+            <label class="form-label">Email <small class="text-muted">(optionnel)</small></label>
+            <input type="email" class="form-control" [(ngModel)]="driverForm.email"
+              placeholder="koffi@email.com" [disabled]="!!editingDriver">
+          </div>
+          <div class="col-6">
+            <label class="form-label">Véhicule</label>
+            <select class="form-select" [(ngModel)]="driverForm.vehicle_type">
+              <option value="moto">🏍️ Moto</option>
+              <option value="velo">🚲 Vélo</option>
+              <option value="voiture">🚗 Voiture</option>
+              <option value="pied">🚶 À pied</option>
+            </select>
+          </div>
+          <div class="col-6">
+            <label class="form-label">Commandes max simultanées</label>
+            <input type="number" class="form-control" [(ngModel)]="driverForm.max_concurrent_orders"
+              min="1" max="10">
+          </div>
+        </div>
+
+        <!-- Afficher les credentials après création -->
+        <div class="alert alert-success mt-3" *ngIf="newDriverCredentials">
+          <i class="bi bi-shield-lock-fill me-2"></i>
+          <strong>Identifiants à communiquer au livreur :</strong>
+          <div class="mt-2" style="font-family: monospace;">
+            <div>📱 Téléphone : <strong>{{ newDriverCredentials.phone }}</strong></div>
+            <div>🔑 Mot de passe temporaire : <strong>{{ newDriverCredentials.temp_password }}</strong></div>
+          </div>
+          <small class="d-block mt-2 text-muted">
+            Le livreur devra créer un nouveau mot de passe lors de sa première connexion.
+            <strong>Notez ces informations, elles ne seront plus affichées.</strong>
+          </small>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" (click)="closeDriverModal()">
+          {{ newDriverCredentials ? 'Fermer' : 'Annuler' }}
+        </button>
+        <button type="button" class="btn btn-primary" (click)="saveDriver()"
+          [disabled]="driverLoading || !!newDriverCredentials || !driverForm.first_name || !driverForm.phone">
+          <span *ngIf="driverLoading" class="spinner-border spinner-border-sm me-2"></span>
+          {{ editingDriver ? 'Mettre à jour' : 'Créer le livreur' }}
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="modal-backdrop fade show" *ngIf="showDriverModal"></div>
+
+<!-- Modal Assigner livreur à une commande -->
+<div class="modal" [class.show]="showAssignModal" [style.display]="showAssignModal ? 'block' : 'none'">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">
+          <i class="bi bi-bicycle"></i>
+          Assigner un livreur — Commande #{{ orderToAssign?.id }}
+        </h5>
+        <button type="button" class="btn-close" (click)="closeAssignModal()"></button>
+      </div>
+      <div class="modal-body" *ngIf="orderToAssign">
+
+        <div class="assign-order-info">
+          <i class="bi bi-person-fill"></i>
+          <div>
+            <strong>{{ orderToAssign.client_name }}</strong>
+            <small class="d-block text-muted">{{ orderToAssign.delivery_address || 'Adresse non précisée' }}</small>
+          </div>
+          <span class="ms-auto fw-bold" style="color:var(--rt-green)">
+            {{ formatMontant(orderToAssign.total_amount) }} FCFA
+          </span>
+        </div>
+
+        <p class="form-label mt-3">Choisir un livreur :</p>
+
+        <div class="assign-drivers-list">
+          <div class="assign-driver-item"
+            *ngFor="let d of drivers"
+            [class.selected]="selectedDriverId === d.id"
+            [class.disabled]="d.real_status !== 'available'"
+            (click)="d.real_status === 'available' ? selectedDriverId = (d.id ?? null) : null">
+
+            <div class="adi-avatar">{{ d.first_name?.charAt(0) }}{{ d.last_name?.charAt(0) }}</div>
+            <div class="adi-info">
+              <div class="adi-name">{{ d.first_name }} {{ d.last_name }}</div>
+              <div class="adi-meta">
+                <i class="bi"
+                  [class.bi-bicycle]="d.vehicle_type==='velo'"
+                  [class.bi-truck]="d.vehicle_type==='moto'"
+                  [class.bi-car-front]="d.vehicle_type==='voiture'"
+                  [class.bi-person-walking]="d.vehicle_type==='pied'"
+                  style="font-size:.75rem;"></i>
+                {{ vehicleLabel(d.vehicle_type) }} ·
+                {{ d.active_orders_count }}/{{ d.max_concurrent_orders }} cmds
+              </div>
+            </div>
+            <div class="adi-status">
+              <span *ngIf="d.real_status === 'available'" class="stag b-active" style="font-size:.65rem;">Dispo</span>
+              <span *ngIf="d.real_status === 'at_capacity'" class="stag s-pending" style="font-size:.65rem;">Complet</span>
+              <span *ngIf="d.real_status === 'offline'" class="stag b-inactive" style="font-size:.65rem;">Hors ligne</span>
+            </div>
+          </div>
+
+          <div class="empty-state py-3" *ngIf="drivers.length === 0">
+            <i class="bi bi-bicycle"></i>
+            <p>Aucun livreur disponible. <button class="btn btn-link btn-sm p-0" (click)="closeAssignModal(); openCreateDriverModal()">Créer un livreur</button></p>
+          </div>
+        </div>
+
+        <!-- Si commande déjà assignée -->
+        <div class="alert alert-info mt-3" *ngIf="orderToAssign.current_assignment_id">
+          <i class="bi bi-info-circle me-2"></i>
+          Cette commande a déjà un livreur assigné. En sélectionner un autre remplacera l'assignation actuelle.
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" (click)="closeAssignModal()">Annuler</button>
+        <button type="button" class="btn btn-primary" (click)="confirmAssign()"
+          [disabled]="!selectedDriverId || assignLoading">
+          <span *ngIf="assignLoading" class="spinner-border spinner-border-sm me-2"></span>
+          <i class="bi bi-bicycle" *ngIf="!assignLoading"></i>
+          Assigner
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="modal-backdrop fade show" *ngIf="showAssignModal"></div>

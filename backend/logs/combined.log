@@ -4127,3 +4127,10 @@
 {"level":"info","message":"Service SMS initialisé","timestamp":"2026-04-22T22:41:47.223Z"}
 {"level":"info","message":"Service email Gmail initialisé avec succès","timestamp":"2026-04-22T22:43:02.422Z"}
 {"error":"Connection terminated due to connection timeout","level":"error","message":"Database connection error","timestamp":"2026-04-22T22:43:07.883Z"}
+{"level":"info","message":"Service SMS initialisé","timestamp":"2026-04-23T00:52:17.331Z"}
+{"level":"info","message":"[SubExpiry] Crons planifiés — URL : https://jason-overbulky-hazardously.ngrok-free.dev/restaurant/dashboard?tab=subscription","timestamp":"2026-04-23T00:52:27.165Z"}
+{"level":"info","message":"Service email Gmail initialisé avec succès","timestamp":"2026-04-23T00:52:27.647Z"}
+{"email":"admin@restotraiteur.com","level":"info","message":"Super-admin already exists","timestamp":"2026-04-23T00:52:28.070Z"}
+{"environment":"development","level":"info","message":"Server started","nodeVersion":"v20.18.3","port":"3000","timestamp":"2026-04-23T00:52:28.091Z"}
+{"level":"info","message":"Service SMS initialisé","timestamp":"2026-06-11T23:46:52.976Z"}
+{"error":"Connection terminated due to connection timeout","level":"error","message":"Database connection error","timestamp":"2026-06-11T23:47:16.576Z"}

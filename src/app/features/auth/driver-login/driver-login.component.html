@@ -1,0 +1,83 @@
+<div class="dl-page">
+
+  <!-- Brand -->
+  <div class="dl-brand">
+    <div class="dl-brand-icon">🚴</div>
+    <div class="dl-brand-text">
+      <span class="dl-brand-name">RestoTraiteur</span>
+      <span class="dl-brand-sub">Espace Livreur</span>
+    </div>
+  </div>
+
+  <div class="dl-card">
+    <div class="dl-card-head">
+      <h1>Connexion Livreur</h1>
+      <p>Accédez à votre interface de livraison</p>
+    </div>
+
+    <!-- Erreur -->
+    <div class="dl-error" *ngIf="errorMsg">
+      <i class="bi bi-exclamation-triangle-fill"></i>
+      <span>{{ errorMsg }}</span>
+    </div>
+
+    <div class="dl-form">
+
+      <!-- Téléphone -->
+      <div class="dl-field">
+        <label class="dl-label">
+          <i class="bi bi-telephone-fill"></i> Numéro de téléphone
+        </label>
+        <input
+          type="tel"
+          class="dl-input"
+          [(ngModel)]="phone"
+          placeholder="+228 90 12 34 56"
+          autocomplete="tel"
+          (keyup.enter)="login()">
+      </div>
+
+      <!-- Mot de passe -->
+      <div class="dl-field">
+        <label class="dl-label">
+          <i class="bi bi-lock-fill"></i> Mot de passe
+        </label>
+        <div class="dl-input-wrap">
+          <input
+            [type]="showPassword ? 'text' : 'password'"
+            class="dl-input"
+            [(ngModel)]="password"
+            placeholder="Votre mot de passe"
+            autocomplete="current-password"
+            (keyup.enter)="login()">
+          <button class="dl-eye" type="button" (click)="showPassword = !showPassword" tabindex="-1">
+            <i class="bi" [class.bi-eye]="!showPassword" [class.bi-eye-slash]="showPassword"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Bouton connexion -->
+      <button class="dl-btn" (click)="login()" [disabled]="loading || !phone || !password">
+        <span *ngIf="loading" class="spinner-border spinner-border-sm me-2"></span>
+        <i *ngIf="!loading" class="bi bi-bicycle me-2"></i>
+        {{ loading ? 'Connexion...' : 'Se connecter' }}
+      </button>
+
+    </div>
+
+    <!-- Footer de la carte -->
+    <div class="dl-card-foot">
+      <p>Vous n'êtes pas livreur ?</p>
+      <a routerLink="/business/login">Connexion établissement</a>
+      &nbsp;·&nbsp;
+      <a routerLink="/login">Connexion client</a>
+    </div>
+  </div>
+
+  <!-- Info -->
+  <div class="dl-info">
+    <i class="bi bi-info-circle"></i>
+    <span>Vos identifiants vous ont été communiqués par votre établissement.</span>
+  </div>
+
+</div>

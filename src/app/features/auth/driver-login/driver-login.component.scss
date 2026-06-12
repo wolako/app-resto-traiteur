@@ -1,0 +1,114 @@
+:host { display: block; }
+
+.dl-page {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #1a0a00 0%, #2d1a0a 50%, #1a0a00 100%);
+  display: flex; flex-direction: column; align-items: center;
+  justify-content: center; padding: 24px 16px;
+  font-family: 'DM Sans', sans-serif;
+}
+
+.dl-brand {
+  display: flex; align-items: center; gap: 12px;
+  margin-bottom: 28px;
+  .dl-brand-icon { font-size: 2.2rem; }
+  .dl-brand-name {
+    display: block;
+    font-family: 'Playfair Display', serif; font-size: 1.2rem; font-weight: 700;
+    color: #fff;
+  }
+  .dl-brand-sub {
+    display: block;
+    font-size: .73rem; color: rgba(255,255,255,.5); letter-spacing: .06em; text-transform: uppercase;
+  }
+}
+
+.dl-card {
+  background: #fff; border-radius: 20px; width: 100%; max-width: 420px;
+  box-shadow: 0 24px 64px rgba(0,0,0,.4);
+  overflow: hidden;
+}
+
+.dl-card-head {
+  background: linear-gradient(135deg, #c94040 0%, #a02020 100%);
+  padding: 28px 28px 24px; color: #fff; text-align: center;
+
+  h1 { font-family: 'Playfair Display', serif; font-size: 1.4rem; font-weight: 700; margin: 0 0 6px; }
+  p  { font-size: .82rem; opacity: .8; margin: 0; }
+}
+
+.dl-error {
+  display: flex; align-items: flex-start; gap: 8px; margin: 16px 24px 0;
+  padding: 10px 12px; background: #fff5f5; border: 1px solid rgba(201,64,64,.25);
+  border-radius: 10px; color: #c94040; font-size: .8rem;
+  i { font-size: .9rem; flex-shrink: 0; margin-top: 1px; }
+}
+
+.dl-form {
+  padding: 24px 24px 20px; display: flex; flex-direction: column; gap: 16px;
+}
+
+.dl-field {
+  display: flex; flex-direction: column; gap: 6px;
+}
+
+.dl-label {
+  font-size: .78rem; font-weight: 600; color: #5c3d2e;
+  display: flex; align-items: center; gap: 5px;
+  i { color: #c94040; font-size: .8rem; }
+}
+
+.dl-input-wrap { position: relative; }
+
+.dl-input {
+  width: 100%; padding: 12px 14px; font-size: .9rem; font-family: 'DM Sans', sans-serif;
+  border: 1.5px solid #e8d5c4; border-radius: 10px; background: #fdf9f6;
+  color: #1a0a00; outline: none; transition: border .2s, box-shadow .2s;
+  box-sizing: border-box;
+
+  &:focus {
+    border-color: #c94040;
+    box-shadow: 0 0 0 3px rgba(201,64,64,.12);
+    background: #fff;
+  }
+  &::placeholder { color: #c4a882; }
+
+  .dl-input-wrap & { padding-right: 44px; }
+}
+
+.dl-eye {
+  position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
+  background: none; border: none; cursor: pointer; color: #c4a882; font-size: .9rem; padding: 4px;
+  &:hover { color: #c94040; }
+}
+
+.dl-btn {
+  width: 100%; padding: 14px; background: linear-gradient(135deg, #c94040 0%, #a02020 100%);
+  color: #fff; border: none; border-radius: 12px;
+  font-family: 'DM Sans', sans-serif; font-size: .9rem; font-weight: 700;
+  cursor: pointer; transition: all .2s; box-shadow: 0 4px 16px rgba(201,64,64,.3);
+  display: flex; align-items: center; justify-content: center;
+
+  &:hover:not(:disabled) {
+    box-shadow: 0 6px 24px rgba(201,64,64,.45);
+    transform: translateY(-1px);
+  }
+  &:disabled { opacity: .55; cursor: not-allowed; transform: none; }
+}
+
+.dl-card-foot {
+  padding: 14px 24px 20px; text-align: center; border-top: 1px solid #f0e6db;
+  font-size: .77rem; color: #9a7a5a;
+
+  a {
+    color: #c94040; text-decoration: none; font-weight: 600;
+    &:hover { text-decoration: underline; }
+  }
+}
+
+.dl-info {
+  margin-top: 20px; display: flex; align-items: center; gap: 7px;
+  font-size: .73rem; color: rgba(255,255,255,.45);
+  i { font-size: .8rem; }
+  max-width: 420px; text-align: center;
+}

@@ -1,0 +1,249 @@
+<div class="drv-layout">
+
+  <!-- ══ HEADER ══════════════════════════════════════════════ -->
+  <header class="drv-header">
+    <div class="drv-brand">
+      <i class="bi bi-bicycle"></i>
+      <span>RestoTraiteur</span>
+    </div>
+    <div class="drv-header-right">
+      <span class="drv-name" *ngIf="driver">
+        {{ driver.first_name }} {{ driver.last_name }}
+      </span>
+      <button class="drv-logout" (click)="logout()">
+        <i class="bi bi-box-arrow-right"></i>
+      </button>
+    </div>
+  </header>
+
+  <!-- ══ LOADING ═════════════════════════════════════════════ -->
+  <div class="drv-loading" *ngIf="loading">
+    <div class="spinner-border" style="color:var(--rt-primary)"></div>
+    <p>Chargement...</p>
+  </div>
+
+  <ng-container *ngIf="!loading && driver">
+
+    <!-- ══ STATUS CARD ════════════════════════════════════════ -->
+    <div class="drv-status-card" [class.online]="isOnline()" [class.offline]="!isOnline()">
+      <div class="dsc-left">
+        <div class="dsc-dot" [class.green]="isOnline()"></div>
+        <div>
+          <div class="dsc-status">{{ isOnline() ? 'En ligne' : 'Hors ligne' }}</div>
+          <div class="dsc-sub">
+            <span *ngIf="isOnline()">
+              {{ driver.active_orders_count || 0 }}/{{ driver.max_concurrent_orders }} commandes actives
+            </span>
+            <span *ngIf="!isOnline()">Passez en ligne pour recevoir des livraisons</span>
+          </div>
+        </div>
+      </div>
+      <button class="dsc-toggle" (click)="toggleStatus()" [disabled]="statusLoading">
+        <span *ngIf="statusLoading" class="spinner-border spinner-border-sm"></span>
+        <i *ngIf="!statusLoading" class="bi" [class.bi-toggle-on]="isOnline()" [class.bi-toggle-off]="!isOnline()"></i>
+        {{ isOnline() ? 'Pause' : 'En ligne' }}
+      </button>
+    </div>
+
+    <!-- ══ INFOS LIVREUR ══════════════════════════════════════ -->
+    <div class="drv-info-row">
+      <div class="dir-item">
+        <i class="bi bi-telephone-fill"></i>
+        <span>{{ driver.phone }}</span>
+      </div>
+      <div class="dir-item">
+        <i class="bi bi-truck"></i>
+        <span>{{ vehicleLabels[driver.vehicle_type] || driver.vehicle_type }}</span>
+      </div>
+      <div class="dir-item" *ngIf="driver.active_orders_count !== undefined">
+        <i class="bi bi-inbox-fill"></i>
+        <span>{{ driver.remaining_slots }} slot(s) libre(s)</span>
+      </div>
+    </div>
+
+    <!-- ══ COMMANDES ACTIVES ══════════════════════════════════ -->
+    <div class="drv-section">
+      <div class="drv-section-title">
+        <i class="bi bi-lightning-charge-fill"></i>
+        Mes commandes
+        <span class="drv-badge" *ngIf="activeOrders.length > 0">{{ activeOrders.length }}</span>
+      </div>
+
+      <!-- Aucune commande -->
+      <div class="drv-empty" *ngIf="activeOrders.length === 0">
+        <i class="bi bi-inbox"></i>
+        <p>Aucune commande assignée pour le moment</p>
+        <small *ngIf="!isOnline()">Passez en ligne pour recevoir des commandes</small>
+      </div>
+
+      <!-- Cartes commandes -->
+      <div class="drv-order-card" *ngFor="let a of activeOrders"
+           [class.in-transit]="a.assignment_status === 'picked_up'">
+
+        <!-- En-tête commande -->
+        <div class="doc-header">
+          <div class="doc-ref">#{{ a.order_id }}</div>
+          <div class="doc-status" [class.pickup]="a.assignment_status === 'assigned'"
+               [class.transit]="a.assignment_status === 'picked_up'">
+            {{ getStatusLabel(a.assignment_status) }}
+          </div>
+        </div>
+
+        <!-- Restaurant à récupérer -->
+        <div class="doc-section" *ngIf="a.assignment_status === 'assigned'">
+          <div class="doc-label"><i class="bi bi-shop-window"></i> Récupérer chez</div>
+          <div class="doc-value">{{ a.business_name }}</div>
+          <div class="doc-address" (click)="openMaps(a.business_address || '')">
+            <i class="bi bi-geo-alt-fill"></i>
+            {{ a.business_address || 'Adresse non précisée' }}
+            <i class="bi bi-box-arrow-up-right" style="font-size:.7rem;margin-left:3px;"></i>
+          </div>
+          <div class="doc-phone" *ngIf="a.business_phone">
+            <a [href]="'tel:' + a.business_phone">
+              <i class="bi bi-telephone-fill"></i> {{ a.business_phone }}
+            </a>
+          </div>
+        </div>
+
+        <!-- Client à livrer -->
+        <div class="doc-section">
+          <div class="doc-label"><i class="bi bi-person-fill"></i> Livrer à</div>
+          <div class="doc-value">{{ a.client_name }}</div>
+          <div class="doc-address" (click)="openMaps(a.delivery_address || '')">
+            <i class="bi bi-geo-alt-fill"></i>
+            {{ a.delivery_address || 'Adresse non précisée' }}
+            <i class="bi bi-box-arrow-up-right" style="font-size:.7rem;margin-left:3px;"></i>
+          </div>
+        </div>
+
+        <!-- Montant -->
+        <div class="doc-amount" *ngIf="a.total_amount">
+          <i class="bi bi-cash-coin"></i>
+          {{ formatAmount(a.total_amount) }} FCFA
+        </div>
+
+        <!-- Actions -->
+        <div class="doc-actions">
+          <!-- État: assigné → bouton "Je pars" -->
+          <button class="doc-btn primary"
+                  *ngIf="a.assignment_status === 'assigned'"
+                  (click)="pickup(a)"
+                  [disabled]="actionLoading[a.order_id]">
+            <span *ngIf="actionLoading[a.order_id]" class="spinner-border spinner-border-sm"></span>
+            <i *ngIf="!actionLoading[a.order_id]" class="bi bi-truck"></i>
+            Je pars livrer
+          </button>
+
+          <!-- État: en transit → bouton "Livré" -->
+          <button class="doc-btn success"
+                  *ngIf="a.assignment_status === 'picked_up'"
+                  (click)="deliver(a)"
+                  [disabled]="actionLoading[a.order_id]">
+            <span *ngIf="actionLoading[a.order_id]" class="spinner-border spinner-border-sm"></span>
+            <i *ngIf="!actionLoading[a.order_id]" class="bi bi-check-circle-fill"></i>
+            Livraison effectuée
+          </button>
+
+          <!-- Bouton problème -->
+          <button class="doc-btn danger"
+                  (click)="openFailModal(a.order_id)"
+                  [disabled]="actionLoading[a.order_id]">
+            <i class="bi bi-exclamation-triangle-fill"></i>
+            Problème
+          </button>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ══ HISTORIQUE RÉCENT ══════════════════════════════════ -->
+    <div class="drv-section" *ngIf="recentHistory.length > 0">
+      <div class="drv-section-title">
+        <i class="bi bi-clock-history"></i> Récent
+      </div>
+      <div class="drv-history-item" *ngFor="let h of recentHistory">
+        <div class="dhi-icon" [class.delivered]="h.status === 'delivered'" [class.failed]="h.status === 'failed'">
+          <i class="bi" [class.bi-check-circle-fill]="h.status === 'delivered'"
+                        [class.bi-x-circle-fill]="h.status === 'failed'"></i>
+        </div>
+        <div class="dhi-body">
+          <div class="dhi-ref">#{{ h.order_id }} — {{ h.client_name }}</div>
+          <div class="dhi-sub">
+            {{ h.business_name }} · {{ formatAmount(h.total_amount) }} FCFA
+          </div>
+          <div class="dhi-date" *ngIf="h.delivered_at">
+            {{ h.delivered_at | date:'dd/MM HH:mm' }}
+          </div>
+        </div>
+        <div class="dhi-status">
+          <span [class.dhi-ok]="h.status === 'delivered'" [class.dhi-fail]="h.status === 'failed'">
+            {{ h.status === 'delivered' ? '✅' : '❌' }}
+          </span>
+        </div>
+      </div>
+    </div>
+
+  </ng-container><!-- /ng-container -->
+
+  <!-- ══ MODAL : Signaler problème ════════════════════════════ -->
+  <div class="drv-modal-ov" [class.on]="showFailModal" (click)="showFailModal = false">
+    <div class="drv-modal" (click)="$event.stopPropagation()">
+      <div class="drvm-head">
+        <h4><i class="bi bi-exclamation-triangle-fill"></i> Signaler un problème</h4>
+        <button (click)="showFailModal = false"><i class="bi bi-x-lg"></i></button>
+      </div>
+      <div class="drvm-body">
+        <p class="drvm-hint">Commande #{{ failOrderId }} — Décrivez le problème rencontré :</p>
+        <div class="drvm-reasons">
+          <button class="drvm-reason-btn" *ngFor="let r of [
+            'Client absent', 'Adresse introuvable',
+            'Client ne répond pas', 'Problème de véhicule',
+            'Commande annulée par client', 'Autre'
+          ]" [class.selected]="failReason === r" (click)="failReason = r">
+            {{ r }}
+          </button>
+        </div>
+        <textarea class="drvm-textarea" [(ngModel)]="failReason"
+          placeholder="Ou décrivez le problème..." rows="3"></textarea>
+      </div>
+      <div class="drvm-foot">
+        <button class="doc-btn ghost" (click)="showFailModal = false">Annuler</button>
+        <button class="doc-btn danger" (click)="submitFail()"
+                [disabled]="!failReason.trim() || failLoading">
+          <span *ngIf="failLoading" class="spinner-border spinner-border-sm"></span>
+          <i *ngIf="!failLoading" class="bi bi-send-fill"></i>
+          Signaler
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ MODAL : Changer mot de passe (1er login) ═════════════ -->
+  <div class="drv-modal-ov" [class.on]="showPasswordModal">
+    <div class="drv-modal">
+      <div class="drvm-head drvm-head-warning">
+        <h4><i class="bi bi-key-fill"></i> Bienvenue ! Créez votre mot de passe</h4>
+      </div>
+      <div class="drvm-body">
+        <p class="drvm-hint">Pour votre sécurité, veuillez créer un mot de passe personnel.</p>
+        <div class="drvm-field">
+          <label>Nouveau mot de passe</label>
+          <input type="password" [(ngModel)]="newPassword" placeholder="Minimum 6 caractères" class="drvm-input">
+        </div>
+        <div class="drvm-field">
+          <label>Confirmer le mot de passe</label>
+          <input type="password" [(ngModel)]="confirmPassword" placeholder="Répétez le mot de passe" class="drvm-input">
+        </div>
+      </div>
+      <div class="drvm-foot">
+        <button class="doc-btn primary full" (click)="submitPasswordChange()"
+                [disabled]="!newPassword || !confirmPassword || passwordLoading">
+          <span *ngIf="passwordLoading" class="spinner-border spinner-border-sm"></span>
+          <i *ngIf="!passwordLoading" class="bi bi-shield-check"></i>
+          Enregistrer
+        </button>
+      </div>
+    </div>
+  </div>
+
+</div>

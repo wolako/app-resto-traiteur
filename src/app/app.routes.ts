@@ -19,6 +19,9 @@ import { VerificationNeededComponent } from './features/auth/verification-needed
 import { ClientProfileComponent } from './features/client-profile/client-profile.component';
 import { MenuPageComponent } from './features/menu-page/menu-page.component';
 import { PayDepositComponent } from './features/orders/pay-deposit/pay-deposit.component';
+import { DriverDashboardComponent } from './features/driver-dashboard/driver-dashboard.component';
+import { DriverLoginComponent } from './features/auth/driver-login/driver-login.component';
+
 
 export const routes: Routes = [
   // ========================================
@@ -66,6 +69,11 @@ export const routes: Routes = [
     path: 'business/login',
     component: BusinessLoginComponent,
     title: 'Connexion Établissement - RestoTraiteur'
+  },
+  {
+    path: 'driver/login',
+    component: DriverLoginComponent,
+    title: 'Connexion Livreur - RestoTraiteur'
   },
   { 
     path: 'register', 
@@ -290,6 +298,27 @@ export const routes: Routes = [
       }
     ]
   },
+
+  // ========================================
+// PROTECTED ROUTES - LIVREUR
+// ========================================
+{
+  path: 'driver',
+  canActivate: [authGuard, roleGuard],
+  data: { role: 'driver' },
+  children: [
+    {
+      path: 'dashboard',
+      component: DriverDashboardComponent,
+      title: 'Interface Livreur - RestoTraiteur'
+    },
+    {
+      path: '',
+      redirectTo: 'dashboard',
+      pathMatch: 'full'
+    }
+  ]
+},
 
   // ========================================
   // FALLBACK ROUTE - 404
