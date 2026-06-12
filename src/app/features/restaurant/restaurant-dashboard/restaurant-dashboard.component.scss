@@ -428,3 +428,69 @@
   .adi-meta { font-size: .72rem; color: var(--rt-t3); display: flex; align-items: center; gap: 4px; }
 }
 .adi-status { flex-shrink: 0; }
+
+// ── Driver Cards ─────────────────────────────────────────────
+.driver-card {
+  background: var(--rt-sfc); border: 1px solid var(--rt-bdr);
+  border-radius: var(--rt-rl); padding: 16px;
+  transition: var(--rt-tr); height: 100%;
+  &:hover { border-color: var(--rt-bdr-hi); box-shadow: var(--shadow-md); }
+}
+.drc-header {
+  display: flex; align-items: center; gap: 10px; margin-bottom: 10px;
+}
+.drc-avatar {
+  width: 40px; height: 40px; border-radius: 50%; flex-shrink: 0;
+  background: var(--rt-primary-s); color: var(--rt-primary);
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Playfair Display', serif; font-weight: 700; font-size: .9rem;
+  border: 2px solid rgba(201,64,64,.2);
+}
+.drc-info { flex: 1; min-width: 0;
+  .drc-name { font-size: .86rem; font-weight: 600; color: var(--rt-t1); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .drc-phone { font-size: .73rem; color: var(--rt-t3); }
+}
+.drc-status-dot {
+  width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0;
+  &.green  { background: var(--rt-green);  box-shadow: 0 0 6px rgba(42,157,92,.5); }
+  &.orange { background: var(--rt-accent); }
+  &.gray   { background: var(--rt-t4); }
+}
+.drc-stats {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 8px;
+  .drc-capacity { font-size: .76rem; color: var(--rt-t3); display: flex; align-items: center; }
+}
+.drc-vehicle {
+  font-size: .76rem; color: var(--rt-t3); display: flex; align-items: center; gap: 5px;
+  margin-bottom: 10px;
+  i { color: var(--rt-primary); }
+}
+.drc-actions { display: flex; gap: 6px; }
+
+// ── Assign Modal ──────────────────────────────────────────────
+.assign-order-info {
+  display: flex; align-items: center; gap: 12px; padding: 12px 14px;
+  background: var(--rt-raised); border: 1px solid var(--rt-bdr); border-radius: var(--rt-r);
+  i { color: var(--rt-primary); font-size: 1.1rem; flex-shrink: 0; }
+}
+.assign-drivers-list { display: flex; flex-direction: column; gap: 6px; max-height: 320px; overflow-y: auto; }
+.assign-driver-item {
+  display: flex; align-items: center; gap: 10px; padding: 11px 12px;
+  background: var(--rt-raised); border: 2px solid var(--rt-bdr); border-radius: var(--rt-r);
+  cursor: pointer; transition: var(--rt-tr);
+  &:hover:not(.disabled) { border-color: var(--rt-primary); background: var(--rt-primary-s); }
+  &.selected { border-color: var(--rt-primary); background: var(--rt-primary-s); }
+  &.disabled { opacity: .5; cursor: not-allowed; }
+}
+.adi-avatar {
+  width: 34px; height: 34px; border-radius: 50%; flex-shrink: 0;
+  background: var(--rt-primary-s); color: var(--rt-primary);
+  display: flex; align-items: center; justify-content: center;
+  font-size: .78rem; font-weight: 700;
+}
+.adi-info { flex: 1; min-width: 0;
+  .adi-name { font-size: .84rem; font-weight: 600; color: var(--rt-t1); }
+  .adi-meta { font-size: .72rem; color: var(--rt-t3); display: flex; align-items: center; gap: 4px; }
+}
+.adi-status { flex-shrink: 0; }

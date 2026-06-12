@@ -426,3 +426,6 @@
 {"code":"ESOCKET","command":"CONN","host":"192.178.223.108","level":"error","message":"Erreur de vérification Gmail: Client network socket disconnected before secure TLS connection was established","port":465,"stack":"Error: Client network socket disconnected before secure TLS connection was established\n    at TLSSocket.onConnectEnd (node:_tls_wrap:1730:19)\n    at TLSSocket.emit (node:events:530:35)\n    at endReadableNT (node:internal/streams/readable:1698:12)\n    at process.processTicksAndRejections (node:internal/process/task_queues:82:21)","timestamp":"2026-04-20T14:56:09.719Z"}
 {"error":"Connection terminated due to connection timeout","level":"error","message":"Database connection error","timestamp":"2026-04-22T22:43:07.883Z"}
 {"error":"Connection terminated due to connection timeout","level":"error","message":"Database connection error","timestamp":"2026-06-11T23:47:16.575Z"}
+{"error":"getaddrinfo ENOTFOUND api.sms-provider.com","level":"error","message":"Erreur envoi SMS","timestamp":"2026-06-12T00:05:07.973Z","to":"98554247"}
+{"error":"getaddrinfo ENOTFOUND api.sms-provider.com","level":"error","message":"Erreur envoi SMS","timestamp":"2026-06-12T00:05:11.902Z","to":"90478814"}
+{"error":"getaddrinfo ENOTFOUND api.sms-provider.com","level":"error","message":"Erreur envoi SMS","timestamp":"2026-06-12T00:05:16.807Z","to":"98005500"}
