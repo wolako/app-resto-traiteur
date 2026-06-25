@@ -494,3 +494,253 @@
   .adi-meta { font-size: .72rem; color: var(--rt-t3); display: flex; align-items: center; gap: 4px; }
 }
 .adi-status { flex-shrink: 0; }
+
+// ── Onglet Drivers (Restaurant) ──────────────────────────────
+
+.driver-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 14px;
+  padding: 16px 18px;
+}
+
+.driver-card {
+  background:    var(--rt-raised);
+  border:        1px solid var(--rt-bdr);
+  border-radius: var(--rt-rl);
+  overflow:      hidden;
+  transition:    var(--rt-tr);
+
+  &:hover { border-color: var(--rt-bdr-hi); box-shadow: var(--shadow-sm); }
+
+  &--inactive {
+    opacity: .65;
+    border-style: dashed;
+  }
+
+  // ── En-tête ────────────────────────────────────────────────
+  .dc-driver-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 14px;
+    background: var(--rt-bg);
+    border-bottom: 1px solid var(--rt-bdr);
+  }
+
+  .dc-driver-identity {
+    display:     flex;
+    align-items: center;
+    gap:         10px;
+    min-width:   0;
+  }
+
+  .dc-driver-avatar {
+    width:           36px;
+    height:          36px;
+    border-radius:   50%;
+    background:      var(--rt-green-s);
+    color:           var(--rt-green);
+    display:         flex;
+    align-items:     center;
+    justify-content: center;
+    font-weight:     700;
+    font-size:       .8rem;
+    flex-shrink:     0;
+    border:          2px solid rgba(42,157,92,.2);
+
+    &--inactive {
+      background: var(--rt-bdr-hi);
+      color:      var(--rt-t4);
+      border-color: transparent;
+    }
+  }
+
+  .dc-driver-name {
+    font-size:     .85rem;
+    font-weight:   600;
+    color:         var(--rt-t1);
+    white-space:   nowrap;
+    overflow:      hidden;
+    text-overflow: ellipsis;
+  }
+
+  .dc-driver-phone {
+    font-size:  .72rem;
+    color:      var(--rt-t3);
+    margin-top: 1px;
+  }
+
+  .dc-driver-status-dot {
+    width:         10px;
+    height:        10px;
+    border-radius: 50%;
+    flex-shrink:   0;
+    transition:    background .2s;
+  }
+
+  // ── Corps ──────────────────────────────────────────────────
+  .dc-driver-body {
+    padding: 10px 14px;
+  }
+
+  .dc-driver-row {
+    display:         flex;
+    align-items:     center;
+    justify-content: space-between;
+    margin-bottom:   6px;
+  }
+
+  .dc-driver-badge-inactive {
+    font-size:     .62rem;
+    padding:       2px 7px;
+    border-radius: 4px;
+    background:    var(--rt-bdr-hi);
+    color:         var(--rt-t4);
+    font-weight:   600;
+    margin-left:   4px;
+  }
+
+  .dc-driver-cap {
+    font-size:  .73rem;
+    color:      var(--rt-t3);
+    font-family: 'DM Mono', monospace;
+  }
+
+  .dc-driver-vehicle {
+    display:     flex;
+    align-items: center;
+    gap:         5px;
+    font-size:   .75rem;
+    color:       var(--rt-t2);
+    font-weight: 500;
+  }
+
+  // ── Actions ────────────────────────────────────────────────
+  .dc-driver-acts {
+    display:         flex;
+    gap:             6px;
+    padding:         8px 14px 10px;
+    border-top:      1px solid var(--rt-bdr);
+    background:      var(--rt-bg);
+    flex-wrap:       wrap;
+  }
+
+  .dc-driver-btn {
+    display:         inline-flex;
+    align-items:     center;
+    gap:             5px;
+    padding:         5px 11px;
+    border-radius:   var(--rt-rs);
+    border:          1px solid var(--rt-bdr);
+    background:      var(--rt-sfc);
+    color:           var(--rt-t2);
+    font-size:       .73rem;
+    font-weight:     500;
+    cursor:          pointer;
+    transition:      var(--rt-tr);
+    font-family:     'DM Sans', sans-serif;
+    white-space:     nowrap;
+
+    &:hover { background: var(--rt-raised); border-color: var(--rt-bdr-hi); color: var(--rt-t1); }
+
+    &--edit:hover {
+      background:    var(--rt-blue-s);
+      border-color:  rgba(43,127,191,.35);
+      color:         var(--rt-blue);
+    }
+
+    &--deactivate:hover {
+      background:   var(--rt-accent-s);
+      border-color: rgba(217,119,6,.35);
+      color:        var(--rt-accent);
+    }
+
+    &--reactivate {
+      background:   var(--rt-green-s);
+      border-color: rgba(42,157,92,.35);
+      color:        var(--rt-green);
+
+      &:hover {
+        background: var(--rt-green);
+        color:      #fff;
+      }
+    }
+
+    i { font-size: .74rem; }
+
+    &:disabled { opacity: .45; cursor: not-allowed; pointer-events: none; }
+  }
+}
+
+// ── Modal assignation — info GPS ───────────────────────────────
+.assign-gps-block {
+  display:       flex;
+  align-items:   center;
+  gap:           8px;
+  padding:       8px 12px;
+  border-radius: var(--rt-r);
+  background:    var(--rt-green-s);
+  border:        1px solid rgba(42,157,92,.25);
+  margin-top:    8px;
+  font-size:     .76rem;
+  color:         var(--rt-t2);
+
+  i   { color: var(--rt-green); font-size: .9rem; flex-shrink: 0; }
+
+  strong { color: var(--rt-t1); }
+
+  a {
+    color:           var(--rt-green);
+    text-decoration: none;
+    font-weight:     600;
+    white-space:     nowrap;
+
+    &:hover { text-decoration: underline; }
+  }
+}
+
+.assign-no-gps {
+  display:     flex;
+  align-items: center;
+  gap:         6px;
+  font-size:   .73rem;
+  color:       var(--rt-t4);
+  padding:     6px 0 0;
+
+  i { font-size: .8rem; }
+}
+
+// ── Drivers tab : barre de recherche ──────────────────────────
+.driver-search {
+  padding:        12px 18px;
+  border-bottom:  1px solid var(--rt-bdr);
+
+  .form-control {
+    background: var(--rt-bg) !important;
+    border:     1px solid var(--rt-bdr) !important;
+    color:      var(--rt-t1) !important;
+    font-size:  .82rem !important;
+
+    &:focus {
+      border-color: var(--rt-green) !important;
+      box-shadow:   0 0 0 3px rgba(42,157,92,.12) !important;
+    }
+
+    &::placeholder { color: var(--rt-t4) !important; }
+  }
+}
+
+@media (max-width: 600px) {
+  .driver-grid {
+    grid-template-columns: 1fr;
+    padding: 10px 12px;
+  }
+}
+
+.assign-driver-item {
+  &.same-zone {
+    border-color: rgba(42, 157, 92, 0.4) !important;
+    background: var(--rt-green-s) !important;
+  }
+}

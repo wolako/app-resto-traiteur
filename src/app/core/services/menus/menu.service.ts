@@ -41,4 +41,11 @@ export class MenuService {
   deleteMenuItem(itemId: number): Observable<any> {
     return this.http.delete(`${this.api}/menu-items/${itemId}`);
   }
+
+  uploadMenuItemImage(file: File): Observable<any> {
+    const formData = new FormData();
+    formData.append('image', file);
+    return this.http.post(`${this.api}/menu-items/upload-image`, formData);
+  }
+  
 }

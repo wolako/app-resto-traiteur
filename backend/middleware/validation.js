@@ -109,6 +109,7 @@ const schemas = {
     client_name:    Joi.string().min(2).max(255).required(),
     client_phone:   Joi.string().pattern(/^\+?[0-9]{8,15}$/).required(),
     client_email:   Joi.string().email().optional().allow(''),
+    payment_type:   Joi.string().valid('online', 'cod').optional().default('online'), // ✅ AJOUTER
     payment_method: Joi.string().valid(...VALID_PAYMENT_METHODS).required(),
     notes:          Joi.string().max(1000).optional().allow(''),
     items: Joi.array().items(
@@ -118,6 +119,13 @@ const schemas = {
         unit_price:   Joi.number().min(0).required(),
       })
     ).min(1).required(),
+    delivery_address:  Joi.string().max(500).optional().allow('', null), // ✅ AJOUTER
+    delivery_distance: Joi.number().min(0).optional().allow(null),       // ✅ AJOUTER
+    delivery_lat:      Joi.number().min(-90).max(90).optional().allow(null),
+    delivery_lng:      Joi.number().min(-180).max(180).optional().allow(null),
+    wants_delivery:    Joi.boolean().optional(),
+    payment_phone:     Joi.string().optional().allow(null, ''),
+    card_holder:       Joi.string().optional().allow(null, ''),
   }),
 
   updateOrderStatus: Joi.object({

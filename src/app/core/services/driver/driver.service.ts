@@ -72,13 +72,26 @@ export class DriverService {
     return this.http.patch<any>(`${environment.apiUrl}/drivers/me/orders/${orderId}/deliver`, data || {});
   }
 
-  /** Signaler échec */
-  fail(orderId: number, failure_reason: string): Observable<any> {
-    return this.http.patch<any>(`${environment.apiUrl}/drivers/me/orders/${orderId}/fail`, { failure_reason });
+  /** Accepter une commande assignée */
+  accept(orderId: number): Observable<any> {
+    return this.http.patch<any>(`${environment.apiUrl}/drivers/me/orders/${orderId}/accept`, {});
+  }
+
+  /** Signaler échec — ✅ envoyer 'reason' (correspondance avec controller) */
+  fail(orderId: number, reason: string): Observable<any> {
+    return this.http.patch<any>(`${environment.apiUrl}/drivers/me/orders/${orderId}/fail`, { reason });
   }
 
   /** Changer mot de passe */
   changePassword(new_password: string): Observable<any> {
     return this.http.patch<any>(`${environment.apiUrl}/drivers/me/change-password`, { new_password });
   }
+
+  refuse(orderId: number, reason?: string): Observable<any> {
+    return this.http.patch<any>(
+      `${environment.apiUrl}/drivers/me/orders/${orderId}/refuse`,
+      { reason }
+    );
+  }
+  
 }

@@ -204,6 +204,7 @@
             <div class="cp-stat-icon green"><i class="bi bi-patch-check-fill"></i></div>
             <div class="cp-stat-body"><h3>{{ statistics.confirmed_special_orders || 0 }}</h3><p>Spéciales conf.</p></div>
           </div>
+
         </div>
 
         <!-- Commandes récentes -->
@@ -248,14 +249,27 @@
                       class="cp-btn-sm green" (click)="confirmDelivery(order.id)">
                       <i class="bi bi-check-circle"></i> Confirmer réception
                     </button>
+
                     <span *ngIf="order.delivery_confirmed" class="cp-confirmed">
                       <i class="bi bi-check-circle-fill"></i> Confirmée
                     </span>
+
+                    <!-- ✅ Noter le livreur — uniquement si confirmé et pas déjà noté -->
+                    <button *ngIf="order.delivery_confirmed && !driverReviews[order.id]"
+                      class="cp-btn-sm outline" (click)="openRatingModal(order.id)">
+                      <i class="bi bi-star-fill"></i> Noter le livreur
+                    </button>
+                    <span *ngIf="driverReviews[order.id]" class="cp-confirmed">
+                      <i class="bi bi-star-fill" style="color:#f5a623"></i>
+                      Livreur noté {{ driverReviews[order.id].rating }}/5
+                    </span>
+
                     <button *ngIf="order.payment_status === 'paid'"
                       class="cp-btn-sm outline" (click)="downloadReceipt(order.id)">
                       <i class="bi bi-file-earmark-pdf"></i> Reçu
                     </button>
                   </div>
+
                 </div>
               </div>
             </div>
@@ -343,13 +357,24 @@
                       class="cp-btn-sm green" (click)="confirmDelivery(order.id)">
                       <i class="bi bi-check-circle"></i> Confirmer réception
                     </button>
+
                     <span *ngIf="order.delivery_confirmed" class="cp-confirmed">
-                      <i class="bi bi-check-circle-fill"></i>
-                      Confirmée le {{ order.delivery_confirmed_at | date:'dd/MM/yyyy' }}
+                      <i class="bi bi-check-circle-fill"></i> Confirmée
                     </span>
+
+                    <!-- ✅ Noter le livreur — uniquement si confirmé et pas déjà noté -->
+                    <button *ngIf="order.delivery_confirmed && !driverReviews[order.id]"
+                      class="cp-btn-sm outline" (click)="openRatingModal(order.id)">
+                      <i class="bi bi-star-fill"></i> Noter le livreur
+                    </button>
+                    <span *ngIf="driverReviews[order.id]" class="cp-confirmed">
+                      <i class="bi bi-star-fill" style="color:#f5a623"></i>
+                      Livreur noté {{ driverReviews[order.id].rating }}/5
+                    </span>
+
                     <button *ngIf="order.payment_status === 'paid'"
                       class="cp-btn-sm outline" (click)="downloadReceipt(order.id)">
-                      <i class="bi bi-file-earmark-pdf"></i> Télécharger le reçu
+                      <i class="bi bi-file-earmark-pdf"></i> Reçu
                     </button>
                   </div>
                 </div>
@@ -576,4 +601,33 @@
   <button (click)="selectMoreTab('settings')">
     <i class="bi bi-gear-fill"></i><span>Paramètres</span>
   </button>
+</div>
+
+<!-- ════ MODAL : Noter le livreur ════════════════════════ -->
+<div class="cp-more-backdrop" *ngIf="showRatingModal" (click)="closeRatingModal()"></div>
+<div class="cp-rating-modal" *ngIf="showRatingModal">
+  <div class="cp-rating-head">
+    <h5><i class="bi bi-star-fill"></i> Noter le livreur</h5>
+    <button class="cp-icon-btn" (click)="closeRatingModal()"><i class="bi bi-x-lg"></i></button>
+  </div>
+  <div class="cp-rating-body">
+    <p>Comment s'est passée votre livraison ?</p>
+    <div class="cp-stars-input">
+      <i *ngFor="let s of [1,2,3,4,5]"
+        class="bi"
+        [class.bi-star-fill]="s <= ratingValue"
+        [class.bi-star]="s > ratingValue"
+        (click)="ratingValue = s"></i>
+    </div>
+    <textarea class="cp-input" rows="3" [(ngModel)]="ratingComment" placeholder="Un commentaire sur le livreur (optionnel)..."></textarea>
+  </div>
+  <div class="cp-rating-foot">
+    <button class="cp-btn-ghost" (click)="closeRatingModal()">Annuler</button>
+    <button class="cp-btn-primary" (click)="submitDriverRating()"
+      [disabled]="ratingValue < 1 || ratingLoading">
+      <span *ngIf="ratingLoading" class="spinner-border spinner-border-sm"></span>
+      <i *ngIf="!ratingLoading" class="bi bi-send-fill"></i>
+      Envoyer
+    </button>
+  </div>
 </div>

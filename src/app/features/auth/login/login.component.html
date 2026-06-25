@@ -10,8 +10,18 @@
       <p>Connectez-vous à votre espace RestoTraiteur</p>
     </div>
 
+    
     <!-- Body -->
     <div class="card-body-login">
+      
+      <div class="alert alert-warning d-flex align-items-center gap-2"
+        *ngIf="sessionExpiredMessage">
+        <i class="bi bi-clock-history fs-5"></i>
+        <div>
+          <strong>Session expirée</strong><br>
+          <small>Votre session a expiré. Veuillez vous reconnecter pour continuer.</small>
+        </div>
+      </div>
 
       <!-- Bannière erreur / redirection -->
       <div *ngIf="error" class="error-banner"

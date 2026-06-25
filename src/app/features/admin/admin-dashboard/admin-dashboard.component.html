@@ -653,12 +653,23 @@
       <!-- ══ DRIVERS ══ -->
       <div *ngIf="activeTab === 'drivers'" class="tab-pane-custom">
         <div class="content-header">
-          <h4><i class="bi bi-bicycle"></i> Tous les livreurs</h4>
-          <div class="filters">
-            <input type="text" class="form-control" [(ngModel)]="driverFilter"
-              (input)="filterDriversAdmin()" placeholder="Filtrer par établissement...">
+          <div>
+            <h4><i class="bi bi-bicycle"></i> Tous les livreurs</h4>
+            <p class="text-muted small">{{ drivers.length }} livreur(s) enregistré(s)</p>
           </div>
+          <!-- ✅ Bouton créer livreur pour l'admin -->
+          <button class="btn btn-primary" (click)="openAdminCreateDriverModal()">
+            <i class="bi bi-plus-lg"></i> Créer un livreur
+          </button>
         </div>
+
+        <!-- Filtre -->
+        <div class="mb-3">
+          <input type="text" class="form-control" [(ngModel)]="driverFilter"
+            (input)="filterDriversAdmin()"
+            placeholder="Filtrer par nom, établissement, téléphone...">
+        </div>
+
         <div class="table-responsive">
           <table class="table custom-table">
             <thead><tr>
@@ -673,30 +684,61 @@
             <tbody>
               <tr *ngFor="let d of filteredDrivers">
                 <td><strong>{{ d.first_name }} {{ d.last_name }}</strong></td>
-                <td>{{ d.phone }}</td>
-                <td><small>{{ d.business_name || '—' }}</small></td>
-                <td>{{ d.vehicle_type }}</td>
+                <td><a [href]="'tel:' + d.phone">{{ d.phone }}</a></td>
+                <td><small class="text-muted">{{ d.business_name || '—' }}</small></td>
                 <td>
-                  <span class="stag"
-                    [ngClass]="{
-                      'b-active':   d.real_status === 'available',
-                      's-preparing': d.real_status === 'at_capacity',
-                      'b-inactive': d.real_status === 'offline',
-                      'r-cancelled': d.real_status === 'inactive'
-                    }">
-                    {{ d.real_status }}
+                  <i class="bi"
+                    [class.bi-bicycle]="d.vehicle_type==='velo'"
+                    [class.bi-truck]="d.vehicle_type==='moto'"
+                    [class.bi-car-front]="d.vehicle_type==='voiture'"
+                    [class.bi-person-walking]="d.vehicle_type==='pied'">
+                  </i>
+                  {{ d.vehicle_type }}
+                </td>
+                <td>
+                  <span class="badge rounded-pill"
+                    [class.bg-success]="d.real_status === 'available'"
+                    [class.bg-warning]="d.real_status === 'at_capacity'"
+                    [class.bg-secondary]="d.real_status === 'offline'"
+                    [class.bg-danger]="d.real_status === 'inactive' || !d.is_active">
+                    {{ !d.is_active ? 'Inactif' : d.real_status }}
                   </span>
                 </td>
-                <td>{{ d.active_orders_count }}/{{ d.max_concurrent_orders }}</td>
+                <td class="text-center">
+                  {{ d.active_orders_count || 0 }} / {{ d.max_concurrent_orders }}
+                </td>
+               <!-- Remplacer le bouton désactiver dans le tableau drivers -->
                 <td>
-                  <button class="btn btn-sm btn-outline-warning" (click)="deactivateDriverAdmin(d)">
-                    <i class="bi bi-person-x"></i>
-                  </button>
+                  <div class="d-flex gap-1">
+                    <!-- Toggle activer / désactiver -->
+                    <button
+                      class="btn btn-sm"
+                      [class.btn-outline-warning]="d.is_active"
+                      [class.btn-outline-success]="!d.is_active"
+                      (click)="toggleDriverAdmin(d)"
+                      [title]="d.is_active ? 'Désactiver' : 'Réactiver'">
+                      <i class="bi"
+                        [class.bi-person-x]="d.is_active"
+                        [class.bi-person-check]="!d.is_active">
+                      </i>
+                      <span class="d-none d-md-inline ms-1">
+                        {{ d.is_active ? 'Désactiver' : 'Réactiver' }}
+                      </span>
+                    </button>
+
+                    <button class="btn btn-sm btn-outline-danger"
+                      (click)="deleteDriverPermanently(d)"
+                      title="Supprimer définitivement">
+                      <i class="bi bi-trash3-fill"></i>
+                    </button>
+
+                  </div>
                 </td>
               </tr>
               <tr *ngIf="filteredDrivers.length === 0">
                 <td colspan="7" class="text-center text-muted py-4">
-                  <i class="bi bi-bicycle fs-1 d-block mb-2 opacity-25"></i> Aucun livreur
+                  <i class="bi bi-bicycle" style="font-size:2rem;opacity:.3;display:block;margin-bottom:8px;"></i>
+                  Aucun livreur
                 </td>
               </tr>
             </tbody>
@@ -819,3 +861,142 @@
 <div class="modal-backdrop fade show" *ngIf="showEditBusinessModal"></div>
 <app-order-details-modal [order]="selectedOrder" [show]="showOrderModal" [loading]="loadingOrderUpdate" (closed)="onOrderModalClosed()" (statusChanged)="onOrderStatusChanged($event)"></app-order-details-modal>
 <app-reservation-details-modal [reservation]="selectedReservation" [show]="showReservationModal" [loading]="loadingReservationUpdate" (closed)="onReservationModalClosed()" (statusChanged)="onReservationStatusChanged($event)"></app-reservation-details-modal>
+
+<!-- ═══ MODAL Créer livreur (Admin) ════════════════════════════ -->
+<div class="modal" [class.show]="showAdminCreateDriverModal"
+  [style.display]="showAdminCreateDriverModal ? 'block' : 'none'">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">
+          <i class="bi bi-bicycle me-2"></i> Créer un livreur
+        </h5>
+        <button type="button" class="btn-close"
+          (click)="showAdminCreateDriverModal = false; adminNewDriverCredentials = null">
+        </button>
+      </div>
+      <div class="modal-body">
+
+        <!-- ✅ Sélecteur d'établissement — clé pour l'admin -->
+        <div class="mb-3">
+          <label class="form-label fw-bold">
+            <i class="bi bi-building me-1"></i> Établissement
+            <small class="text-muted">(optionnel — laisser vide pour livreur plateforme)</small>
+          </label>
+          <select class="form-select" [(ngModel)]="adminDriverForm.business_id">
+            <option [ngValue]="null">
+              🌍 Livreur plateforme (aucun établissement fixe)
+            </option>
+            <option *ngFor="let b of businessesList" [ngValue]="b.id">
+              {{ b.name }} ({{ b.type }})
+            </option>
+          </select>
+          <div class="form-text">
+            <i class="bi bi-info-circle me-1"></i>
+            Un livreur plateforme sera visible par TOUS les établissements lors des assignations.
+          </div>
+        </div>
+
+        <hr>
+
+        <!-- Informations du livreur -->
+        <div class="row g-3">
+          <div class="col-6">
+            <label class="form-label">Prénom *</label>
+            <input type="text" class="form-control"
+              [(ngModel)]="adminDriverForm.first_name" placeholder="Koffi">
+          </div>
+          <div class="col-6">
+            <label class="form-label">Nom *</label>
+            <input type="text" class="form-control"
+              [(ngModel)]="adminDriverForm.last_name" placeholder="Amevor">
+          </div>
+          <div class="col-12">
+            <label class="form-label">Téléphone *</label>
+            <input type="tel" class="form-control"
+              [(ngModel)]="adminDriverForm.phone" placeholder="+228 90 12 34 56">
+          </div>
+          <div class="col-12">
+            <label class="form-label">Email *</label>
+            <input type="email" class="form-control"
+              [(ngModel)]="adminDriverForm.email" placeholder="livreur@email.com" required>
+          </div>
+          
+          <div class="col-12">
+            <label class="form-label fw-bold">
+              <i class="bi bi-key-fill text-warning me-1"></i> Mot de passe *
+            </label>
+            <div class="input-group">
+              <input [type]="showAdminDriverPassword ? 'text' : 'password'"
+                class="form-control"
+                [(ngModel)]="adminDriverForm.password"
+                placeholder="Mot de passe du livreur"
+                autocomplete="new-password">
+              <button class="btn btn-outline-secondary" type="button"
+                (click)="showAdminDriverPassword = !showAdminDriverPassword">
+                <i class="bi" [class.bi-eye]="!showAdminDriverPassword" [class.bi-eye-slash]="showAdminDriverPassword"></i>
+              </button>
+              <button class="btn btn-outline-primary" type="button"
+                (click)="generateAdminDriverPassword()">
+                <i class="bi bi-shuffle"></i> Générer
+              </button>
+            </div>
+            <div class="form-text">
+              Le livreur se connectera sur <strong>/driver/login</strong> avec son téléphone + ce mot de passe.
+            </div>
+          </div>
+
+          <div class="col-6">
+            <label class="form-label">Véhicule</label>
+            <select class="form-select" [(ngModel)]="adminDriverForm.vehicle_type">
+              <option value="moto">🏍️ Moto</option>
+              <option value="velo">🚲 Vélo</option>
+              <option value="voiture">🚗 Voiture</option>
+              <option value="pied">🚶 À pied</option>
+            </select>
+          </div>
+          <div class="col-6">
+            <label class="form-label">Commandes max simultanées</label>
+            <input type="number" class="form-control"
+              [(ngModel)]="adminDriverForm.max_concurrent_orders" min="1" max="10">
+          </div>
+        </div>
+
+        <!-- Credentials après création -->
+        <div class="alert alert-success mt-3" *ngIf="adminNewDriverCredentials">
+          <i class="bi bi-shield-lock-fill me-2"></i>
+          <strong>Identifiants à communiquer au livreur :</strong>
+          <div class="mt-2 p-2 bg-white rounded" style="font-family: monospace; font-size: .9rem;">
+            <div>📱 <strong>Téléphone :</strong> {{ adminNewDriverCredentials.phone }}</div>
+            <div>🔑 <strong>Mot de passe temporaire :</strong> {{ adminNewDriverCredentials.temp_password }}</div>
+          </div>
+          <div class="mt-2 small text-muted">
+            <i class="bi bi-exclamation-triangle me-1"></i>
+            Ces informations ne seront plus affichées. Notez-les maintenant.
+          </div>
+          <div class="mt-2 small">
+            Le livreur devra se connecter sur :
+            <strong>{{ '/driver/login' }}</strong>
+          </div>
+        </div>
+
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary"
+          (click)="showAdminCreateDriverModal = false; adminNewDriverCredentials = null">
+          {{ adminNewDriverCredentials ? 'Fermer' : 'Annuler' }}
+        </button>
+        <button type="button" class="btn btn-primary"
+          (click)="saveDriverAdmin()"
+          [disabled]="adminDriverLoading || !!adminNewDriverCredentials ||
+                      !adminDriverForm.first_name || !adminDriverForm.phone
+                      ">
+          <span *ngIf="adminDriverLoading" class="spinner-border spinner-border-sm me-2"></span>
+          <i class="bi bi-person-plus-fill" *ngIf="!adminDriverLoading"></i>
+          Créer le livreur
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="modal-backdrop fade show" *ngIf="showAdminCreateDriverModal"></div>

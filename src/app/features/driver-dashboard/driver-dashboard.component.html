@@ -82,7 +82,7 @@
 
         <!-- En-tête commande -->
         <div class="doc-header">
-          <div class="doc-ref">#{{ a.order_id }}</div>
+          <div class="doc-ref">{{ a.order_id }}</div>
           <div class="doc-status" [class.pickup]="a.assignment_status === 'assigned'"
                [class.transit]="a.assignment_status === 'picked_up'">
             {{ getStatusLabel(a.assignment_status) }}
@@ -109,11 +109,36 @@
         <div class="doc-section">
           <div class="doc-label"><i class="bi bi-person-fill"></i> Livrer à</div>
           <div class="doc-value">{{ a.client_name }}</div>
-          <div class="doc-address" (click)="openMaps(a.delivery_address || '')">
+
+          <!-- ✅ Téléphone client — cliquable pour appeler -->
+          <a *ngIf="a.client_phone" [href]="'tel:' + a.client_phone" class="doc-phone">
+            <i class="bi bi-telephone-fill"></i> {{ a.client_phone }}
+          </a>
+
+          <!-- Adresse texte -->
+          <div class="doc-address" *ngIf="a.delivery_address">
             <i class="bi bi-geo-alt-fill"></i>
-            {{ a.delivery_address || 'Adresse non précisée' }}
-            <i class="bi bi-box-arrow-up-right" style="font-size:.7rem;margin-left:3px;"></i>
+            {{ a.delivery_address }}
           </div>
+
+          <!-- ✅ GPS précis si disponible — priorité sur l'adresse texte -->
+          <a *ngIf="a['delivery_lat'] && a['delivery_lng']"
+            [href]="'https://maps.google.com/?q=' + a['delivery_lat'] + ',' + a['delivery_lng']"
+            target="_blank" rel="noopener"
+            class="doc-gps-link">
+            <i class="bi bi-broadcast-pin"></i>
+            Ouvrir dans Maps (GPS précis)
+          </a>
+
+          <!-- Fallback : Maps par adresse si pas de GPS -->
+          <button *ngIf="!a['delivery_lat'] && a.delivery_address"
+            class="doc-gps-link" style="background:none;border:none;padding:0;cursor:pointer;"
+            (click)="openMaps(a.delivery_address || '')">
+            <i class="bi bi-map"></i> Chercher l'adresse sur Maps
+          </button>
+          <span *ngIf="!a['delivery_lat'] && !a.delivery_address" class="doc-no-gps">
+            <i class="bi bi-geo-alt"></i> Aucune localisation fournie
+          </span>
         </div>
 
         <!-- Montant -->
@@ -124,9 +149,29 @@
 
         <!-- Actions -->
         <div class="doc-actions">
-          <!-- État: assigné → bouton "Je pars" -->
+
+          <!-- Pas encore accepté → Accepter + Refuser -->
+          <ng-container *ngIf="a.assignment_status === 'assigned' && !a.accepted_at">
+            <button class="doc-btn info"
+                    (click)="accept(a)"
+                    [disabled]="actionLoading[a.order_id]">
+              <span *ngIf="actionLoading[a.order_id]" class="spinner-border spinner-border-sm"></span>
+              <i *ngIf="!actionLoading[a.order_id]" class="bi bi-check2-all"></i>
+              Accepter
+            </button>
+
+            <!-- Refuser -->
+            <button class="doc-btn danger"
+                    (click)="openRefuseModal(a.order_id)"
+                    [disabled]="actionLoading[a.order_id]">
+              <i class="bi bi-x-circle-fill"></i>
+              Refuser
+            </button>
+          </ng-container>
+
+          <!-- accepté → Je pars livrer -->
           <button class="doc-btn primary"
-                  *ngIf="a.assignment_status === 'assigned'"
+                  *ngIf="a.assignment_status === 'assigned' && a.accepted_at"
                   (click)="pickup(a)"
                   [disabled]="actionLoading[a.order_id]">
             <span *ngIf="actionLoading[a.order_id]" class="spinner-border spinner-border-sm"></span>
@@ -134,7 +179,7 @@
             Je pars livrer
           </button>
 
-          <!-- État: en transit → bouton "Livré" -->
+          <!-- en transit → Livré -->
           <button class="doc-btn success"
                   *ngIf="a.assignment_status === 'picked_up'"
                   (click)="deliver(a)"
@@ -144,13 +189,15 @@
             Livraison effectuée
           </button>
 
-          <!-- Bouton problème -->
+          <!-- Problème — visible dès que la commande est acceptée -->
           <button class="doc-btn danger"
+                  *ngIf="a.accepted_at"
                   (click)="openFailModal(a.order_id)"
                   [disabled]="actionLoading[a.order_id]">
             <i class="bi bi-exclamation-triangle-fill"></i>
             Problème
           </button>
+
         </div>
 
       </div>
@@ -167,12 +214,22 @@
                         [class.bi-x-circle-fill]="h.status === 'failed'"></i>
         </div>
         <div class="dhi-body">
-          <div class="dhi-ref">#{{ h.order_id }} — {{ h.client_name }}</div>
+          <div class="dhi-ref">{{ h.order_id }} — {{ h.client_name }}</div>
           <div class="dhi-sub">
             {{ h.business_name }} · {{ formatAmount(h.total_amount) }} FCFA
           </div>
           <div class="dhi-date" *ngIf="h.delivered_at">
             {{ h.delivered_at | date:'dd/MM HH:mm' }}
+          </div>
+
+          <!-- ✅ Note et commentaire du client -->
+          <div class="dhi-rating" *ngIf="h.client_rating">
+            <span class="dhi-stars">
+              <i *ngFor="let s of [1,2,3,4,5]" class="bi"
+                [class.bi-star-fill]="s <= h.client_rating"
+                [class.bi-star]="s > h.client_rating"></i>
+            </span>
+            <span *ngIf="h.client_comment" class="dhi-comment">"{{ h.client_comment }}"</span>
           </div>
         </div>
         <div class="dhi-status">
@@ -183,7 +240,7 @@
       </div>
     </div>
 
-  </ng-container><!-- /ng-container -->
+  </ng-container>
 
   <!-- ══ MODAL : Signaler problème ════════════════════════════ -->
   <div class="drv-modal-ov" [class.on]="showFailModal" (click)="showFailModal = false">
@@ -193,7 +250,7 @@
         <button (click)="showFailModal = false"><i class="bi bi-x-lg"></i></button>
       </div>
       <div class="drvm-body">
-        <p class="drvm-hint">Commande #{{ failOrderId }} — Décrivez le problème rencontré :</p>
+        <p class="drvm-hint">Commande {{ failOrderId }} — Décrivez le problème rencontré :</p>
         <div class="drvm-reasons">
           <button class="drvm-reason-btn" *ngFor="let r of [
             'Client absent', 'Adresse introuvable',
@@ -218,26 +275,88 @@
     </div>
   </div>
 
+  <!-- ══ MODAL : Refuser une commande ════════════════════════ -->
+  <div class="drv-modal-ov" [class.on]="showRefuseModal" (click)="showRefuseModal = false">
+    <div class="drv-modal" (click)="$event.stopPropagation()">
+      <div class="drvm-head" style="border-bottom:2px solid var(--rt-primary);">
+        <h4><i class="bi bi-x-circle-fill" style="color:var(--rt-primary)"></i> Refuser la commande</h4>
+        <button (click)="showRefuseModal = false"><i class="bi bi-x-lg"></i></button>
+      </div>
+      <div class="drvm-body">
+        <p class="drvm-hint">Commande {{ refuseOrderId }} — Pourquoi refusez-vous cette commande ?</p>
+
+        <!-- Raisons rapides -->
+        <div class="drvm-reasons">
+          <button class="drvm-reason-btn" *ngFor="let r of [
+            'Zone trop éloignée',
+            'Véhicule en panne',
+            'Déjà occupé',
+            'Heure de fermeture proche',
+            'Autre'
+          ]" [class.selected]="refuseReason === r" (click)="refuseReason = r">
+            {{ r }}
+          </button>
+        </div>
+
+        <textarea class="drvm-textarea" [(ngModel)]="refuseReason"
+          placeholder="Ou précisez la raison..." rows="3"></textarea>
+
+        <div class="drvm-info-box" style="background:var(--rt-accent-s);border:1px solid rgba(217,119,6,.3);border-radius:8px;padding:10px 12px;margin-top:12px;font-size:.8rem;color:var(--rt-t2);">
+          <i class="bi bi-info-circle-fill" style="color:var(--rt-accent);margin-right:6px;"></i>
+          L'établissement sera notifié et pourra assigner un autre livreur.
+        </div>
+      </div>
+      <div class="drvm-foot">
+        <button class="doc-btn ghost" (click)="showRefuseModal = false">Annuler</button>
+        <button class="doc-btn danger" (click)="submitRefuse()"
+                [disabled]="refuseLoading">
+          <span *ngIf="refuseLoading" class="spinner-border spinner-border-sm"></span>
+          <i *ngIf="!refuseLoading" class="bi bi-x-circle-fill"></i>
+          Confirmer le refus
+        </button>
+      </div>
+    </div>
+  </div>
+
   <!-- ══ MODAL : Changer mot de passe (1er login) ═════════════ -->
   <div class="drv-modal-ov" [class.on]="showPasswordModal">
     <div class="drv-modal">
       <div class="drvm-head drvm-head-warning">
-        <h4><i class="bi bi-key-fill"></i> Bienvenue ! Créez votre mot de passe</h4>
+        <h4><i class="bi bi-key-fill"></i>
+          {{ driver?.temp_password_used ? 'Bienvenue ! Créez votre mot de passe' : 'Changer le mot de passe' }}
+        </h4>
+        <!-- ✅ Bouton fermer seulement si ce n'est pas le 1er login forcé -->
+        <button *ngIf="!driver?.temp_password_used"
+          (click)="showPasswordModal = false"
+          style="background:none;border:none;color:var(--rt-t2);cursor:pointer;">
+          <i class="bi bi-x-lg"></i>
+        </button>
       </div>
       <div class="drvm-body">
-        <p class="drvm-hint">Pour votre sécurité, veuillez créer un mot de passe personnel.</p>
+        <p class="drvm-hint">
+          {{ driver?.temp_password_used
+            ? 'Pour votre sécurité, veuillez créer un mot de passe personnel.'
+            : 'Entrez un nouveau mot de passe pour votre compte.' }}
+        </p>
         <div class="drvm-field">
           <label>Nouveau mot de passe</label>
-          <input type="password" [(ngModel)]="newPassword" placeholder="Minimum 6 caractères" class="drvm-input">
+          <input type="password" [(ngModel)]="newPassword"
+            placeholder="Minimum 6 caractères" class="drvm-input">
         </div>
         <div class="drvm-field">
           <label>Confirmer le mot de passe</label>
-          <input type="password" [(ngModel)]="confirmPassword" placeholder="Répétez le mot de passe" class="drvm-input">
+          <input type="password" [(ngModel)]="confirmPassword"
+            placeholder="Répétez le mot de passe" class="drvm-input">
         </div>
       </div>
       <div class="drvm-foot">
-        <button class="doc-btn primary full" (click)="submitPasswordChange()"
-                [disabled]="!newPassword || !confirmPassword || passwordLoading">
+        <button *ngIf="!driver?.temp_password_used" class="doc-btn ghost"
+          (click)="showPasswordModal = false">
+          Annuler
+        </button>
+        <button class="doc-btn primary" [class.full]="driver?.temp_password_used"
+          (click)="submitPasswordChange()"
+          [disabled]="!newPassword || !confirmPassword || passwordLoading">
           <span *ngIf="passwordLoading" class="spinner-border spinner-border-sm"></span>
           <i *ngIf="!passwordLoading" class="bi bi-shield-check"></i>
           Enregistrer

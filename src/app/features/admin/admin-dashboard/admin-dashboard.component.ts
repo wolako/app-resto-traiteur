@@ -118,10 +118,32 @@ export class AdminDashboardComponent implements OnInit {
 
   today = new Date();
 
-  // ── Drivers ───────────────────────────────────────
-  drivers: any[] = [];
-  filteredDrivers: any[] = [];
-  driverFilter = '';
+  // ── Livreurs Admin ──────────────────────────────────────────
+  drivers: any[]          = [];
+  filteredDrivers: any[]  = [];
+  driverFilter            = '';
+  businessesList: any[]   = [];  // Liste établissements pour le select
+
+  // Modal création livreur admin
+  showAdminCreateDriverModal  = false;
+  adminDriverLoading          = false;
+  adminNewDriverCredentials: any = null;
+  showAdminDriverPassword = false;
+
+  adminDriverForm: {
+    first_name: string;
+    last_name: string;
+    phone: string;
+    email: string;
+    vehicle_type: string;
+    max_concurrent_orders: number;
+    business_id: number | null;
+    password: string;
+  } = {
+    first_name: '', last_name: '', phone: '', email: '',
+    vehicle_type: 'moto', max_concurrent_orders: 3,
+    business_id: null, password: ''
+  };
 
   constructor(
     private adminService: AdminService,
@@ -823,33 +845,137 @@ export class AdminDashboardComponent implements OnInit {
   // ═══════════════════════════════════════════════════════════
   // DRIVERS
   // ═══════════════════════════════════════════════════════════
+
   loadAllDrivers(): void {
     this.http.get<any>(`${environment.apiUrl}/drivers`).subscribe({
       next: (res) => {
         this.drivers = res.data || [];
-        this.filterDriversAdmin();
+        this.filteredDrivers = [...this.drivers];
       },
       error: () => this.toastService.showError('Erreur', 'Impossible de charger les livreurs')
     });
   }
 
   filterDriversAdmin(): void {
-    this.filteredDrivers = this.driverFilter
-      ? this.drivers.filter(d => d.business_name?.toLowerCase().includes(this.driverFilter.toLowerCase())
-          || d.real_status === this.driverFilter)
-      : [...this.drivers];
+    if (!this.driverFilter.trim()) {
+      this.filteredDrivers = [...this.drivers];
+      return;
+    }
+    const q = this.driverFilter.toLowerCase();
+    this.filteredDrivers = this.drivers.filter(d =>
+      `${d.first_name} ${d.last_name}`.toLowerCase().includes(q) ||
+      d.business_name?.toLowerCase().includes(q) ||
+      d.phone?.includes(q)
+    );
   }
 
-  async deactivateDriverAdmin(driver: any): Promise<void> {
+  loadBusinessesList(): void {
+    this.http.get<any>(`${environment.apiUrl}/businesses?limit=200`).subscribe({
+      next: (res) => {
+        this.businessesList = res.data || res || [];
+      },
+      error: () => {}
+    });
+  }
+
+  // Méthode pour générer un mot de passe lisible
+  generateAdminDriverPassword(): void {
+    const words = ['Lome', 'Togo', 'Fast', 'Live', 'Drive', 'Moto', 'Speed'];
+    const word  = words[Math.floor(Math.random() * words.length)];
+    const nums  = Math.floor(1000 + Math.random() * 9000);
+    this.adminDriverForm.password = `${word}${nums}`;
+    this.showAdminDriverPassword  = true;
+  }
+
+  openAdminCreateDriverModal(): void {
+    this.adminDriverForm = {
+      first_name: '', last_name: '', phone: '', email: '',
+      vehicle_type: 'moto', max_concurrent_orders: 3,
+      business_id: null,  // ✅ null = livreur plateforme
+      password: ''
+    };
+    this.adminNewDriverCredentials = null;
+    this.showAdminDriverPassword   = false;
+    this.generateAdminDriverPassword();
+    this.showAdminCreateDriverModal = true;
+    if (this.businessesList.length === 0) this.loadBusinessesList();
+  }
+
+  saveDriverAdmin(): void {
+    if (!this.adminDriverForm.first_name || !this.adminDriverForm.phone || !this.adminDriverForm.email) {
+      this.toastService.showError('Erreur', 'Prénom, téléphone et email sont requis');
+      return;
+    }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(this.adminDriverForm.email)) {
+      this.toastService.showError('Erreur', 'Email invalide');
+      return;
+    }
+    if (!this.adminDriverForm.password || this.adminDriverForm.password.length < 6) {
+      this.toastService.showError('Erreur', 'Le mot de passe doit faire au moins 6 caractères');
+      return;
+    }
+    this.adminDriverLoading = true;
+    this.http.post<any>(`${environment.apiUrl}/drivers`, this.adminDriverForm).subscribe({
+      next: (res) => {
+        this.adminDriverLoading = false;
+        this.adminNewDriverCredentials = res.credentials;
+        if (res.credentials) {
+          this.toastService.showSuccess(
+            `${res.credentials.is_platform_driver ? '🌍 Livreur plateforme' : 'Livreur'} créé : ${this.adminDriverForm.first_name}`,
+            `Téléphone: ${res.credentials.phone} | Mot de passe: ${res.credentials.temp_password}`
+          );
+        }
+        this.loadAllDrivers();
+      },
+      error: (err) => {
+        this.adminDriverLoading = false;
+        this.toastService.showError('Erreur', err.error?.error || 'Impossible de créer le livreur');
+      }
+    });
+  }
+
+  async toggleDriverAdmin(driver: any): Promise<void> {
+    const action      = driver.is_active ? 'désactiver' : 'réactiver';
+    const actionLabel = driver.is_active ? 'Désactiver' : 'Réactiver';
+    const type        = driver.is_active ? 'warning' : 'success';
+
     const ok = await this.confirmationService.confirm(
-      'Désactiver le livreur ?',
-      `Désactiver ${driver.first_name} ${driver.last_name} — ${driver.business_name} ?`,
-      { confirmText: 'Désactiver', cancelText: 'Annuler', type: 'warning' }
+      `${actionLabel} le livreur ?`,
+      `${actionLabel} ${driver.first_name} ${driver.last_name} (${driver.business_name || 'admin'}) ?`,
+      { confirmText: actionLabel, cancelText: 'Annuler', type }
     );
     if (!ok) return;
-    this.http.delete<any>(`${environment.apiUrl}/drivers/${driver.id}`).subscribe({
-      next: () => { this.loadAllDrivers(); this.toastService.showSuccess('Désactivé', ''); },
-      error: () => this.toastService.showError('Erreur', 'Impossible de désactiver')
+
+    this.http.patch<any>(`${environment.apiUrl}/drivers/${driver.id}/toggle-active`, {}).subscribe({
+      next: (res) => {
+        this.loadAllDrivers();
+        this.toastService.showSuccess(
+          `Livreur ${res.data?.is_active ? 'réactivé' : 'désactivé'}`,
+          `${driver.first_name} ${driver.last_name}`
+        );
+      },
+      error: (err) => this.toastService.showError(
+        'Erreur',
+        err.error?.error || `Impossible de ${action} le livreur`
+      )
+    });
+  }
+
+  async deleteDriverPermanently(driver: any): Promise<void> {
+    const ok = await this.confirmationService.confirm(
+      '⚠️ Suppression définitive',
+      `Supprimer définitivement ${driver.first_name} ${driver.last_name}${driver.business_name ? ' (' + driver.business_name + ')' : ' — Livreur plateforme'} ?\n\nToutes les assignations seront annulées. Irréversible.`,
+      { confirmText: 'Supprimer définitivement', cancelText: 'Annuler', type: 'danger' }
+    );
+    if (!ok) return;
+
+    this.http.delete<any>(`${environment.apiUrl}/drivers/${driver.id}/permanent`).subscribe({
+      next: () => {
+        this.loadAllDrivers();
+        this.toastService.showSuccess('Supprimé', `${driver.first_name} ${driver.last_name} supprimé définitivement`);
+      },
+      error: (err) => this.toastService.showError('Erreur', err.error?.error || 'Impossible de supprimer')
     });
   }
 

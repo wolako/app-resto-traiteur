@@ -1279,3 +1279,70 @@ ALTER TABLE notifications ADD CONSTRAINT notifications_type_check
 COMMENT ON TABLE drivers              IS 'Livreurs (compte user + profil)';
 COMMENT ON TABLE delivery_assignments IS 'Assignations livreur ↔ commande (historique complet)';
 COMMENT ON VIEW  driver_availability  IS 'Disponibilité temps réel des livreurs';
+
+ALTER TABLE orders
+  ADD COLUMN IF NOT EXISTS delivery_lat  DECIMAL(10, 8),
+  ADD COLUMN IF NOT EXISTS delivery_lng  DECIMAL(11, 8);
+
+CREATE INDEX IF NOT EXISTS idx_orders_geo
+  ON orders(delivery_lat, delivery_lng)
+  WHERE delivery_lat IS NOT NULL;
+
+-- Corrige TOUTES les erreurs "updated_at inexistant" en une seule migration
+ALTER TABLE delivery_assignments
+  ADD COLUMN IF NOT EXISTS updated_at  TIMESTAMP DEFAULT NOW(),
+  ADD COLUMN IF NOT EXISTS accepted_at TIMESTAMP;
+
+-- Trigger pour garder updated_at synchronisé
+CREATE OR REPLACE FUNCTION update_delivery_assignments_updated_at()
+RETURNS TRIGGER AS $$
+BEGIN
+  NEW.updated_at = NOW();
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+DROP TRIGGER IF EXISTS set_delivery_assignments_updated_at ON delivery_assignments;
+CREATE TRIGGER set_delivery_assignments_updated_at
+  BEFORE UPDATE ON delivery_assignments
+  FOR EACH ROW EXECUTE FUNCTION update_delivery_assignments_updated_at();
+
+ALTER TABLE drivers
+  ADD COLUMN IF NOT EXISTS average_rating DECIMAL(2,1) DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS reviews_count  INTEGER DEFAULT 0;
+
+CREATE TABLE IF NOT EXISTS driver_reviews (
+  id          SERIAL PRIMARY KEY,
+  driver_id   INTEGER NOT NULL REFERENCES drivers(id) ON DELETE CASCADE,
+  order_id    INTEGER NOT NULL REFERENCES orders(id)  ON DELETE CASCADE,
+  client_id   INTEGER REFERENCES users(id) ON DELETE SET NULL,
+  rating      INTEGER NOT NULL CHECK (rating BETWEEN 1 AND 5),
+  comment     TEXT,
+  created_at  TIMESTAMP DEFAULT NOW(),
+  UNIQUE(order_id)
+);
+
+-- ✅ AJOUT — raison du problème de livraison, persistée même après réassignation
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS last_delivery_failure_reason TEXT;
+
+-- ============================================================
+-- 8bis. NOTIFICATIONS PUSH (Web Push API)
+-- ============================================================
+
+CREATE TABLE IF NOT EXISTS push_subscriptions (
+    id          SERIAL PRIMARY KEY,
+    user_id     INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    endpoint    TEXT NOT NULL UNIQUE,
+    p256dh      TEXT NOT NULL,
+    auth        TEXT NOT NULL,
+    user_agent  TEXT,
+    created_at  TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_push_subscriptions_user_id ON push_subscriptions(user_id);
+COMMENT ON TABLE push_subscriptions IS 'Abonnements navigateur pour notifications Web Push (livreurs, clients)';
+
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS driver_accepted_at TIMESTAMP WITH TIME ZONE;
+
+ALTER TABLE drivers ADD COLUMN IF NOT EXISTS district VARCHAR(100);
+CREATE INDEX IF NOT EXISTS idx_drivers_district ON drivers(district) WHERE district IS NOT NULL;

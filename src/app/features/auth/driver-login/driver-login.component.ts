@@ -1,8 +1,8 @@
 // features/auth/driver-login/driver-login.component.ts
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Router, RouterModule } from '@angular/router';
+import { Router, RouterModule, ActivatedRoute } from '@angular/router';
 import { AuthService } from '../../../core/services/auth/auth.service';
 
 @Component({
@@ -12,22 +12,32 @@ import { AuthService } from '../../../core/services/auth/auth.service';
   templateUrl: './driver-login.component.html',
   styleUrls: ['./driver-login.component.scss']
 })
-export class DriverLoginComponent {
+export class DriverLoginComponent implements OnInit {
   phone    = '';
   password = '';
   loading  = false;
   errorMsg = '';
   showPassword = false;
-
+  sessionExpiredMessage = false;
+  
   constructor(
     private authService: AuthService,
-    private router: Router
+    private router: Router,
+    private route: ActivatedRoute
   ) {
     // Si déjà connecté en tant que livreur → rediriger directement
     const user = this.authService.getCurrentUser();
     if (user?.role === 'driver') {
       this.router.navigate(['/driver/dashboard']);
     }
+  }
+
+  ngOnInit(): void {
+    this.route.queryParams.subscribe(params => {
+      if (params['reason'] === 'session_expired') {
+        this.sessionExpiredMessage = true;
+      }
+    });
   }
 
   login(): void {

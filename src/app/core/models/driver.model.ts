@@ -21,24 +21,27 @@ export interface Driver {
   last_seen_at?: string;
   created_at?: string;
   active_assignments?: DriverAssignment[];
+  driver_type: string;
+  district?: string;
 }
 
 export interface DriverAssignment {
-  id: number;
-  order_id: number;
-  driver_id: number;
+  assignment_id:     number;
+  order_id:          number;
   assignment_status: 'assigned' | 'picked_up' | 'delivered' | 'failed';
-  assigned_at: string;
-  picked_up_at?: string;
-  delivered_at?: string;
-  failed_at?: string;
-  failure_reason?: string;
-  client_name?: string;
+  assigned_at:       string;
+  accepted_at?:      string | null;
+  picked_up_at?:     string;
+  total_amount:      number;
   delivery_address?: string;
-  business_name?: string;
+  delivery_lat?:     number | null;  // ✅ AJOUTER
+  delivery_lng?:     number | null;  // ✅ AJOUTER
+  delivery_status:   string;
+  client_name:       string;
+  client_phone?:     string;         // ✅ AJOUTER (si absent)
+  business_name:     string;
   business_address?: string;
-  business_phone?: string;
-  total_amount?: number;
+  business_phone?:   string;
 }
 
 export interface CreateDriverDto {
@@ -48,7 +51,8 @@ export interface CreateDriverDto {
   email?: string;
   vehicle_type: 'moto' | 'velo' | 'voiture' | 'pied';
   max_concurrent_orders?: number;
-  business_id?: number; // admin seulement
+  business_id?: number; 
+  district?: string;
 }
 
 export interface DriverCredentials {
@@ -56,4 +60,3 @@ export interface DriverCredentials {
   temp_password: string;
   note: string;
 }
-

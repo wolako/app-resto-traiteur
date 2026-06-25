@@ -2,7 +2,7 @@
 import { Component, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
+import { Router, ActivatedRoute } from '@angular/router';
 import { AuthService } from '../../../core/services/auth/auth.service';
 import { LoginRequest } from '../../../core/models/user.model';
 
@@ -18,16 +18,24 @@ export class AdminLoginComponent implements OnInit {
   hidePassword = true;
   loading = false;
   errorMessage = '';
-
+  sessionExpiredMessage = false;
   currentYear = new Date().getFullYear();
 
   constructor(
     private fb: FormBuilder,
     private authService: AuthService,
-    private router: Router
+    private router: Router,
+    private route: ActivatedRoute
   ) {}
 
   ngOnInit(): void {
+
+    this.route.queryParams.subscribe(params => {
+      if (params['reason'] === 'session_expired') {
+        this.sessionExpiredMessage = true;
+      }
+    });
+    
     // Vérifier si l'admin est déjà connecté
     if (this.authService.isLoggedIn() && this.authService.isAdmin()) {
       this.router.navigate(['/admin/dashboard']);

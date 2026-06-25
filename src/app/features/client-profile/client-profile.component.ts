@@ -1,6 +1,6 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { ReactiveFormsModule, FormBuilder, FormGroup, Validators, FormsModule } from '@angular/forms';
 import { RouterModule, ActivatedRoute } from '@angular/router';
 import { AuthService } from '../../core/services/auth/auth.service';
 import { ClientNotification, ClientNotificationPreferences, ClientService, ClientStatistics } from '../../core/services/client/client.service';
@@ -10,6 +10,9 @@ import { ConfirmationModalService } from '../../core/services/confirmation-modal
 import { SubmitTestimonialComponent } from '../../shared/components/submit-testimonial/submit-testimonial.component';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../environments/environment';
+import { ChatService } from '../../core/services/chat/chat.service';
+import { Subscription } from 'rxjs';
+
 
 @Component({
   selector: 'app-client-profile',
@@ -18,6 +21,7 @@ import { environment } from '../../../environments/environment';
     CommonModule,
     ReactiveFormsModule,
     RouterModule,
+    FormsModule,
     CurrencyFormatPipe,
     SubmitTestimonialComponent
   ],
@@ -52,6 +56,16 @@ export class ClientProfileComponent implements OnInit, OnDestroy {
 
   showMoreMenu = false;
 
+  // État modal notation livreur
+  showRatingModal = false;
+  ratingOrderId: number | null = null;
+  ratingValue = 0;
+  ratingComment = '';
+  ratingLoading = false;
+  driverReviews: { [orderId: number]: any } = {};
+  
+  private socketSub?: Subscription;
+
   constructor(
     private clientService: ClientService,
     private authService: AuthService,
@@ -59,7 +73,8 @@ export class ClientProfileComponent implements OnInit, OnDestroy {
     private route: ActivatedRoute,
     private toastService: ToastService,
     private confirmationService: ConfirmationModalService,
-    private http: HttpClient
+    private http: HttpClient,
+    private chatService: ChatService
   ) {}
 
   ngOnInit(): void {
@@ -86,9 +101,15 @@ export class ClientProfileComponent implements OnInit, OnDestroy {
     });
 
     this.clientService.refreshUnreadCount();
+
+    this.socketSub = this.chatService.orderUpdated$.subscribe((data) => {
+      const idx = this.recentOrders.findIndex(o => o.id === data.orderId);
+      if (idx !== -1) this.recentOrders[idx] = { ...this.recentOrders[idx], ...data };
+    });
+    
   }
 
-  ngOnDestroy(): void {}
+  ngOnDestroy(): void { this.socketSub?.unsubscribe();}
 
   // ─── Initialisation des formulaires ──────────────────────────
 
@@ -190,7 +211,11 @@ export class ClientProfileComponent implements OnInit, OnDestroy {
   loadRecentOrders(): void {
     this.loading.orders = true;
     this.clientService.getOrders({ limit: 5 }).subscribe({
-      next: (orders) => { this.recentOrders = orders; this.loading.orders = false; },
+      next: (orders) => { 
+        this.recentOrders = orders; 
+        this.loading.orders = false; 
+        this.checkDriverReviews(this.recentOrders);
+      },
       error: () => { this.loading.orders = false; this.toastService.showError('Erreur', 'Impossible de charger vos commandes'); }
     });
   }
@@ -347,6 +372,50 @@ export class ClientProfileComponent implements OnInit, OnDestroy {
   selectMoreTab(tab: 'testimonial' | 'settings'): void {
     this.activeTab = tab;
     this.closeMoreMenu();
+  }
+
+  // ─── NOTATION LIVREUR ───────────────────────────────────────
+
+  openRatingModal(orderId: number): void {
+    this.ratingOrderId = orderId;
+    this.ratingValue = 0;
+    this.ratingComment = '';
+    this.showRatingModal = true;
+  }
+
+  closeRatingModal(): void {
+    this.showRatingModal = false;
+    this.ratingOrderId = null;
+  }
+
+  submitDriverRating(): void {
+  if (!this.ratingOrderId || this.ratingValue < 1) {
+    this.toastService.showError('Erreur', 'Veuillez sélectionner une note');
+    return;
+  }
+
+  this.ratingLoading = true;
+  this.clientService.rateDriver(this.ratingOrderId, this.ratingValue, this.ratingComment).subscribe({
+      next: () => {
+        this.ratingLoading = false;
+        this.driverReviews[this.ratingOrderId!] = { rating: this.ratingValue, comment: this.ratingComment };
+        this.toastService.showSuccess('Merci !', 'Votre avis sur le livreur a été enregistré');
+        this.closeRatingModal();
+      },
+      error: (err) => {
+        this.ratingLoading = false;
+        this.toastService.showError('Erreur', err.error?.error || 'Impossible d\'enregistrer votre avis');
+      }
+    });
+  }
+
+  // Charger si une note existe déjà — appeler dans loadRecentOrders après réception
+  checkDriverReviews(orders: any[]): void {
+    orders.filter(o => o.delivery_confirmed).forEach(o => {
+      this.clientService.getDriverReview(o.id).subscribe({
+        next: (res) => { if (res.data) this.driverReviews[o.id] = res.data; }
+      });
+    });
   }
 
 }

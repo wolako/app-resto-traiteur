@@ -30,6 +30,8 @@ import { PaymentAccountComponent } from '../../../shared/components/payment-acco
 import { CoverImageSettingComponent } from '../../../shared/components/cover-image-setting/cover-image-setting.component';
 import { DriverService } from '../../../core/services/driver/driver.service';
 import { Driver } from '../../../core/models/driver.model';
+import { interval, Subscription } from 'rxjs';
+import { ChatService } from '../../../core/services/chat/chat.service';
 
 interface SubscriptionLimits {
   max_menu_items: number | null;
@@ -172,6 +174,7 @@ export class TraiteurDashboardComponent implements OnInit {
   editingDriver: Driver | null = null;
   driverLoading     = false;
   newDriverCredentials: any = null;
+  showDriverPassword = false;
   driverForm: {
     first_name: string;
     last_name: string;
@@ -179,15 +182,22 @@ export class TraiteurDashboardComponent implements OnInit {
     email: string;
     vehicle_type: 'moto' | 'velo' | 'voiture' | 'pied';
     max_concurrent_orders: number;
+    password: string;
+    district: string;
   } = {
     first_name: '', last_name: '', phone: '', email: '',
-    vehicle_type: 'moto', max_concurrent_orders: 3
+    vehicle_type: 'moto', max_concurrent_orders: 3,
+    password: '',
+    district: ''
   };
 
   showAssignModal   = false;
   orderToAssign: any = null;
   selectedDriverId: number | null | undefined = null;
   assignLoading     = false;
+
+  private ordersRefreshSub?: Subscription;
+  private socketSub?: Subscription;
 
   readonly lomeDistricts = [
     { value: 'Lomé Centre',   label: 'Lomé Centre' },
@@ -215,7 +225,8 @@ export class TraiteurDashboardComponent implements OnInit {
     private confirmationService: ConfirmationModalService,
     private paymentService: PaymentService,
     private driverService: DriverService,
-    private router: Router
+    private router: Router,
+    private chatService: ChatService
   ) {}
 
   ngOnInit(): void {
@@ -236,6 +247,25 @@ export class TraiteurDashboardComponent implements OnInit {
       this.notificationService.unreadCount$.subscribe(count => { this.unreadCount = count; });
       this.notificationService.refreshUnreadCount();
     }
+
+    // ✅ Rafraîchir les commandes toutes les 20s si l'onglet est actif
+    this.ordersRefreshSub = interval(20000).subscribe(() => {
+      if (this.activeTab === 'orders') this.loadOrders();
+    });
+
+    this.socketSub = this.chatService.orderUpdated$.subscribe((data) => {
+      const idx = this.orders.findIndex(o => o.id === data.orderId);
+      if (idx !== -1) {
+        this.orders[idx] = { ...this.orders[idx], ...data };
+        this.filterOrders();
+      }
+    });
+
+  }
+
+  ngOnDestroy(): void {
+    this.ordersRefreshSub?.unsubscribe();
+    this.socketSub?.unsubscribe();
   }
 
   private checkAnalyticsAccess(): void {
@@ -884,13 +914,26 @@ export class TraiteurDashboardComponent implements OnInit {
     return l[type] || type;
   }
 
+  // Méthode pour générer un mot de passe lisible
+  generateDriverPassword(): void {
+    // Génère un mot de passe facile à retenir : MOT + 4 chiffres
+    const words = ['Lome', 'Togo', 'Fast', 'Live', 'Drive', 'Moto', 'Speed'];
+    const word   = words[Math.floor(Math.random() * words.length)];
+    const nums   = Math.floor(1000 + Math.random() * 9000);
+    this.driverForm.password = `${word}${nums}`;
+    this.showDriverPassword  = true; // Afficher automatiquement
+  }
   openCreateDriverModal(): void {
     this.editingDriver = null;
     this.newDriverCredentials = null;
+    this.showDriverPassword = false;
     this.driverForm = {
       first_name: '', last_name: '', phone: '', email: '',
-      vehicle_type: 'moto', max_concurrent_orders: 3
+      vehicle_type: 'moto', max_concurrent_orders: 3,
+      password: '',
+      district: '' 
     };
+    this.generateDriverPassword();
     this.showDriverModal = true;
   }
 
@@ -902,21 +945,32 @@ export class TraiteurDashboardComponent implements OnInit {
       last_name:  driver.last_name,
       phone:      driver.phone,
       email:      driver.email || '',
+      password: '',
       vehicle_type: driver.vehicle_type,
-      max_concurrent_orders: driver.max_concurrent_orders
+      max_concurrent_orders: driver.max_concurrent_orders,
+      district: driver.district || ''
     };
     this.showDriverModal = true;
   }
-
+  
   closeDriverModal(): void {
     this.showDriverModal = false;
     this.editingDriver   = null;
     this.newDriverCredentials = null;
   }
-
+  
   saveDriver(): void {
-    if (!this.driverForm.first_name || !this.driverForm.phone) {
-      this.toastService.showError('Erreur', 'Prénom et téléphone sont requis');
+    if (!this.driverForm.first_name || !this.driverForm.phone || !this.driverForm.email) {
+      this.toastService.showError('Erreur', 'Prénom, téléphone et email sont requis');
+      return;
+    }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(this.driverForm.email)) {
+      this.toastService.showError('Erreur', 'Email invalide');
+      return;
+    }
+    if (!this.editingDriver && (!this.driverForm.password || this.driverForm.password.length < 6)) {
+      this.toastService.showError('Erreur', 'Le mot de passe doit faire au moins 6 caractères');
       return;
     }
     this.driverLoading = true;
@@ -926,7 +980,8 @@ export class TraiteurDashboardComponent implements OnInit {
         first_name: this.driverForm.first_name,
         last_name:  this.driverForm.last_name,
         vehicle_type: this.driverForm.vehicle_type,
-        max_concurrent_orders: this.driverForm.max_concurrent_orders
+        max_concurrent_orders: this.driverForm.max_concurrent_orders,
+        district: this.driverForm.district || undefined  // ✅ undefined
       }).subscribe({
         next: () => {
           this.driverLoading = false;
@@ -940,34 +995,75 @@ export class TraiteurDashboardComponent implements OnInit {
         }
       });
     } else {
-      this.driverService.createDriver(this.driverForm).subscribe({
+      this.driverService.createDriver({
+        first_name: this.driverForm.first_name,
+        last_name:  this.driverForm.last_name,
+        phone:      this.driverForm.phone,
+        email:      this.driverForm.email,
+        vehicle_type: this.driverForm.vehicle_type,
+        max_concurrent_orders: this.driverForm.max_concurrent_orders,
+        district: this.driverForm.district || undefined  // ✅ undefined
+      } as any).subscribe({
         next: (res) => {
           this.driverLoading = false;
           this.newDriverCredentials = res.credentials;
+          if (res.credentials) {
+            this.toastService.showSuccess(
+              `✅ Livreur créé — ${this.driverForm.first_name} ${this.driverForm.last_name}`,
+              `📱 ${res.credentials.phone}  |  🔑 ${res.credentials.temp_password}`
+            );
+          }
           this.loadDrivers();
-          this.toastService.showSuccess('Livreur créé', `Identifiants générés pour ${this.driverForm.first_name}`);
         },
         error: (err) => {
           this.driverLoading = false;
-          this.toastService.showError('Erreur', err.error?.error || 'Impossible de créer');
+          this.toastService.showError('Erreur', err.error?.error || 'Impossible de créer le livreur');
         }
       });
     }
   }
 
-  async confirmDeleteDriver(driver: Driver): Promise<void> {
+  async toggleDriver(driver: Driver): Promise<void> {
+    const action      = (driver as any).is_active ? 'désactiver' : 'réactiver';
+    const actionLabel = (driver as any).is_active ? 'Désactiver' : 'Réactiver';
+    const type        = (driver as any).is_active ? 'warning' : 'success';
+
     const ok = await this.confirmationService.confirm(
-      'Désactiver le livreur ?',
-      `Désactiver ${driver.first_name} ${driver.last_name} ?`,
-      { confirmText: 'Désactiver', cancelText: 'Annuler', type: 'warning' }
+      `${actionLabel} le livreur ?`,
+      `${actionLabel} ${driver.first_name} ${driver.last_name} ?`,
+      { confirmText: actionLabel, cancelText: 'Annuler', type }
     );
     if (!ok) return;
-    this.driverService.deleteDriver(driver.id!).subscribe({
-      next: () => { this.loadDrivers(); this.toastService.showSuccess('Livreur désactivé', ''); },
-      error: () => this.toastService.showError('Erreur', 'Impossible de désactiver')
+
+    this.http.patch<any>(`${environment.apiUrl}/drivers/${driver.id}/toggle-active`, {}).subscribe({
+      next: (res) => {
+        this.loadDrivers();
+        this.toastService.showSuccess(
+          `Livreur ${res.data?.is_active ? 'réactivé' : 'désactivé'}`,
+          `${driver.first_name} ${driver.last_name}`
+        );
+      },
+      error: () => this.toastService.showError('Erreur', `Impossible de ${action} le livreur`)
     });
   }
 
+  async deleteDriverPermanently(driver: Driver): Promise<void> {
+    const ok = await this.confirmationService.confirm(
+      '⚠️ Supprimer définitivement ?',
+      `Supprimer définitivement ${driver.first_name} ${driver.last_name} ? Cette action est irréversible.`,
+      { confirmText: 'Supprimer définitivement', cancelText: 'Annuler', type: 'danger' }
+    );
+    if (!ok) return;
+
+    this.http.delete<any>(`${environment.apiUrl}/drivers/${driver.id}/permanent`).subscribe({
+      next: () => {
+        this.loadDrivers();
+        this.toastService.showSuccess('Livreur supprimé', `${driver.first_name} ${driver.last_name} supprimé définitivement`);
+      },
+      error: (err) => this.toastService.showError('Erreur', err.error?.error || 'Impossible de supprimer')
+    });
+  }
+  
   openAssignModal(order: any): void {
     this.orderToAssign    = order;
     this.selectedDriverId = null;

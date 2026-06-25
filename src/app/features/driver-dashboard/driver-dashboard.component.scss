@@ -241,3 +241,10 @@
   .drv-modal-ov { align-items: center; }
   .drv-modal    { border-radius: 16px; }
 }
+
+
+.dhi-rating {
+  display: flex; flex-direction: column; gap: 3px; margin-top: 4px;
+  .dhi-stars { color: #f5a623; font-size: .8rem; }
+  .dhi-comment { font-size: .72rem; color: var(--rt-t3); font-style: italic; }
+}

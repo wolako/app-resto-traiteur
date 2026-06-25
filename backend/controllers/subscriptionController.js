@@ -7,6 +7,8 @@ const Business         = require('../models/Business');
 const { pool }         = require('../config/db');
 const { expireOverdueSubscriptions } = require('../jobs/subscriptionExpiryJob');
 const axios            = require('axios');
+// ✅ CORRECTION CRITIQUE : logger manquant
+const logger           = require('../utils/logger');
 
 // ─────────────────────────────────────────────────────────────
 // HELPERS
@@ -31,6 +33,48 @@ function getApiBaseUrl() {
 const isSandbox = () => process.env.PAYMENT_MODE !== 'live';
 
 // ─────────────────────────────────────────────────────────────
+// HELPER : Auto-assigner le plan gratuit si aucun abonnement
+// ─────────────────────────────────────────────────────────────
+
+async function autoAssignFreePlan(businessId) {
+  try {
+    // Vérifier qu'il n'y a pas déjà un abonnement actif
+    const existing = await pool.query(
+      `SELECT id FROM business_subscriptions
+       WHERE business_id = $1 AND status = 'active'
+         AND (end_date IS NULL OR end_date > NOW())
+       LIMIT 1`,
+      [businessId]
+    );
+    if (existing.rows.length > 0) return;
+
+    // Trouver le plan gratuit
+    const freePlan = await pool.query(
+      `SELECT id FROM subscription_plans WHERE name = 'free' AND is_active = true LIMIT 1`
+    );
+    if (!freePlan.rows[0]) return;
+
+    // Créer l'abonnement gratuit sans date d'expiration (NULL = permanent)
+    await pool.query(
+      `INSERT INTO business_subscriptions
+         (business_id, plan_id, status, start_date, end_date, auto_renew)
+       VALUES ($1, $2, 'active', NOW(), NULL, false)`,
+      [businessId, freePlan.rows[0].id]
+    );
+
+    // ✅ S'assurer que le business est bien actif (visible sur la page d'accueil)
+    await pool.query(
+      `UPDATE businesses SET is_active = true, updated_at = NOW() WHERE id = $1`,
+      [businessId]
+    );
+
+    logger.info(`[FreePlan] Plan gratuit auto-assigné au business #${businessId}`);
+  } catch (err) {
+    logger.error('[FreePlan] Erreur auto-assignation:', err.message);
+  }
+}
+
+// ─────────────────────────────────────────────────────────────
 // PLANS
 // ─────────────────────────────────────────────────────────────
 
@@ -39,7 +83,7 @@ exports.getAllPlans = async (req, res) => {
     const plans = await SubscriptionPlan.getAll();
     res.json(plans);
   } catch (error) {
-    console.error('Erreur récupération plans:', error);
+    logger.error('Erreur récupération plans:', error);
     res.status(500).json({ error: 'Erreur serveur' });
   }
 };
@@ -50,7 +94,6 @@ exports.getPlanById = async (req, res) => {
     if (!plan) return res.status(404).json({ error: 'Plan non trouvé' });
     res.json(plan);
   } catch (error) {
-    console.error('Erreur récupération plan:', error);
     res.status(500).json({ error: 'Erreur serveur' });
   }
 };
@@ -65,18 +108,25 @@ exports.getCurrentSubscription = async (req, res) => {
     if (!businessId) businessId = await getBusinessIdFromUser(req.user.id);
     if (!businessId) return res.status(400).json({ error: 'Aucun établissement trouvé' });
 
-    const subscription = await Subscription.getByBusinessId(businessId);
+    let subscription = await Subscription.getByBusinessId(businessId);
+
+    // ✅ Auto-assigner le plan gratuit si aucun abonnement actif
+    if (!subscription) {
+      await autoAssignFreePlan(businessId);
+      subscription = await Subscription.getByBusinessId(businessId);
+    }
+
     if (!subscription) return res.status(404).json({ error: 'Aucun abonnement actif' });
 
     res.json(subscription);
   } catch (error) {
-    console.error('Erreur récupération abonnement:', error);
+    logger.error('Erreur récupération abonnement:', error);
     res.status(500).json({ error: 'Erreur serveur' });
   }
 };
 
 // ─────────────────────────────────────────────────────────────
-// SOUSCRIRE (plan gratuit ou simulation sandbox)
+// SOUSCRIRE
 // ─────────────────────────────────────────────────────────────
 
 exports.subscribe = async (req, res) => {
@@ -90,52 +140,37 @@ exports.subscribe = async (req, res) => {
     const plan = await SubscriptionPlan.getById(plan_id);
     if (!plan) return res.status(404).json({ error: 'Plan non trouvé' });
 
-    const currentSub = await Subscription.getByBusinessId(businessId);
-    if (currentSub) {
-      await pool.query(
-        'UPDATE business_subscriptions SET status = $1 WHERE id = $2',
-        ['cancelled', currentSub.id]
-      );
-    }
+    // Annuler l'abonnement existant
+    await pool.query(
+      `UPDATE business_subscriptions
+       SET status = 'cancelled', updated_at = NOW()
+       WHERE business_id = $1 AND status = 'active'`,
+      [businessId]
+    );
 
     const startDate = new Date();
-    let endDate = null;
-    let nextBillingDate = null;
+    let endDate = null; // ✅ Plan gratuit = NULL (jamais expiré)
 
-    if (plan.billing_period !== 'lifetime') {
+    if (plan.price > 0 && plan.billing_period !== 'lifetime') {
       endDate = new Date(startDate);
-      if (plan.billing_period === 'monthly') {
-        endDate.setMonth(endDate.getMonth() + 1);
-      } else if (plan.billing_period === 'yearly') {
-        endDate.setFullYear(endDate.getFullYear() + 1);
-      }
-      nextBillingDate = endDate;
+      if (plan.billing_period === 'monthly') endDate.setMonth(endDate.getMonth() + 1);
+      else if (plan.billing_period === 'yearly') endDate.setFullYear(endDate.getFullYear() + 1);
     }
 
     const subscription = await Subscription.create({
-      business_id:       businessId,
+      business_id: businessId,
       plan_id,
       start_date:        startDate,
       end_date:          endDate,
-      next_billing_date: nextBillingDate,
-      auto_renew:        true
+      next_billing_date: endDate,
+      auto_renew:        plan.price > 0
     });
 
-    // ✅ NOUVEAU : Réactiver le business si plan gratuit souscrit
+    // ✅ Réactiver le business
     await pool.query(
       `UPDATE businesses SET is_active = true, updated_at = NOW() WHERE id = $1`,
       [businessId]
     );
-
-    if (plan.price > 0) {
-      await pool.query(
-        `INSERT INTO subscription_payments
-         (subscription_id, business_id, plan_id, amount, currency, payment_status,
-          payment_method, billing_period_start, billing_period_end)
-         VALUES ($1, $2, $3, $4, 'XOF', 'success', 'simulation', $5, $6)`,
-        [subscription.id, businessId, plan_id, plan.price, startDate, endDate]
-      );
-    }
 
     res.status(201).json({
       success: true,
@@ -149,7 +184,7 @@ exports.subscribe = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Erreur souscription:', error);
+    logger.error('Erreur souscription:', error);
     res.status(500).json({ success: false, error: 'Erreur serveur', message: error.message });
   }
 };
@@ -167,70 +202,49 @@ exports.upgrade = async (req, res) => {
     if (!businessId) return res.status(400).json({ error: 'Aucun établissement trouvé' });
 
     const currentSub = await Subscription.getByBusinessId(businessId);
-    if (!currentSub) return res.status(404).json({ error: 'Aucun abonnement actif' });
-
     const newPlan     = await SubscriptionPlan.getById(plan_id);
-    const currentPlan = await SubscriptionPlan.getById(currentSub.plan_id);
     if (!newPlan) return res.status(404).json({ error: 'Plan non trouvé' });
 
-    const isSamePeriod = currentPlan.billing_period === newPlan.billing_period;
-    const isUpgrade    = newPlan.price > currentPlan.price;
-
-    if (isSamePeriod && !isUpgrade) {
-      return res.status(400).json({ error: 'Ce n\'est pas un upgrade.' });
+    if (currentSub) {
+      const currentPlan = await SubscriptionPlan.getById(currentSub.plan_id);
+      const isSamePeriod = currentPlan?.billing_period === newPlan.billing_period;
+      const isUpgrade    = newPlan.price > (currentPlan?.price || 0);
+      if (isSamePeriod && !isUpgrade) {
+        return res.status(400).json({ error: 'Ce n\'est pas un upgrade.' });
+      }
+      await pool.query(
+        `UPDATE business_subscriptions SET status = 'cancelled', updated_at = NOW() WHERE id = $1`,
+        [currentSub.id]
+      );
     }
-
-    await pool.query(
-      'UPDATE business_subscriptions SET status = $1 WHERE id = $2',
-      ['cancelled', currentSub.id]
-    );
 
     const startDate = new Date();
     let endDate = null;
-    let nextBillingDate = null;
-
-    if (newPlan.billing_period !== 'lifetime') {
+    if (newPlan.billing_period !== 'lifetime' && newPlan.price > 0) {
       endDate = new Date(startDate);
-      if (newPlan.billing_period === 'monthly') {
-        endDate.setMonth(endDate.getMonth() + 1);
-      } else if (newPlan.billing_period === 'yearly') {
-        endDate.setFullYear(endDate.getFullYear() + 1);
-      }
-      nextBillingDate = endDate;
+      if (newPlan.billing_period === 'monthly') endDate.setMonth(endDate.getMonth() + 1);
+      else if (newPlan.billing_period === 'yearly') endDate.setFullYear(endDate.getFullYear() + 1);
     }
 
     const subscription = await Subscription.create({
-      business_id:       businessId,
-      plan_id,
-      start_date:        startDate,
-      end_date:          endDate,
-      next_billing_date: nextBillingDate,
-      auto_renew:        true
+      business_id: businessId, plan_id,
+      start_date: startDate, end_date: endDate,
+      next_billing_date: endDate, auto_renew: newPlan.price > 0
     });
 
-    if (newPlan.price > 0) {
-      await pool.query(
-        `INSERT INTO subscription_payments
-         (subscription_id, business_id, plan_id, amount, currency, payment_status,
-          payment_method, billing_period_start, billing_period_end)
-         VALUES ($1, $2, $3, $4, 'XOF', 'success', 'simulation', $5, $6)`,
-        [subscription.id, businessId, plan_id, newPlan.price, startDate, endDate]
-      );
-    }
+    await pool.query(
+      `UPDATE businesses SET is_active = true, updated_at = NOW() WHERE id = $1`,
+      [businessId]
+    );
 
     res.json({
       success: true,
       message: 'Changement de plan effectué avec succès',
-      subscription: {
-        ...subscription,
-        plan_name:      newPlan.name,
-        display_name:   newPlan.display_name,
-        billing_period: newPlan.billing_period
-      }
+      subscription: { ...subscription, plan_name: newPlan.name, display_name: newPlan.display_name }
     });
 
   } catch (error) {
-    console.error('Erreur upgrade:', error);
+    logger.error('Erreur upgrade:', error);
     res.status(500).json({ error: 'Erreur serveur' });
   }
 };
@@ -248,10 +262,13 @@ exports.cancel = async (req, res) => {
     const subscription = await Subscription.cancel(businessId);
     if (!subscription) return res.status(404).json({ error: 'Aucun abonnement actif' });
 
-    res.json({ success: true, message: 'Abonnement annulé avec succès', subscription });
+    // ✅ Assigner le plan gratuit automatiquement après annulation
+    await autoAssignFreePlan(businessId);
+
+    res.json({ success: true, message: 'Abonnement annulé, plan gratuit activé', subscription });
 
   } catch (error) {
-    console.error('Erreur annulation:', error);
+    logger.error('Erreur annulation:', error);
     res.status(500).json({ error: 'Erreur serveur' });
   }
 };
@@ -266,8 +283,30 @@ exports.getUsageStats = async (req, res) => {
     if (!businessId) businessId = await getBusinessIdFromUser(req.user.id);
     if (!businessId) return res.status(400).json({ error: 'Aucun établissement trouvé' });
 
-    const subscription = await Subscription.getByBusinessId(businessId);
-    if (!subscription) return res.status(404).json({ error: 'Aucun abonnement actif' });
+    let subscription = await Subscription.getByBusinessId(businessId);
+
+    // ✅ Auto-assigner le plan gratuit si pas d'abonnement
+    if (!subscription) {
+      await autoAssignFreePlan(businessId);
+      subscription = await Subscription.getByBusinessId(businessId);
+    }
+
+    if (!subscription) {
+      // Retourner des stats vides plutôt qu'une erreur 404
+      return res.json({
+        subscription: { plan_name: 'Aucun', status: 'none', end_date: null, billing_period: 'free' },
+        plan: { name: 'free', display_name: 'Gratuit' },
+        limits: {
+          menu_items: 10, orders_per_month: 50,
+          special_orders_per_month: null, reservations_per_month: null, photos: 5
+        },
+        usage: { menu_items: 0, orders_this_month: 0, special_orders_this_month: 0, reservations_this_month: 0, photos: 0 },
+        features: {
+          analytics_access: false, custom_branding: false, priority_support: false,
+          can_accept_online_orders: true, can_accept_reservations: true, can_accept_special_orders: false
+        }
+      });
+    }
 
     const planResult = await pool.query(
       `SELECT max_special_orders_per_month, max_reservations_per_month,
@@ -278,14 +317,15 @@ exports.getUsageStats = async (req, res) => {
       [subscription.plan_id]
     );
     if (!planResult.rows.length) return res.status(404).json({ error: 'Plan introuvable' });
-
     const plan = planResult.rows[0];
 
-    const menuItems    = await pool.query(`SELECT COUNT(*) as count FROM menu_items mi JOIN menus m ON mi.menu_id = m.id WHERE m.business_id = $1`, [businessId]);
-    const orders       = await pool.query(`SELECT COUNT(*) as count FROM orders WHERE business_id = $1 AND created_at >= date_trunc('month', CURRENT_DATE) AND status != 'cancelled'`, [businessId]);
-    const specialOrders = await pool.query(`SELECT COUNT(*) as count FROM special_orders WHERE business_id = $1 AND created_at >= date_trunc('month', CURRENT_DATE) AND status != 'cancelled'`, [businessId]);
-    const reservations  = await pool.query(`SELECT COUNT(*) as count FROM reservations WHERE restaurant_id = $1 AND created_at >= date_trunc('month', CURRENT_DATE) AND status != 'cancelled'`, [businessId]);
-    const photos       = await pool.query(`SELECT COUNT(*) as count FROM menu_items WHERE menu_id IN (SELECT id FROM menus WHERE business_id = $1) AND image_url IS NOT NULL`, [businessId]);
+    const [menuItems, orders, specialOrders, reservations, photos] = await Promise.all([
+      pool.query(`SELECT COUNT(*) as count FROM menu_items mi JOIN menus m ON mi.menu_id = m.id WHERE m.business_id = $1`, [businessId]),
+      pool.query(`SELECT COUNT(*) as count FROM orders WHERE business_id = $1 AND created_at >= date_trunc('month', CURRENT_DATE) AND status != 'cancelled'`, [businessId]),
+      pool.query(`SELECT COUNT(*) as count FROM special_orders WHERE business_id = $1 AND created_at >= date_trunc('month', CURRENT_DATE) AND status != 'cancelled'`, [businessId]),
+      pool.query(`SELECT COUNT(*) as count FROM reservations WHERE restaurant_id = $1 AND created_at >= date_trunc('month', CURRENT_DATE) AND status != 'cancelled'`, [businessId]),
+      pool.query(`SELECT COUNT(*) as count FROM menu_items WHERE menu_id IN (SELECT id FROM menus WHERE business_id = $1) AND image_url IS NOT NULL`, [businessId])
+    ]);
 
     res.json({
       subscription: {
@@ -294,10 +334,7 @@ exports.getUsageStats = async (req, res) => {
         end_date:       subscription.end_date,
         billing_period: subscription.billing_period
       },
-      plan: {
-        name:         plan.plan_code,
-        display_name: plan.plan_display_name
-      },
+      plan: { name: plan.plan_code, display_name: plan.plan_display_name },
       limits: {
         menu_items:               subscription.max_menu_items,
         orders_per_month:         subscription.max_orders_per_month,
@@ -323,13 +360,13 @@ exports.getUsageStats = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Erreur stats utilisation:', error);
+    logger.error('Erreur stats utilisation:', error);
     res.status(500).json({ error: 'Erreur serveur' });
   }
 };
 
 // ─────────────────────────────────────────────────────────────
-// ✅ INITIER PAIEMENT ABONNEMENT (Sandbox ou CinetPay live)
+// PAIEMENT ABONNEMENT
 // ─────────────────────────────────────────────────────────────
 
 exports.initiateSubscriptionPayment = async (req, res) => {
@@ -344,47 +381,30 @@ exports.initiateSubscriptionPayment = async (req, res) => {
     if (!plan)       return res.status(404).json({ error: 'Plan introuvable' });
     if (plan.price === 0) return res.status(400).json({ error: 'Utilisez /subscribe pour les plans gratuits' });
 
-    // ══════════════════════════════════════════════════════════
-    // MODE SANDBOX — simulation immédiate, aucun appel CinetPay
-    // ══════════════════════════════════════════════════════════
     if (isSandbox()) {
-      console.log('[SANDBOX] Paiement abonnement simulé — plan:', plan.display_name);
-
+      logger.info('[SANDBOX] Paiement abonnement simulé — plan:', plan.display_name);
       const transactionId = `SANDBOX_SUB_${businessId}_${plan_id}_${Date.now()}`;
-
-      // Activer directement l'abonnement
       const newSub = await activateSubscriptionAfterPayment(
-        { business_id: businessId, plan_id },
-        transactionId
+        { business_id: businessId, plan_id }, transactionId
       );
-
       return res.json({
-        success:        true,
-        sandbox:        true,
-        payment_url:    null,
-        transaction_id: transactionId,
-        amount:         plan.price,
-        plan_name:      plan.display_name,
-        subscription:   newSub,
-        message:        `[SANDBOX] Abonnement ${plan.display_name} activé immédiatement`
+        success: true, sandbox: true, payment_url: null,
+        transaction_id: transactionId, amount: plan.price,
+        plan_name: plan.display_name, subscription: newSub,
+        message: `[SANDBOX] Abonnement ${plan.display_name} activé`
       });
     }
 
-    // ══════════════════════════════════════════════════════════
-    // MODE LIVE — Flow CinetPay réel
-    // ══════════════════════════════════════════════════════════
+    // Mode live — CinetPay
     const businessResult = await pool.query(
       `SELECT b.*, u.email, u.first_name, u.last_name, u.phone
        FROM businesses b JOIN users u ON b.user_id = u.id
-       WHERE b.id = $1`,
-      [businessId]
+       WHERE b.id = $1`, [businessId]
     );
     if (!businessResult.rows[0]) return res.status(404).json({ error: 'Établissement introuvable' });
     const business = businessResult.rows[0];
 
     const transactionId = `SUB_${businessId}_${plan_id}_${Date.now()}`;
-
-    // Sauvegarder la tentative (subscription_id NULL car pas encore activé)
     await pool.query(
       `INSERT INTO subscription_payments
        (subscription_id, business_id, plan_id, amount, currency, payment_status,
@@ -393,64 +413,49 @@ exports.initiateSubscriptionPayment = async (req, res) => {
       [businessId, plan_id, plan.price, transactionId]
     );
 
-    // Construire le payload CinetPay
     const appUrl = getAppBaseUrl();
     const apiUrl = getApiBaseUrl();
 
-    const cinetpayPayload = {
-      apikey:                process.env.CINETPAY_API_KEY,
-      site_id:               process.env.CINETPAY_SITE_ID,
-      transaction_id:        transactionId,
-      amount:                plan.price,
-      currency:              'XOF',
-      description:           `Abonnement ${plan.display_name} — ${business.name}`,
-      return_url:            `${appUrl}/restaurant/dashboard?tab=subscription&payment=return&tx=${transactionId}`,
-      notify_url:            `${apiUrl}/api/subscriptions/payment-notify`,
-      customer_name:         `${business.first_name} ${business.last_name}`,
-      customer_email:        business.email,
-      customer_phone_number: business.phone || '',
-      customer_address:      business.address || '',
-      customer_city:         'Lomé',
-      customer_country:      'TG',
-      customer_state:        'TG',
-      customer_zip_code:     '00228',
-      channels:              'ALL',
-      metadata:              JSON.stringify({ businessId, plan_id, transactionId }),
-    };
-
     const cpResponse = await axios.post(
       'https://api-checkout.cinetpay.com/v2/payment',
-      cinetpayPayload,
+      {
+        apikey: process.env.CINETPAY_API_KEY,
+        site_id: process.env.CINETPAY_SITE_ID,
+        transaction_id: transactionId,
+        amount: plan.price, currency: 'XOF',
+        description: `Abonnement ${plan.display_name} — ${business.name}`,
+        return_url: `${appUrl}/restaurant/dashboard?tab=subscription&tx=${transactionId}`,
+        notify_url: `${apiUrl}/api/subscriptions/payment-notify`,
+        customer_name: `${business.first_name} ${business.last_name}`,
+        customer_email: business.email,
+        customer_phone_number: business.phone || '',
+        customer_address: business.address || '',
+        customer_city: 'Lomé', customer_country: 'TG',
+        customer_state: 'TG', customer_zip_code: '00228', channels: 'ALL',
+        metadata: JSON.stringify({ businessId, plan_id, transactionId }),
+      },
       { headers: { 'Content-Type': 'application/json' }, timeout: 15000 }
     );
 
     const cpData = cpResponse.data;
     if (cpData.code !== '201') {
-      console.error('CinetPay erreur:', cpData);
-      return res.status(400).json({
-        error:  'Impossible d\'initier le paiement CinetPay',
-        detail: cpData.message || cpData.description,
-      });
+      return res.status(400).json({ error: 'Impossible d\'initier le paiement CinetPay', detail: cpData.message });
     }
 
     return res.json({
-      success:        true,
-      sandbox:        false,
-      payment_url:    cpData.data.payment_url,
-      transaction_id: transactionId,
-      amount:         plan.price,
-      plan_name:      plan.display_name,
+      success: true, sandbox: false,
+      payment_url: cpData.data.payment_url,
+      transaction_id: transactionId, amount: plan.price, plan_name: plan.display_name,
     });
 
   } catch (error) {
-    const detail = error.response?.data || error.message;
-    console.error('Erreur initiation paiement abonnement:', detail);
+    logger.error('Erreur initiation paiement abonnement:', error.response?.data || error.message);
     res.status(500).json({ error: 'Erreur serveur', message: error.message });
   }
 };
 
 // ─────────────────────────────────────────────────────────────
-// ✅ WEBHOOK CINETPAY
+// WEBHOOK CINETPAY
 // ─────────────────────────────────────────────────────────────
 
 exports.handlePaymentNotify = async (req, res) => {
@@ -458,18 +463,11 @@ exports.handlePaymentNotify = async (req, res) => {
     const { cpm_trans_id } = req.body;
     if (!cpm_trans_id) return res.status(400).json({ error: 'transaction_id manquant' });
 
-    // Vérifier auprès de CinetPay
     const verifyResponse = await axios.post(
       'https://api-checkout.cinetpay.com/v2/payment/check',
-      {
-        apikey:         process.env.CINETPAY_API_KEY,
-        site_id:        process.env.CINETPAY_SITE_ID,
-        transaction_id: cpm_trans_id,
-      },
+      { apikey: process.env.CINETPAY_API_KEY, site_id: process.env.CINETPAY_SITE_ID, transaction_id: cpm_trans_id },
       { headers: { 'Content-Type': 'application/json' }, timeout: 10000 }
     );
-
-    const verifyData = verifyResponse.data;
 
     const paymentResult = await pool.query(
       `SELECT * FROM subscription_payments WHERE transaction_id = $1 AND payment_status = 'pending' LIMIT 1`,
@@ -477,10 +475,8 @@ exports.handlePaymentNotify = async (req, res) => {
     );
     if (!paymentResult.rows[0]) return res.json({ message: 'Déjà traité' });
 
-    const payment = paymentResult.rows[0];
-
-    if (verifyData.code === '00' && verifyData.data?.status === 'ACCEPTED') {
-      await activateSubscriptionAfterPayment(payment, cpm_trans_id);
+    if (verifyResponse.data.code === '00' && verifyResponse.data.data?.status === 'ACCEPTED') {
+      await activateSubscriptionAfterPayment(paymentResult.rows[0], cpm_trans_id);
       return res.json({ message: 'OK' });
     } else {
       await pool.query(
@@ -489,15 +485,14 @@ exports.handlePaymentNotify = async (req, res) => {
       );
       return res.json({ message: 'Paiement refusé' });
     }
-
   } catch (error) {
-    console.error('Erreur webhook:', error.message);
+    logger.error('Erreur webhook:', error.message);
     res.status(500).json({ error: 'Erreur serveur' });
   }
 };
 
 // ─────────────────────────────────────────────────────────────
-// ✅ VÉRIFIER STATUT PAIEMENT (polling frontend)
+// VÉRIFIER STATUT PAIEMENT
 // ─────────────────────────────────────────────────────────────
 
 exports.checkPaymentStatus = async (req, res) => {
@@ -507,22 +502,10 @@ exports.checkPaymentStatus = async (req, res) => {
     let businessId = req.user.business_id;
     if (!businessId) businessId = await getBusinessIdFromUser(req.user.id);
 
-    // ── Sandbox : transaction déjà activée ──────────────────
     if (transaction_id.startsWith('SANDBOX_SUB_')) {
-      const result = await pool.query(
-        `SELECT sp_pay.payment_status, sp.display_name as plan_name
-         FROM subscription_payments sp_pay
-         JOIN subscription_plans sp ON sp_pay.plan_id = sp.id
-         WHERE sp_pay.transaction_id = $1 LIMIT 1`,
-        [transaction_id]
-      );
-      if (result.rows[0]) {
-        return res.json({ status: result.rows[0].payment_status === 'success' ? 'success' : 'pending', plan_name: result.rows[0].plan_name });
-      }
       return res.json({ status: 'success', plan_name: 'Plan activé' });
     }
 
-    // ── Live : vérification réelle ───────────────────────────
     const result = await pool.query(
       `SELECT sp_pay.payment_status, sp_pay.plan_id, sp.display_name as plan_name
        FROM subscription_payments sp_pay
@@ -534,61 +517,19 @@ exports.checkPaymentStatus = async (req, res) => {
     if (!result.rows[0]) return res.status(404).json({ error: 'Transaction introuvable' });
 
     const payment = result.rows[0];
-
-    // Si déjà résolu en base, renvoyer directement
-    if (payment.payment_status === 'success') {
-      return res.json({ status: 'success', plan_name: payment.plan_name });
-    }
-    if (payment.payment_status === 'failed') {
-      return res.json({ status: 'failed', plan_name: payment.plan_name });
-    }
-
-    // Encore pending → vérifier CinetPay
-    try {
-      const verifyResponse = await axios.post(
-        'https://api-checkout.cinetpay.com/v2/payment/check',
-        {
-          apikey:         process.env.CINETPAY_API_KEY,
-          site_id:        process.env.CINETPAY_SITE_ID,
-          transaction_id: transaction_id,
-        },
-        { headers: { 'Content-Type': 'application/json' }, timeout: 8000 }
-      );
-
-      const verifyData = verifyResponse.data;
-
-      if (verifyData.code === '00' && verifyData.data?.status === 'ACCEPTED') {
-        const freshPayment = await pool.query(
-          `SELECT * FROM subscription_payments WHERE transaction_id = $1 LIMIT 1`,
-          [transaction_id]
-        );
-        if (freshPayment.rows[0]?.payment_status === 'pending') {
-          await activateSubscriptionAfterPayment(freshPayment.rows[0], transaction_id);
-        }
-        return res.json({ status: 'success', plan_name: payment.plan_name });
-      }
-
-      if (verifyData.data?.status === 'REFUSED' || verifyData.data?.status === 'CANCELLED') {
-        await pool.query(
-          `UPDATE subscription_payments SET payment_status = 'failed', updated_at = NOW() WHERE transaction_id = $1`,
-          [transaction_id]
-        );
-        return res.json({ status: 'failed', plan_name: payment.plan_name });
-      }
-    } catch (verifyErr) {
-      console.error('Erreur vérification CinetPay:', verifyErr.message);
-    }
+    if (payment.payment_status === 'success') return res.json({ status: 'success', plan_name: payment.plan_name });
+    if (payment.payment_status === 'failed')  return res.json({ status: 'failed',  plan_name: payment.plan_name });
 
     return res.json({ status: 'pending', plan_name: payment.plan_name });
 
   } catch (error) {
-    console.error('Erreur checkPaymentStatus:', error.message);
+    logger.error('Erreur checkPaymentStatus:', error.message);
     res.status(500).json({ error: 'Erreur serveur' });
   }
 };
 
 // ─────────────────────────────────────────────────────────────
-// HELPER : activer l'abonnement après paiement confirmé
+// HELPER : Activer abonnement après paiement confirmé
 // ─────────────────────────────────────────────────────────────
 
 async function activateSubscriptionAfterPayment(payment, transactionId) {
@@ -598,62 +539,47 @@ async function activateSubscriptionAfterPayment(payment, transactionId) {
   if (!plan) throw new Error('Plan introuvable');
 
   // Annuler l'abonnement existant
-  const currentSub = await Subscription.getByBusinessId(business_id);
-  if (currentSub) {
-    await pool.query(
-      'UPDATE business_subscriptions SET status = $1 WHERE id = $2',
-      ['cancelled', currentSub.id]
-    );
-  }
+  await pool.query(
+    `UPDATE business_subscriptions SET status = 'cancelled', updated_at = NOW()
+     WHERE business_id = $1 AND status = 'active'`,
+    [business_id]
+  );
 
   const startDate = new Date();
   let endDate = null;
-  let nextBillingDate = null;
 
-  if (plan.billing_period !== 'lifetime') {
+  if (plan.billing_period !== 'lifetime' && plan.price > 0) {
     endDate = new Date(startDate);
-    if (plan.billing_period === 'monthly') {
-      endDate.setMonth(endDate.getMonth() + 1);
-    } else if (plan.billing_period === 'yearly') {
-      endDate.setFullYear(endDate.getFullYear() + 1);
-    }
-    nextBillingDate = endDate;
+    if (plan.billing_period === 'monthly') endDate.setMonth(endDate.getMonth() + 1);
+    else if (plan.billing_period === 'yearly') endDate.setFullYear(endDate.getFullYear() + 1);
   }
 
   const newSub = await Subscription.create({
-    business_id,
-    plan_id,
-    start_date:        startDate,
-    end_date:          endDate,
-    next_billing_date: nextBillingDate,
-    auto_renew:        true,
+    business_id, plan_id,
+    start_date: startDate, end_date: endDate,
+    next_billing_date: endDate, auto_renew: plan.price > 0,
   });
 
-  // ✅ NOUVEAU : Réactiver le business automatiquement
+  // ✅ Toujours réactiver le business
   await pool.query(
     `UPDATE businesses SET is_active = true, updated_at = NOW() WHERE id = $1`,
     [business_id]
   );
-  logger.info ? logger.info(`[Sub] Business #${business_id} réactivé — nouvel abonnement ${plan.display_name}`)
-              : console.log(`[Sub] Business #${business_id} réactivé — plan ${plan.display_name}`);
 
-  // Marquer le paiement comme success
-  await pool.query(
-    `UPDATE subscription_payments
-     SET payment_status = 'success',
-         subscription_id = $1,
-         billing_period_start = $2,
-         billing_period_end   = $3,
-         updated_at = NOW()
-     WHERE transaction_id = $4`,
-    [newSub.id, startDate, endDate, transactionId]
-  );
-
+  // Marquer paiement success
   const existing = await pool.query(
-    `SELECT id FROM subscription_payments WHERE transaction_id = $1`,
-    [transactionId]
+    `SELECT id FROM subscription_payments WHERE transaction_id = $1`, [transactionId]
   );
-  if (!existing.rows.length) {
+
+  if (existing.rows.length > 0) {
+    await pool.query(
+      `UPDATE subscription_payments
+       SET payment_status = 'success', subscription_id = $1,
+           billing_period_start = $2, billing_period_end = $3, updated_at = NOW()
+       WHERE transaction_id = $4`,
+      [newSub.id, startDate, endDate, transactionId]
+    );
+  } else {
     await pool.query(
       `INSERT INTO subscription_payments
        (subscription_id, business_id, plan_id, amount, currency, payment_status,
@@ -663,7 +589,7 @@ async function activateSubscriptionAfterPayment(payment, transactionId) {
     );
   }
 
-  console.log(`✅ Abonnement activé: business=${business_id} plan=${plan_id} sub=${newSub.id}`);
+  logger.info(`✅ Abonnement activé: business=${business_id} plan=${plan_id} sub=${newSub.id}`);
   return newSub;
 }
 
@@ -676,7 +602,10 @@ exports.getAllSubscriptions = async (req, res) => {
     const { status, page = 1, limit = 20 } = req.query;
     const offset = (page - 1) * limit;
 
-    let query  = `SELECT bs.*, b.name as business_name, sp.display_name as plan_name, sp.price as plan_price, sp.billing_period FROM business_subscriptions bs JOIN businesses b ON bs.business_id = b.id JOIN subscription_plans sp ON bs.plan_id = sp.id`;
+    let query = `SELECT bs.*, b.name as business_name, sp.display_name as plan_name, sp.price as plan_price, sp.billing_period
+                 FROM business_subscriptions bs
+                 JOIN businesses b ON bs.business_id = b.id
+                 JOIN subscription_plans sp ON bs.plan_id = sp.id`;
     const params = [];
     if (status) { query += ' WHERE bs.status = $1'; params.push(status); }
     query += ` ORDER BY bs.created_at DESC LIMIT $${params.length + 1} OFFSET $${params.length + 2}`;
@@ -691,11 +620,10 @@ exports.getAllSubscriptions = async (req, res) => {
     res.json({
       subscriptions: result.rows,
       total: parseInt(countResult.rows[0].count),
-      page:  parseInt(page),
-      limit: parseInt(limit)
+      page: parseInt(page), limit: parseInt(limit)
     });
   } catch (error) {
-    console.error('Erreur liste abonnements:', error);
+    logger.error('Erreur liste abonnements:', error);
     res.status(500).json({ error: 'Erreur serveur' });
   }
 };
@@ -712,7 +640,7 @@ exports.getExpiringSubscriptions = async (req, res) => {
 
 exports.getSubscriptionStats = async (req, res) => {
   try {
-    const planStats   = await pool.query(`SELECT sp.display_name, sp.price, sp.billing_period, COUNT(bs.id) as active_subscriptions, SUM(sp.price) as total_revenue FROM subscription_plans sp LEFT JOIN business_subscriptions bs ON sp.id = bs.plan_id AND bs.status = 'active' GROUP BY sp.id, sp.display_name, sp.price, sp.billing_period ORDER BY sp.price DESC`);
+    const planStats   = await pool.query(`SELECT sp.display_name, sp.price, sp.billing_period, COUNT(bs.id) as active_subscriptions, SUM(sp.price) as total_revenue FROM subscription_plans sp LEFT JOIN business_subscriptions bs ON sp.id = bs.plan_id AND bs.status = 'active' GROUP BY sp.id ORDER BY sp.price DESC`);
     const totalActive = await pool.query(`SELECT COUNT(*) as count FROM business_subscriptions WHERE status = 'active'`);
     const monthlyRev  = await pool.query(`SELECT COALESCE(SUM(sp.price),0) as monthly_revenue FROM business_subscriptions bs JOIN subscription_plans sp ON bs.plan_id = sp.id WHERE bs.status = 'active' AND sp.billing_period = 'monthly'`);
     const yearlyRev   = await pool.query(`SELECT COALESCE(SUM(sp.price),0) as yearly_revenue FROM business_subscriptions bs JOIN subscription_plans sp ON bs.plan_id = sp.id WHERE bs.status = 'active' AND sp.billing_period = 'yearly'`);
@@ -735,7 +663,7 @@ exports.getPlatformCommissionStats = async (req, res) => {
   try {
     const { period = 'month' } = req.query;
     const dateFilters = {
-      day:   "AND o.created_at >= CURRENT_DATE",
+      day:   'AND o.created_at >= CURRENT_DATE',
       week:  "AND o.created_at >= date_trunc('week', CURRENT_DATE)",
       month: "AND o.created_at >= date_trunc('month', CURRENT_DATE)",
       year:  "AND o.created_at >= date_trunc('year', CURRENT_DATE)"
@@ -750,7 +678,8 @@ exports.getPlatformCommissionStats = async (req, res) => {
       LEFT JOIN business_subscriptions bs ON b.id = bs.business_id AND bs.status = 'active'
       LEFT JOIN subscription_plans sp ON bs.plan_id = sp.id
       LEFT JOIN orders o ON b.id = o.business_id AND o.payment_status = 'paid' ${dateFilter}
-      GROUP BY b.id, b.name, b.type, sp.commission_rate HAVING COUNT(o.id) > 0 ORDER BY total_commission DESC`);
+      GROUP BY b.id, b.name, b.type, sp.commission_rate HAVING COUNT(o.id) > 0
+      ORDER BY total_commission DESC`);
 
     const total = await pool.query(`
       SELECT COALESCE(SUM(o.total_amount * sp.commission_rate / 100), 0) as total_commission,
@@ -797,11 +726,7 @@ exports.updatePlan = async (req, res) => {
 exports.expireOverdue = async (req, res) => {
   try {
     const expired = await expireOverdueSubscriptions();
-    res.json({
-      success: true,
-      message: `${expired.length} abonnement(s) expiré(s)`,
-      expired
-    });
+    res.json({ success: true, message: `${expired.length} abonnement(s) expiré(s)`, expired });
   } catch (error) {
     res.status(500).json({ success: false, error: 'Erreur serveur' });
   }

@@ -8,6 +8,8 @@ import { ToastService }  from '../../core/services/toast/toast.service';
 import { ConfirmationModalService } from '../../core/services/confirmation-modal/confirmation-modal.service';
 import { Driver, DriverAssignment } from '../../core/models/driver.model';
 import { interval, Subscription } from 'rxjs';
+import { ChatService } from '../../core/services/chat/chat.service';
+import { PushNotificationService } from '../../core/services/push-notification/push-notification.service';
 
 @Component({
   selector: 'app-driver-dashboard',
@@ -37,9 +39,16 @@ export class DriverDashboardComponent implements OnInit, OnDestroy {
   failReason = '';
   failLoading = false;
 
+  // État modal refus
+  showRefuseModal = false;
+  refuseOrderId: number | null = null;
+  refuseReason = '';
+  refuseLoading = false;
+
   // Rafraîchissement auto toutes les 30s
   private refreshSub?: Subscription;
-
+  private socketSub?: Subscription;
+  
   readonly vehicleLabels: Record<string, string> = {
     moto: '🏍️ Moto', velo: '🚲 Vélo', voiture: '🚗 Voiture', pied: '🚶 À pied'
   };
@@ -48,17 +57,27 @@ export class DriverDashboardComponent implements OnInit, OnDestroy {
     private driverService: DriverService,
     private authService: AuthService,
     private toastService: ToastService,
-    private confirmService: ConfirmationModalService
+    private confirmService: ConfirmationModalService,
+    private chatService: ChatService,
+    private pushService: PushNotificationService 
   ) {}
 
   ngOnInit(): void {
     this.loadData();
-    // Refresh toutes les 30 secondes
-    this.refreshSub = interval(30000).subscribe(() => this.loadData(true));
-  }
+    
+    // Demander l'autorisation push dès l'arrivée sur le dashboard
+    this.pushService.subscribe().catch(err => console.warn('Push non activé:', err));
 
+    this.refreshSub = interval(30000).subscribe(() => this.loadData(true));
+
+    this.socketSub = this.chatService.newAssignment$.subscribe((data) => {
+      this.toastService.showSuccess('🆕 Nouvelle commande !', `La commande ${data.order_id} vous a été assignée`);
+      this.loadData(true);
+    });
+  }
   ngOnDestroy(): void {
     this.refreshSub?.unsubscribe();
+    this.socketSub?.unsubscribe();
   }
 
   loadData(silent = false): void {
@@ -170,6 +189,57 @@ export class DriverDashboardComponent implements OnInit, OnDestroy {
     });
   }
 
+  // ── Accepter la commande ──────────────────────────────────────
+  async accept(assignment: DriverAssignment): Promise<void> {
+    const ok = await this.confirmService.confirm(
+      'Accepter la commande ?',
+      `Confirmer que vous prenez en charge la commande #${assignment.order_id} pour ${assignment.business_name} ?`,
+      { confirmText: '✅ J\'accepte', cancelText: 'Plus tard', type: 'info' }
+    );
+    if (!ok) return;
+
+    this.actionLoading[assignment.order_id] = true;
+    this.driverService.accept(assignment.order_id).subscribe({
+      next: (res) => {
+        this.actionLoading[assignment.order_id] = false;
+        this.toastService.showSuccess('Commande acceptée', `Rendez-vous chez ${assignment.business_name} pour récupérer la commande`);
+        this.loadData(true);
+      },
+      error: (err) => {
+        this.actionLoading[assignment.order_id] = false;
+        this.toastService.showError('Erreur', err.error?.error || 'Impossible d\'accepter');
+      }
+    });
+  }
+
+  // ── Accepter la commande ──────────────────────────────────────
+  openRefuseModal(orderId: number): void {
+    this.refuseOrderId = orderId;
+    this.refuseReason  = '';
+    this.showRefuseModal = true;
+  }
+
+  submitRefuse(): void {
+    if (!this.refuseOrderId) return;
+    this.refuseLoading = true;
+    this.driverService.refuse(this.refuseOrderId, this.refuseReason).subscribe({
+      next: () => {
+        this.refuseLoading    = false;
+        this.showRefuseModal  = false;
+        this.refuseOrderId    = null;
+        this.toastService.showWarning(
+          'Commande refusée',
+          'L\'établissement a été notifié et peut assigner un autre livreur'
+        );
+        this.loadData(true);
+      },
+      error: (err) => {
+        this.refuseLoading = false;
+        this.toastService.showError('Erreur', err.error?.error || 'Impossible de refuser');
+      }
+    });
+  }
+
   // ── Changer mot de passe ──────────────────────────────────
   submitPasswordChange(): void {
     if (!this.newPassword || this.newPassword.length < 6) {
@@ -211,8 +281,10 @@ export class DriverDashboardComponent implements OnInit, OnDestroy {
     return l[status] || status;
   }
 
-  openMaps(address: string): void {
-    const url = `https://maps.google.com/?q=${encodeURIComponent(address + ', Lomé, Togo')}`;
+  openMaps(address: string, lat?: number, lng?: number): void {
+    const url = (lat && lng)
+      ? `https://maps.google.com/?q=${lat},${lng}`
+      : `https://maps.google.com/?q=${encodeURIComponent(address + ', Lomé, Togo')}`;
     window.open(url, '_blank');
   }
 

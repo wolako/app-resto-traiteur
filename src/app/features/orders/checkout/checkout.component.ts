@@ -33,6 +33,9 @@ export class CheckoutComponent implements OnInit {
   gpsCoords: { lat: number; lng: number } | null = null;
   gpsError: string | null = null;
 
+  // ── Propriété affichage distance ──────────────────────────────
+  deliveryDistanceKm: number | null = null;
+
   constructor(
     private fb: FormBuilder,
     private orderService: OrderService,
@@ -89,6 +92,16 @@ export class CheckoutComponent implements OnInit {
     });
   }
 
+  private mapPaymentMethodToBackend(method: string): string {
+    const map: Record<string, string> = {
+      'mixx':  'Mixx By Yas',  // ← frontend 'mixx' → backend 'Mixx By Yas'
+      'flooz': 'flooz',
+      'card':  'card',
+      'cod':   'cod'
+    };
+    return map[method] || method;
+  }
+
   private clearPaymentValidators(): void {
     ['mobile_phone', 'card_number', 'card_expiry', 'card_cvv', 'card_holder'].forEach(k => {
       this.checkoutForm.get(k)?.clearValidators();
@@ -134,13 +147,11 @@ export class CheckoutComponent implements OnInit {
   calculateFees(): void {
     this.fees.subtotal = this.cart.reduce((t, i) => t + (Number(i.subtotal) || 0), 0);
 
-    const method  = this.checkoutForm.get('payment_method')?.value;
-    const wants   = this.checkoutForm.get('wants_delivery')?.value;
+    const method = this.checkoutForm.get('payment_method')?.value;
+    const wants  = this.checkoutForm.get('wants_delivery')?.value;
 
-    // Livraison si COD ou si checkbox cochée
-    this.fees.deliveryFee = (method === 'cod' || wants)
-      ? 500 // frais fixes — à affiner selon la distance GPS si disponible
-      : 0;
+    // ✅ Livraison uniquement si COD ou checkbox cochée
+    this.fees.deliveryFee = (method === 'cod' || wants) ? this.getDeliveryFee() : 0;
 
     this.fees.paymentFee = (method && method !== 'cod')
       ? this.calculatePaymentFee(this.fees.subtotal, method)
@@ -212,11 +223,11 @@ export class CheckoutComponent implements OnInit {
           delivery_lat: pos.coords.latitude,
           delivery_lng: pos.coords.longitude,
         });
-        // Pré-remplir l'adresse avec les coordonnées
         const addrCtrl = this.checkoutForm.get('delivery_address');
         if (!addrCtrl?.value) {
           addrCtrl?.patchValue(`${pos.coords.latitude.toFixed(6)}, ${pos.coords.longitude.toFixed(6)}`);
         }
+        this.calculateFees();
         this.toastService.showSuccess('Position capturée !', 'Le livreur pourra vous localiser.');
       },
       (err) => {
@@ -283,29 +294,32 @@ export class CheckoutComponent implements OnInit {
       return;
     }
 
-    this.loading  = true;
-    const v       = this.checkoutForm.value;
-    const isCOD   = v.payment_method === 'cod';
+    this.loading = true;
+    const v     = this.checkoutForm.value;
+    const isCOD = v.payment_method === 'cod';
+
+    // ✅ Mapper la méthode frontend → backend/DB
+    const backendMethod = this.mapPaymentMethodToBackend(v.payment_method);
 
     const orderData: any = {
-      business_id:       this.business.id,
-      client_name:       v.client_name,
-      client_phone:      v.client_phone,
-      client_email:      v.client_email,
-      payment_type:      isCOD ? 'cod' : 'online',
-      payment_method:    v.payment_method,
-      notes:             v.notes,
-      items:             this.cart,
-      subtotal_amount:   this.fees.subtotal,
-      delivery_fee:      this.fees.deliveryFee,
-      payment_fee:       this.fees.paymentFee,
-      total_amount:      this.fees.total,
-      wants_delivery:    v.wants_delivery,
-      delivery_address:  v.delivery_address,
-      delivery_lat:      v.delivery_lat,
-      delivery_lng:      v.delivery_lng,
-      payment_phone:     v.mobile_phone   || null,
-      card_holder:       v.card_holder    || null,
+      business_id:      this.business.id,
+      client_name:      v.client_name,
+      client_phone:     v.client_phone,
+      client_email:     v.client_email,
+      payment_type:     isCOD ? 'cod' : 'online',
+      payment_method:   backendMethod,  // ✅ 'Mixx By Yas' au lieu de 'mixx'
+      notes:            v.notes,
+      items:            this.cart,
+      subtotal_amount:  this.fees.subtotal,
+      delivery_fee:     this.fees.deliveryFee,
+      payment_fee:      this.fees.paymentFee,
+      total_amount:     this.fees.total,
+      wants_delivery:   v.wants_delivery,
+      delivery_address: v.delivery_address,
+      delivery_lat:     v.delivery_lat,
+      delivery_lng:     v.delivery_lng,
+      payment_phone:    v.mobile_phone || null,
+      card_holder:      v.card_holder  || null,
     };
 
     this.orderService.createOrder(orderData).subscribe({
@@ -323,8 +337,10 @@ export class CheckoutComponent implements OnInit {
           this.loading = false;
           sessionStorage.removeItem('checkout_cart');
           sessionStorage.removeItem('checkout_business');
-          this.toastService.showSuccess('✅ Commande confirmée !',
-            `Commande #${orderId} — ${this.fees.total.toLocaleString('fr-FR')} FCFA à la livraison`);
+          this.toastService.showSuccess(
+            '✅ Commande confirmée !',
+            `Commande ${orderId} — ${this.fees.total.toLocaleString('fr-FR')} FCFA à la livraison`
+          );
           setTimeout(() => this.router.navigate(['/orders', orderId]), 2000);
           return;
         }
@@ -333,7 +349,7 @@ export class CheckoutComponent implements OnInit {
           order_id:       orderId,
           amount:         this.fees.total,
           currency:       'XOF',
-          payment_method: v.payment_method,
+          payment_method: backendMethod as any,
           customer_name:  v.client_name,
           customer_phone: v.mobile_phone || v.client_phone,
           customer_email: v.client_email
@@ -344,10 +360,13 @@ export class CheckoutComponent implements OnInit {
             sessionStorage.removeItem('checkout_cart');
             sessionStorage.removeItem('checkout_business');
 
+            // ✅ Sandbox : le backend retourne directement { sandbox: true }
             if (payRes.sandbox === true || this.isSandbox) {
               this.loading = false;
-              this.toastService.showSuccess('✅ Paiement accepté !',
-                `Commande #${orderId} confirmée — ${this.fees.total.toLocaleString('fr-FR')} FCFA`);
+              this.toastService.showSuccess(
+                '✅ Paiement accepté !',
+                `Commande ${orderId} — ${this.fees.total.toLocaleString('fr-FR')} FCFA`
+              );
               setTimeout(() => this.router.navigate(['/']), 2500);
               return;
             }
@@ -362,16 +381,73 @@ export class CheckoutComponent implements OnInit {
           },
           error: (err: any) => {
             this.loading = false;
-            this.toastService.showError('Erreur de paiement', err.error?.message || 'Impossible d\'initier le paiement.');
+            this.toastService.showError(
+              'Erreur de paiement',
+              err.error?.message || 'Impossible d\'initier le paiement.'
+            );
           }
         });
       },
       error: (err: any) => {
         this.loading = false;
-        this.toastService.showError('Erreur de commande', err.error?.message || 'Impossible de créer la commande.');
+        this.toastService.showError(
+          'Erreur de commande',
+          err.error?.message || 'Impossible de créer la commande.'
+        );
       }
     });
   }
 
   onImageError(event: any): void { event.target.style.display = 'none'; }
+
+  // ── Barème livraison ──────────────────────────────────────────
+  private readonly DELIVERY_TIERS = [
+    { maxKm: 2,   fee: 0  },
+    { maxKm: 5,   fee: 1000 },
+    { maxKm: 10,  fee: 1500 },
+    { maxKm: 20,  fee: 2500 },
+    { maxKm: 999, fee: 3500 },
+  ];
+
+  // ── Calcul distance Haversine (km) ────────────────────────────
+  private haversineKm(
+    lat1: number, lng1: number,
+    lat2: number, lng2: number
+  ): number {
+    const R = 6371;
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLng = (lng2 - lng1) * Math.PI / 180;
+    const a =
+      Math.sin(dLat / 2) ** 2 +
+      Math.cos(lat1 * Math.PI / 180) *
+      Math.cos(lat2 * Math.PI / 180) *
+      Math.sin(dLng / 2) ** 2;
+    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  }
+
+  // ── Frais selon distance ──────────────────────────────────────
+  getDeliveryFee(): number {
+    const method = this.checkoutForm.get('payment_method')?.value;
+    const wants  = this.checkoutForm.get('wants_delivery')?.value;
+
+    if (!this.isCOD() && !wants) return 0;  // ✅ pas de livraison demandée = 0
+
+    // Si GPS client + position business disponibles → calcul précis
+    const clientLat  = this.checkoutForm.get('delivery_lat')?.value;
+    const clientLng  = this.checkoutForm.get('delivery_lng')?.value;
+    const bizLat     = this.business?.latitude;
+    const bizLng     = this.business?.longitude;
+
+    if (clientLat && clientLng && bizLat && bizLng) {
+      const km  = this.haversineKm(bizLat, bizLng, clientLat, clientLng);
+      this.deliveryDistanceKm = Math.round(km * 10) / 10;
+      const tier = this.DELIVERY_TIERS.find(t => km <= t.maxKm);
+      return tier ? tier.fee : 3500;
+    }
+
+    // Fallback si pas de GPS → tarif fixe de base
+    this.deliveryDistanceKm = null;
+    return 500;
+  }
+
 }

@@ -346,6 +346,27 @@
                   </label>
                 </div>
 
+                <!-- ✅ Tableau des tarifs — visible si livraison demandée et pas encore de GPS -->
+                <div *ngIf="(isCOD() || wantsDelivery()) && !gpsCoords"
+                  class="delivery-tiers-info mt-2"
+                  style="background:var(--rt-raised);border:1px solid var(--rt-bdr);border-radius:8px;padding:10px 12px;font-size:.75rem;">
+                  <div style="font-weight:600;color:var(--rt-t2);margin-bottom:6px;">
+                    <i class="bi bi-info-circle-fill" style="color:var(--rt-blue);"></i>
+                    Tarifs de livraison selon la distance
+                  </div>
+                  <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;">
+                    <span style="color:var(--rt-t3);">0 – 2 km</span><span><strong style="color:var(--rt-green);">🎁 Gratuit</strong></span>
+                    <span style="color:var(--rt-t3);">2 – 5 km</span><span><strong>1 000 FCFA</strong></span>
+                    <span style="color:var(--rt-t3);">5 – 10 km</span><span><strong>1 500 FCFA</strong></span>
+                    <span style="color:var(--rt-t3);">10 – 20 km</span><span><strong>2 500 FCFA</strong></span>
+                    <span style="color:var(--rt-t3);">> 20 km</span><span><strong>3 500 FCFA</strong></span>
+                  </div>
+                  <div style="margin-top:6px;font-size:.7rem;color:var(--rt-t4);">
+                    <i class="bi bi-crosshair me-1"></i>
+                    Activez le GPS pour un calcul précis selon votre position.
+                  </div>
+                </div>
+
                 <div class="delivery-form" *ngIf="isCOD() || wantsDelivery()">
                   <div class="mb-3">
                     <label class="form-label">Adresse de livraison *</label>
@@ -387,6 +408,15 @@
                         target="_blank" rel="noopener" class="gps-map-link ms-2">
                         <i class="bi bi-map-fill"></i> Voir
                       </a>
+
+                      <!-- afficher la distance et le tarif calculé -->
+                      <div *ngIf="deliveryDistanceKm" class="gps-distance-info mt-1"
+                        style="font-size:.78rem;color:var(--rt-t2);background:var(--rt-raised);border-radius:6px;padding:5px 10px;display:inline-block;margin-top:5px;">
+                        <i class="bi bi-rulers me-1" style="color:var(--rt-blue);"></i>
+                        Distance : <strong>{{ deliveryDistanceKm }} km</strong>
+                        — Frais de livraison : <strong style="color:var(--rt-primary)">{{ fees.deliveryFee | number:'1.0-0' }} FCFA</strong>
+                      </div>
+
                     </div>
                     <div class="gps-error" *ngIf="gpsError">
                       <i class="bi bi-exclamation-triangle-fill me-1"></i> {{ gpsError }}
@@ -473,7 +503,15 @@
                 <span class="fw-bold">{{ fees.subtotal | number:'1.0-0' }} FCFA</span>
               </div>
               <div class="fee-row" *ngIf="fees.deliveryFee > 0">
-                <span><i class="bi bi-truck"></i> Livraison</span>
+                <span>
+                  <i class="bi bi-truck"></i> Livraison
+                  <small *ngIf="deliveryDistanceKm" class="text-muted ms-1">
+                    ({{ deliveryDistanceKm }} km)
+                  </small>
+                  <small *ngIf="!deliveryDistanceKm && (isCOD() || wantsDelivery())" class="text-muted ms-1">
+                    (activez le GPS pour un tarif précis)
+                  </small>
+                </span>
                 <span class="text-warning">+{{ fees.deliveryFee | number:'1.0-0' }} FCFA</span>
               </div>
               <div class="fee-row" *ngIf="fees.paymentFee > 0">

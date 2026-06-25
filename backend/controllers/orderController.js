@@ -15,9 +15,8 @@ const Subscription = require('../models/Subscription');
 const orderReceiptService = require('../services/orderReceiptService');
 const { calculateOrderFees, calculateDepositFees } = require('../utils/feeCalculator');
 const { cinetpayService } = require('../services/cinetpayService');
-// ✅ AJOUT
 const { getSettings } = require('../utils/settingsHelper');
-
+const { notifyClient } = require('../utils/socketEmit');
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Créer une commande (public)
@@ -29,7 +28,9 @@ const createOrder = asyncHandler(async (req, res) => {
     payment_type = 'online',
     payment_method,
     delivery_address,
-    delivery_distance
+    delivery_distance,
+    delivery_lat,   
+    delivery_lng
   } = req.body;
 
   if (!business_id || !client_name || !client_phone || !items?.length) {
@@ -91,7 +92,9 @@ const createOrder = asyncHandler(async (req, res) => {
     payment_fee:       fees.payment_fee,
     total_amount:      fees.total_amount,
     delivery_address,
-    delivery_distance
+    delivery_distance,
+    delivery_lat:  delivery_lat  || null,
+    delivery_lng:  delivery_lng  || null  
   };
 
   const order = await Order.create(orderData, items);
@@ -113,7 +116,6 @@ const createOrder = asyncHandler(async (req, res) => {
 
   res.status(201).json({ success: true, message: 'Commande créée avec succès', data: order });
 });
-
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Obtenir une commande par ID
@@ -162,6 +164,15 @@ const updateOrderStatus = asyncHandler(async (req, res) => {
 
     const business = await Business.findById(order.business_id);
 
+    // ✅ AJOUT — notifier le client en temps réel, AVANT les autres notifs
+    const io = req.app.get('io');
+    if (order.client_id) {
+      notifyClient(io, order.client_id, 'order_updated', {
+        orderId: parseInt(id),
+        status: order.status
+      });
+    }
+
     if (order.client_id) {
       try {
         const clientUser = await User.findById(order.client_id);
@@ -184,18 +195,13 @@ const updateOrderStatus = asyncHandler(async (req, res) => {
               await clientNotificationService.notifyOrderDelivered(order, business, clientInfo);
               break;
             case 'cancelled':
-              // ✅ FIX — notifier le client de l'annulation (était manquant)
               await clientNotificationService.notifyOrderCancelled(order, business, clientInfo);
               break;
-            // 'preparing' et autres : pas de notif client pour l'instant
           }
         }
       } catch (notifError) {
-        // Ne jamais bloquer la réponse API si la notif échoue
         logger.error('Erreur notification client (non bloquant)', {
-          error: notifError.message,
-          orderId: id,
-          newStatus: status
+          error: notifError.message, orderId: id, newStatus: status
         });
       }
     }

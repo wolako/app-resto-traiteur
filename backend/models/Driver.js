@@ -1,38 +1,40 @@
 // models/Driver.js
-const { pool } = require('../config/db');
-const bcrypt   = require('bcryptjs');
+const { pool }   = require('../config/db');
+const bcrypt     = require('bcryptjs');
 
 class Driver {
 
-  // ─── Créer un livreur (crée aussi le user) ──────────────────
-  static async create({ business_id, created_by_type, created_by_id, first_name, last_name, phone, email, vehicle_type, max_concurrent_orders = 3, temp_password }) {
+  // ─── Créer un livreur (user + driver en transaction) ────────
+  static async create({
+    business_id, created_by_type, created_by_id,
+    first_name, last_name, phone, email,
+    vehicle_type, max_concurrent_orders, temp_password,
+    district  // ✅ AJOUTER
+  }) {
     const client = await pool.connect();
     try {
       await client.query('BEGIN');
+      const passwordHash = await bcrypt.hash(temp_password, 12);
 
-      // Hasher le mot de passe temporaire
-      const password_hash = await bcrypt.hash(temp_password, 12);
-
-      // Créer le user
       const userResult = await client.query(
-        `INSERT INTO users (email, password_hash, role, first_name, last_name, phone, is_active, email_verified)
-         VALUES ($1, $2, 'driver', $3, $4, $5, true, true)
-         RETURNING *`,
-        [email || null, password_hash, first_name, last_name, phone]
+        `INSERT INTO users (first_name, last_name, phone, email, password_hash, role, is_active, email_verified, created_at, updated_at)
+        VALUES ($1,$2,$3,$4,$5,'driver',true,true,NOW(),NOW()) RETURNING id`,
+        [first_name, last_name, phone, email || null, passwordHash]
       );
-      const user = userResult.rows[0];
+      const userId = userResult.rows[0].id;
 
-      // Créer le profil driver
       const driverResult = await client.query(
-        `INSERT INTO drivers (user_id, business_id, created_by_type, created_by_id, vehicle_type, max_concurrent_orders)
-         VALUES ($1, $2, $3, $4, $5, $6)
-         RETURNING *`,
-        [user.id, business_id || null, created_by_type, created_by_id, vehicle_type || 'moto', max_concurrent_orders]
+        `INSERT INTO drivers
+          (user_id, business_id, vehicle_type, status, max_concurrent_orders,
+            temp_password_used, created_by_type, created_by_id, district, created_at, updated_at)
+        VALUES ($1,$2,$3,'offline',$4,true,$5,$6,$7,NOW(),NOW())
+        RETURNING *`,
+        [userId, business_id, vehicle_type, max_concurrent_orders,
+        created_by_type, created_by_id, district || null]
       );
-      const driver = driverResult.rows[0];
 
       await client.query('COMMIT');
-      return { ...driver, first_name: user.first_name, last_name: user.last_name, phone: user.phone, email: user.email };
+      return { ...driverResult.rows[0], first_name, last_name, phone, email: email || null, user_id: userId };
     } catch (err) {
       await client.query('ROLLBACK');
       throw err;
@@ -41,13 +43,14 @@ class Driver {
     }
   }
 
-  // ─── Trouver par ID ──────────────────────────────────────────
-  static async findById(id) {
+  // ─── Trouver par ID ─────────────────────────────────────────
+  static async findById(driverId) {
     const result = await pool.query(
-      `SELECT d.*, u.first_name, u.last_name, u.phone, u.email, u.is_active AS user_active
-       FROM drivers d JOIN users u ON d.user_id = u.id
+      `SELECT d.*, u.first_name, u.last_name, u.phone, u.email, u.is_active
+       FROM drivers d
+       JOIN users u ON d.user_id = u.id
        WHERE d.id = $1`,
-      [id]
+      [driverId]
     );
     return result.rows[0] || null;
   }
@@ -55,155 +58,234 @@ class Driver {
   // ─── Trouver par user_id ─────────────────────────────────────
   static async findByUserId(userId) {
     const result = await pool.query(
-      `SELECT d.*, u.first_name, u.last_name, u.phone, u.email
-       FROM drivers d JOIN users u ON d.user_id = u.id
+      `SELECT d.*, u.first_name, u.last_name, u.phone, u.email, u.is_active
+       FROM drivers d
+       JOIN users u ON d.user_id = u.id
        WHERE d.user_id = $1`,
       [userId]
     );
     return result.rows[0] || null;
   }
 
-  // ─── Liste livreurs d'un établissement ──────────────────────
+  // ─── Livreurs d'un établissement + livreurs plateforme ───────
   static async getByBusinessId(businessId) {
-    const result = await pool.query(
-      `SELECT
-         dv.*,
-         (SELECT json_agg(json_build_object(
-           'id', da.id, 'order_id', da.order_id,
-           'status', da.status, 'assigned_at', da.assigned_at,
-           'order_ref', o.id, 'client_name', o.client_name,
-           'delivery_address', o.delivery_address
-         )) FROM delivery_assignments da
-           JOIN orders o ON da.order_id = o.id
-           WHERE da.driver_id = dv.id AND da.status IN ('assigned','picked_up')
-         ) AS active_assignments
-       FROM driver_availability dv
-       WHERE dv.business_id = $1
-       ORDER BY dv.first_name, dv.last_name`,
+    // Récupérer d'abord le district de l'établissement
+    const businessResult = await pool.query(
+      `SELECT district FROM businesses WHERE id = $1`,
       [businessId]
     );
-    return result.rows;
-  }
+    const businessDistrict = businessResult.rows[0]?.district || null;
 
-  // ─── Liste tous les livreurs (admin) ─────────────────────────
-  static async getAll() {
     const result = await pool.query(
-      `SELECT dv.*,
-         b.name AS business_name, b.type AS business_type
-       FROM driver_availability dv
-       LEFT JOIN businesses b ON dv.business_id = b.id
-       ORDER BY dv.first_name, dv.last_name`
+      `SELECT
+        dv.*,
+        u.first_name, u.last_name, u.phone, u.email, u.is_active,
+        d.district,
+        CASE WHEN dv.business_id IS NULL THEN 'platform' ELSE 'own' END AS driver_type,
+        -- ✅ Score de proximité : même district = priorité 1, sinon 2
+        CASE WHEN d.district = $2 THEN 1 ELSE 2 END AS zone_priority
+      FROM driver_availability dv
+      JOIN users u ON dv.user_id = u.id
+      JOIN drivers d ON dv.id = d.id
+      WHERE dv.business_id = $1 OR dv.business_id IS NULL
+      ORDER BY
+        zone_priority ASC,
+        CASE WHEN dv.business_id = $1 THEN 0 ELSE 1 END,
+        u.first_name, u.last_name`,
+      [businessId, businessDistrict]
     );
     return result.rows;
   }
 
-  // ─── Mise à jour profil ──────────────────────────────────────
-  static async update(id, updates) {
-    const allowedDriver = ['vehicle_type','max_concurrent_orders','is_active','business_id'];
-    const allowedUser   = ['first_name','last_name','phone'];
-
-    const driverFields = [], userFields = [], driverVals = [], userVals = [];
-    let dp = 1, up = 1;
-
-    Object.entries(updates).forEach(([k, v]) => {
-      if (allowedDriver.includes(k)) { driverFields.push(`${k} = $${dp++}`); driverVals.push(v); }
-      if (allowedUser.includes(k))   { userFields.push(`${k} = $${up++}`);   userVals.push(v); }
-    });
-
-    const clientDb = await pool.connect();
+  // ─── Supprimer définitivement (cascade) ──────────────────────
+  static async deleteForever(driverId) {
+    const client = await pool.connect();
     try {
-      await clientDb.query('BEGIN');
+      await client.query('BEGIN');
 
-      let driver;
-      if (driverFields.length > 0) {
-        driverVals.push(id);
-        const r = await clientDb.query(
-          `UPDATE drivers SET ${driverFields.join(', ')}, updated_at = NOW() WHERE id = $${dp} RETURNING *`,
-          driverVals
-        );
-        driver = r.rows[0];
-      }
+      // 1. Annuler les assignations actives — sans updated_at (pas toujours présent)
+      await client.query(
+        `UPDATE delivery_assignments
+        SET status = 'failed', failure_reason = 'Livreur supprimé',
+            failed_at = NOW()
+        WHERE driver_id = $1 AND status IN ('assigned','picked_up')`,
+        [driverId]
+      );
 
-      if (userFields.length > 0) {
-        const driverRow = driver || (await clientDb.query('SELECT user_id FROM drivers WHERE id = $1', [id])).rows[0];
-        userVals.push(driverRow.user_id);
-        await clientDb.query(
-          `UPDATE users SET ${userFields.join(', ')}, updated_at = NOW() WHERE id = $${up}`,
-          userVals
-        );
-      }
+      // 2. Remettre les commandes concernées disponibles
+      await client.query(
+        `UPDATE orders
+        SET delivery_status = 'ready_for_pickup',
+            current_assignment_id = NULL,
+            updated_at = NOW()
+        WHERE id IN (
+          SELECT order_id FROM delivery_assignments
+          WHERE driver_id = $1
+        ) AND delivery_status IN ('assigned','in_transit')`,
+        [driverId]
+      );
 
-      await clientDb.query('COMMIT');
-      return await this.findById(id);
+      // 3. Récupérer user_id
+      const { rows } = await client.query('SELECT user_id FROM drivers WHERE id = $1', [driverId]);
+      const userId = rows[0]?.user_id;
+
+      // 4. Supprimer les assignations
+      await client.query('DELETE FROM delivery_assignments WHERE driver_id = $1', [driverId]);
+
+      // 5. Supprimer le profil livreur
+      await client.query('DELETE FROM drivers WHERE id = $1', [driverId]);
+
+      // 6. Supprimer l'utilisateur
+      if (userId) await client.query('DELETE FROM users WHERE id = $1', [userId]);
+
+      await client.query('COMMIT');
     } catch (err) {
-      await clientDb.query('ROLLBACK');
+      await client.query('ROLLBACK');
       throw err;
     } finally {
-      clientDb.release();
+      client.release();
     }
   }
 
-  // ─── Mise à jour statut ──────────────────────────────────────
-  static async updateStatus(id, status) {
+  // ─── Tous les livreurs (admin) ───────────────────────────────
+  static async getAll() {
     const result = await pool.query(
-      `UPDATE drivers SET status = $1, last_seen_at = NOW(), updated_at = NOW()
-       WHERE id = $2 RETURNING *`,
-      [status, id]
+      `SELECT
+         dv.*,
+         u.first_name, u.last_name, u.phone, u.email, u.is_active,
+         b.name AS business_name
+       FROM driver_availability dv
+       JOIN users       u ON dv.user_id      = u.id
+       LEFT JOIN businesses b ON dv.business_id = b.id
+       ORDER BY b.name, u.first_name`
     );
-    return result.rows[0];
+    return result.rows;
   }
 
-  // ─── Recalculer statut après assignation ─────────────────────
-  static async recalcStatus(id) {
-    const result = await pool.query(
+  // ─── Modifier un livreur ─────────────────────────────────────
+  static async update(driverId, data) {
+    const allowed = ['vehicle_type', 'max_concurrent_orders', 'is_active'];
+    const fields  = [];
+    const values  = [];
+    let   i       = 1;
+
+    // Champs dans drivers
+    const driverFields = ['vehicle_type', 'max_concurrent_orders', 'is_active', 'district'];
+    const userFields   = ['first_name', 'last_name'];
+
+    const driverUpdates = {};
+    const userUpdates   = {};
+
+    Object.entries(data).forEach(([key, val]) => {
+      if (driverFields.includes(key)) driverUpdates[key] = val;
+      if (userFields.includes(key))   userUpdates[key]   = val;
+    });
+
+    // Update drivers
+    if (Object.keys(driverUpdates).length > 0) {
+      const dFields = Object.keys(driverUpdates).map((k, idx) => `${k} = $${idx + 1}`);
+      const dValues = Object.values(driverUpdates);
+      await pool.query(
+        `UPDATE drivers SET ${dFields.join(', ')}, updated_at = NOW() WHERE id = $${dValues.length + 1}`,
+        [...dValues, driverId]
+      );
+    }
+
+    // Update users si nécessaire
+    if (Object.keys(userUpdates).length > 0) {
+      const driver = await this.findById(driverId);
+      if (driver) {
+        const uFields = Object.keys(userUpdates).map((k, idx) => `${k} = $${idx + 1}`);
+        const uValues = Object.values(userUpdates);
+        await pool.query(
+          `UPDATE users SET ${uFields.join(', ')}, updated_at = NOW() WHERE id = $${uValues.length + 1}`,
+          [...uValues, driver.user_id]
+        );
+      }
+    }
+
+    return this.findById(driverId);
+  }
+
+  // ─── Mettre à jour le statut ─────────────────────────────────
+  static async updateStatus(driverId, status) {
+    await pool.query(
+      `UPDATE drivers SET status = $1, updated_at = NOW() WHERE id = $2`,
+      [status, driverId]
+    );
+  }
+
+  // ─── Recalculer le statut (at_capacity ou available) ────────
+  static async recalcStatus(driverId) {
+    await pool.query(
       `UPDATE drivers SET
          status = CASE
            WHEN status = 'offline' THEN 'offline'
            WHEN (
              SELECT COUNT(*) FROM delivery_assignments
-             WHERE driver_id = $1 AND status IN ('assigned','picked_up')
+             WHERE driver_id = $1 AND status IN ('assigned', 'picked_up')
            ) >= max_concurrent_orders THEN 'at_capacity'
            ELSE 'available'
          END,
          updated_at = NOW()
-       WHERE id = $1 RETURNING *`,
-      [id]
+       WHERE id = $1`,
+      [driverId]
     );
-    return result.rows[0];
   }
 
-  // ─── Commandes actives du livreur ────────────────────────────
+  // ─── Commandes actives du livreur ───────────────────────────
   static async getActiveOrders(driverId) {
     const result = await pool.query(
       `SELECT
-         da.id AS assignment_id,
-         da.status AS assignment_status,
-         da.assigned_at, da.picked_up_at,
-         o.id AS order_id, o.client_name, o.client_phone,
-         o.delivery_address, o.total_amount, o.notes,
-         o.delivery_status,
-         b.name AS business_name, b.address AS business_address, b.phone AS business_phone
-       FROM delivery_assignments da
-       JOIN orders o ON da.order_id = o.id
-       JOIN businesses b ON o.business_id = b.id
-       WHERE da.driver_id = $1 AND da.status IN ('assigned','picked_up')
-       ORDER BY da.assigned_at ASC`,
+        da.id                AS assignment_id,
+        da.order_id,
+        da.status            AS assignment_status,
+        da.assigned_at,
+        da.accepted_at,
+        da.picked_up_at,
+        o.total_amount,
+        o.delivery_address,
+        o.delivery_lat,      -- ✅ AJOUTER
+        o.delivery_lng,      -- ✅ AJOUTER
+        o.delivery_status,
+        o.client_name,
+        o.client_phone,      -- ✅ déjà présent, vérifier
+        b.name               AS business_name,
+        b.address            AS business_address,
+        b.phone              AS business_phone
+      FROM delivery_assignments da
+      JOIN orders     o ON da.order_id   = o.id
+      JOIN businesses b ON o.business_id = b.id
+      WHERE da.driver_id = $1
+        AND da.status    IN ('assigned','picked_up')
+      ORDER BY da.assigned_at DESC`,
       [driverId]
     );
     return result.rows;
   }
 
-  // ─── Historique livraisons ────────────────────────────────────
-  static async getHistory(driverId, limit = 20) {
+  // ─── Historique récent ───────────────────────────────────────
+  static async getHistory(driverId, limit = 10) {
     const result = await pool.query(
-      `SELECT da.*, o.client_name, o.total_amount, o.delivery_address,
-         b.name AS business_name
-       FROM delivery_assignments da
-       JOIN orders o ON da.order_id = o.id
-       JOIN businesses b ON o.business_id = b.id
-       WHERE da.driver_id = $1 AND da.status IN ('delivered','failed')
-       ORDER BY COALESCE(da.delivered_at, da.failed_at) DESC
-       LIMIT $2`,
+      `SELECT
+        da.order_id,
+        da.status,
+        da.delivered_at,
+        da.failed_at,
+        da.failure_reason,
+        o.total_amount,
+        o.client_name,
+        b.name AS business_name,
+        dr.rating  AS client_rating,    -- ✅ AJOUTÉ
+        dr.comment AS client_comment    -- ✅ AJOUTÉ
+      FROM delivery_assignments da
+      JOIN orders     o ON da.order_id   = o.id
+      JOIN businesses b ON o.business_id = b.id
+      LEFT JOIN driver_reviews dr ON dr.order_id = da.order_id   -- ✅ AJOUTÉ
+      WHERE da.driver_id = $1
+        AND da.status    IN ('delivered', 'failed')
+      ORDER BY COALESCE(da.delivered_at, da.failed_at) DESC
+      LIMIT $2`,
       [driverId, limit]
     );
     return result.rows;

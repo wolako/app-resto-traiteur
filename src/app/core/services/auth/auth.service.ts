@@ -4,6 +4,7 @@ import { BehaviorSubject, Observable, tap } from 'rxjs';
 import { AuthResponse, LoginRequest, RegisterRequest, User } from '../../models/user.model';
 import { environment } from '../../../../environments/environment';
 import { NotificationService } from '../notification/notification.service';
+import { ChatService } from '../chat/chat.service';
 
 export interface ChangePasswordRequest {
   currentPassword: string;
@@ -19,7 +20,8 @@ export class AuthService {
 
   constructor(
     private http: HttpClient,
-    private notificationService: NotificationService, // ✅ AJOUTÉ
+    private notificationService: NotificationService,
+    private chatService: ChatService
   ) {
     const token = localStorage.getItem('token');
     const user  = localStorage.getItem('user');
@@ -35,8 +37,10 @@ export class AuthService {
 
     if (token && parsedUser) {
       this.currentUserSubject.next(parsedUser);
-      // ✅ Reprendre le polling si déjà connecté (refresh de page)
       this.notificationService.startPolling();
+      this.chatService.connectSocket(token);            
+      const business = this.getBusiness();
+      if (business?.id) this.chatService.joinBusiness(business.id); 
     }
   }
 
@@ -54,8 +58,9 @@ export class AuthService {
             localStorage.setItem('business', JSON.stringify(business));
           }
           this.currentUserSubject.next(user);
-          // ✅ Démarrer le polling après login
           this.notificationService.startPolling();
+          this.chatService.connectSocket(token);          
+          if (business?.id) this.chatService.joinBusiness(business.id);
         }
       })
     );
@@ -77,8 +82,9 @@ export class AuthService {
             localStorage.setItem('business', JSON.stringify(business));
           }
           this.currentUserSubject.next(user);
-          // ✅ Démarrer le polling après login admin
           this.notificationService.startPolling();
+          this.chatService.connectSocket(token);          
+          if (business?.id) this.chatService.joinBusiness(business.id);
           console.log('User set in BehaviorSubject:', user);
         } else {
           console.error('Invalid admin login response or user is not superadmin');
@@ -110,7 +116,7 @@ export class AuthService {
   logout(): void {
     // ✅ Arrêter le polling avant de nettoyer
     this.notificationService.stopPolling();
-
+    this.chatService.disconnectSocket(); 
     localStorage.removeItem('token');
     localStorage.removeItem('user');
     localStorage.removeItem('business');

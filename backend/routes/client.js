@@ -56,4 +56,7 @@ router.delete('/notifications/:id',
   clientController.deleteNotification
 );
 
+router.post('/orders/:orderId/rate-driver', authenticateToken, requireRole('client'), clientController.rateDriver);
+router.get('/orders/:orderId/driver-review',  authenticateToken, requireRole('client'), clientController.getDriverReview);
+
 module.exports = router;

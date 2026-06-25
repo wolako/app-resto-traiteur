@@ -53,11 +53,10 @@
         <span class="nav-badge info" *ngIf="hasNewReviews">{{ currentReviewsCount }}</span>
       </button>
 
-      <button class="sb-btn" [class.active]="activeTab==='drivers'"
+      <button class="nav-item" [class.active]="activeTab==='drivers'"
         (click)="activeTab='drivers'; loadDrivers()">
-        <span class="sb-ico-w"><i class="bi bi-bicycle"></i></span>
-        <span class="sb-lbl">Livreurs</span>
-        <span class="sb-badge green" *ngIf="drivers.length > 0">{{ drivers.length }}</span>
+        <i class="bi bi-bicycle"></i><span>Livreurs</span>
+        <span class="nav-badge success" *ngIf="drivers.length > 0">{{ drivers.length }}</span>
       </button>
 
       <p class="nav-section-label">Finance</p>
@@ -589,6 +588,7 @@
               <th class="d-none d-md-table-cell">Téléphone</th>
               <th>Total</th>
               <th>Statut</th>
+              <th class="d-none d-md-table-cell">Livraison</th>
               <th class="d-none d-md-table-cell">Paiement</th>
               <th class="d-none d-md-table-cell">Date</th>
               <th>Actions</th>
@@ -612,10 +612,20 @@
               <td>
                 <div class="d-flex gap-1 align-items-center">
                   <button class="btn btn-sm btn-outline-info" (click)="viewOrder(order)" title="Voir détails"><i class="bi bi-eye"></i></button>
-                  <button class="btn btn-sm btn-outline-secondary" *ngIf="order.status === 'ready' && !order.current_assignment_id"
-                    (click)="openAssignModal(order)" title="Assigner un livreur">
+                  <!-- Bouton Assigner — uniquement si la commande a une adresse de livraison -->
+                  <button class="btn btn-sm btn-outline-secondary"
+                    *ngIf="order.status === 'ready' && !order.current_assignment_id && order.delivery_address"
+                    (click)="openAssignModal(order)"
+                    title="Assigner un livreur">
                     <i class="bi bi-bicycle"></i>
                   </button>
+
+                  <!-- Badge "À emporter" si pas d'adresse -->
+                  <span class="stag b-inactive"
+                    *ngIf="order.status === 'ready' && !order.delivery_address"
+                    style="font-size:.62rem;" title="Commande à emporter — pas de livraison">
+                    <i class="bi bi-bag"></i> À emporter
+                  </span>
                   <!-- Afficher le livreur assigné si déjà assigné -->
                   <span class="stag s-confirmed"
                     *ngIf="order.current_assignment_id"
@@ -645,6 +655,65 @@
                   <span *ngIf="order.payment_type === 'cod' && order.payment_status === 'cod_received'" class="stag s-ready" style="font-size:.65rem;"><i class="bi bi-check-circle"></i> COD</span>
                 </div>
               </td>
+            <td class="d-none d-md-table-cell">
+              <span *ngIf="order.delivery_status && order.delivery_status !== 'pending'" class="stag"
+                [ngClass]="{
+                  's-confirmed':  order.delivery_status === 'assigned',
+                  's-preparing':  order.delivery_status === 'in_transit',
+                  's-ready':      order.delivery_status === 'delivered',
+                  's-pending':    order.delivery_status === 'ready_for_pickup',
+                  'r-cancelled':  order.delivery_status === 'failed'
+                }">
+                <i class="bi"
+                  [class.bi-bicycle]="order.delivery_status === 'assigned'"
+                  [class.bi-truck]="order.delivery_status === 'in_transit'"
+                  [class.bi-check-circle-fill]="order.delivery_status === 'delivered'"
+                  [class.bi-exclamation-triangle-fill]="order.delivery_status === 'failed'">
+                </i>
+                {{ order.delivery_status === 'assigned'        ? 'Livreur assigné'
+                  : order.delivery_status === 'in_transit'     ? '🚀 En route'
+                  : order.delivery_status === 'delivered'      ? '✅ Livré'
+                  : order.delivery_status === 'ready_for_pickup' ? 'Prêt à récupérer'
+                  : order.delivery_status === 'failed'         ? '⚠️ Problème'
+                  : '' }}
+              </span>
+              <span *ngIf="order.delivery_status === 'assigned' && order.driver_accepted_at"
+                class="stag s-confirmed d-block mt-1" style="font-size:.62rem;">
+                <i class="bi bi-check2-all"></i> Commande accepter
+              </span>
+              <span *ngIf="order.delivery_status === 'assigned' && !order.driver_accepted_at"
+                class="stag s-pending d-block mt-1" style="font-size:.62rem;">
+                <i class="bi bi-hourglass-split"></i> En attente d'acceptation
+              </span>
+              <span *ngIf="order.delivery_status === 'failed'" class="stag r-cancelled d-block mt-1"
+                style="font-size:.62rem; cursor:help; max-width:160px; white-space:normal;"
+                [title]="order.last_delivery_failure_reason || 'Aucun détail fourni'">
+                <i class="bi bi-chat-left-text-fill"></i>
+                {{ order.last_delivery_failure_reason
+                    ? (order.last_delivery_failure_reason.length > 35
+                        ? (order.last_delivery_failure_reason | slice:0:35) + '…'
+                        : order.last_delivery_failure_reason)
+                    : 'Raison non précisée' }}
+              </span>
+              <!-- Confirmation client -->
+              <span *ngIf="order.delivery_confirmed" class="stag s-ready d-block mt-1" style="font-size:.62rem;">
+                <i class="bi bi-person-check-fill"></i> Client confirmé
+              </span>
+
+              <!-- ✅ Note du livreur laissée par le client -->
+              <div *ngIf="order.driver_rating" class="d-block mt-1" style="font-size:.62rem;"
+                [title]="order.driver_comment || ''">
+                <span style="color:#f5a623;">
+                  <i *ngFor="let s of [1,2,3,4,5]" class="bi"
+                    [class.bi-star-fill]="s <= order.driver_rating"
+                    [class.bi-star]="s > order.driver_rating"
+                    style="font-size:.7rem;"></i>
+                </span>
+                <span *ngIf="order.driver_comment" style="color:var(--rt-t3); display:block; font-style:italic;">
+                  "{{ order.driver_comment.length > 40 ? (order.driver_comment | slice:0:40) + '…' : order.driver_comment }}"
+                </span>
+              </div>
+            </td>
             </tr>
             <tr *ngIf="filteredOrders.length === 0">
               <td colspan="8" class="text-center py-5 text-muted"><i class="bi bi-inbox fs-1 d-block mb-2"></i>Aucune commande</td>
@@ -891,68 +960,114 @@
         </button>
       </div>
 
-      <!-- Grille des livreurs -->
+      <!-- ✅ Barre de recherche -->
+      <div class="mb-3" *ngIf="drivers.length > 0">
+        <input type="text" class="form-control"
+          [(ngModel)]="driverFilter"
+          (input)="filterDrivers()"
+          placeholder="Rechercher par nom ou téléphone…"
+          style="max-width:320px;">
+      </div>
+
+      <!-- ✅ Utiliser filteredDrivers (pas drivers) -->
       <div class="row g-3">
-        <div class="col-sm-6 col-md-4" *ngFor="let d of drivers">
-          <div class="driver-card">
+        <div class="col-sm-6 col-md-4" *ngFor="let d of filteredDrivers">
+          <div class="driver-card" [class.opacity-50]="!(d).is_active">
             <div class="drc-header">
-              <div class="drc-avatar">
-                {{ d.first_name?.charAt(0) }}{{ d.last_name?.charAt(0) }}
+              <div class="drc-avatar"
+                [style.background]="(d).is_active === false ? 'var(--rt-bdr-hi)' : 'var(--rt-primary-s)'"
+                [style.color]="(d).is_active === false ? 'var(--rt-t4)' : 'var(--rt-primary)'">
+                {{ d.first_name.charAt(0) }}{{ d.last_name.charAt(0) }}
               </div>
               <div class="drc-info">
-                <div class="drc-name">{{ d.first_name }} {{ d.last_name }}</div>
+                <div class="drc-name">
+                  {{ d.first_name }} {{ d.last_name }}
+                  <span *ngIf="!(d).is_active"
+                    style="font-size:.6rem;padding:1px 6px;background:var(--rt-bdr-hi);color:var(--rt-t4);border-radius:4px;margin-left:4px;">
+                    Inactif
+                  </span>
+                </div>
                 <div class="drc-phone">{{ d.phone }}</div>
               </div>
               <div class="drc-status-dot"
-                [class.green]="d.real_status === 'available'"
-                [class.orange]="d.real_status === 'at_capacity'"
-                [class.gray]="d.real_status === 'offline' || d.real_status === 'inactive'"
-                [title]="d.real_status">
+                [class.green]="(d).is_active && d.real_status === 'available'"
+                [class.orange]="(d).is_active && d.real_status === 'at_capacity'"
+                [class.gray]="!(d).is_active || d.real_status === 'offline'">
               </div>
             </div>
+
             <div class="drc-stats">
               <span class="stag"
                 [ngClass]="{
-                  'b-active':   d.real_status === 'available',
-                  's-preparing': d.real_status === 'at_capacity',
-                  'b-inactive': d.real_status === 'offline' || d.real_status === 'inactive'
+                  'b-active':   (d).is_active && d.real_status === 'available',
+                  's-preparing': (d).is_active && d.real_status === 'at_capacity',
+                  'b-inactive': !(d).is_active || d.real_status === 'offline'
                 }">
                 <i class="bi bi-circle-fill" style="font-size:.45rem;"></i>
-                {{ d.real_status === 'available' ? 'Disponible'
-                  : d.real_status === 'at_capacity' ? 'Complet'
-                  : d.real_status === 'offline' ? 'Hors ligne' : 'Inactif' }}
+                {{ !(d).is_active ? 'Inactif'
+                  : d.real_status === 'available'   ? 'Disponible'
+                  : d.real_status === 'at_capacity' ? 'Complet' : 'Hors ligne' }}
               </span>
               <span class="drc-capacity">
                 {{ d.active_orders_count || 0 }}/{{ d.max_concurrent_orders }}
                 <i class="bi bi-box-seam ms-1" style="color:var(--rt-t4)"></i>
               </span>
             </div>
+
             <div class="drc-vehicle">
               <i class="bi"
                 [class.bi-bicycle]="d.vehicle_type === 'velo'"
-                [class.bi-motorbike]="d.vehicle_type === 'moto'"
+                [class.bi-truck]="d.vehicle_type === 'moto'"
                 [class.bi-car-front]="d.vehicle_type === 'voiture'"
                 [class.bi-person-walking]="d.vehicle_type === 'pied'">
               </i>
-              <span>{{ vehicleLabel(d.vehicle_type) }}</span>
+              {{ vehicleLabel(d.vehicle_type) }}
             </div>
+
             <div class="drc-actions">
+              <!-- Modifier — uniquement si actif -->
               <button class="btn btn-sm btn-outline-secondary"
+                *ngIf="(d).is_active"
                 (click)="editDriver(d)" title="Modifier">
                 <i class="bi bi-pencil"></i>
               </button>
-              <button class="btn btn-sm btn-outline-danger"
-                (click)="confirmDeleteDriver(d)" title="Désactiver">
-                <i class="bi bi-person-x"></i>
+
+              <!-- ✅ Toggle activer / désactiver -->
+              <button class="btn btn-sm"
+                [class.btn-outline-warning]="(d).is_active"
+                [class.btn-outline-success]="!(d).is_active"
+                (click)="toggleDriver(d)"
+                [title]="(d).is_active ? 'Désactiver' : 'Réactiver'">
+                <i class="bi"
+                  [class.bi-person-x]="(d).is_active"
+                  [class.bi-person-check]="!(d).is_active">
+                </i>
+                <span class="d-none d-md-inline ms-1">
+                  {{ (d).is_active ? 'Désactiver' : 'Réactiver' }}
+                </span>
               </button>
+
+              <button class="btn btn-sm btn-outline-danger"
+                (click)="deleteDriverPermanently(d)"
+                title="Supprimer définitivement">
+                <i class="bi bi-trash3-fill"></i>
+              </button>
+
             </div>
           </div>
         </div>
       </div>
 
-      <div class="empty-state" *ngIf="drivers.length === 0">
+      <!-- État vide : aucun livreur -->
+      <div class="empty-state" *ngIf="filteredDrivers.length === 0 && !driverFilter">
         <i class="bi bi-bicycle"></i>
         <p>Aucun livreur. Ajoutez votre premier livreur !</p>
+      </div>
+
+      <!-- État vide : recherche sans résultat -->
+      <div class="empty-state" *ngIf="filteredDrivers.length === 0 && driverFilter">
+        <i class="bi bi-search"></i>
+        <p>Aucun résultat pour "{{ driverFilter }}"</p>
       </div>
     </div>
 
@@ -1062,9 +1177,18 @@
       </div>
       <form [formGroup]="menuForm" (ngSubmit)="saveMenu()">
         <div class="modal-body">
-          <div class="mb-3"><label class="form-label">Nom du menu *</label><input type="text" class="form-control" formControlName="name" placeholder="Ex: Menu du jour" [class.is-invalid]="menuForm.get('name')?.invalid && menuForm.get('name')?.touched"><div class="invalid-feedback">Requis</div></div>
-          <div class="mb-3"><label class="form-label">Description</label><textarea class="form-control" formControlName="description" rows="3"></textarea></div>
-          <div class="form-check"><input class="form-check-input" type="checkbox" id="menuActive" formControlName="is_active"><label class="form-check-label" for="menuActive">Menu actif</label></div>
+          <div class="mb-3"><label class="form-label">Nom du menu *</label>
+            <input type="text" class="form-control" formControlName="name" placeholder="Ex: Menu du jour" [class.is-invalid]="menuForm.get('name')?.invalid && menuForm.get('name')?.touched">
+            <div class="invalid-feedback">Requis</div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Description</label>
+            <textarea class="form-control" formControlName="description" rows="3"></textarea>
+          </div>
+          <div class="form-check">
+            <input class="form-check-input" type="checkbox" id="menuActive" formControlName="is_active">
+            <label class="form-check-label" for="menuActive">Menu actif</label>
+          </div>
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-secondary" (click)="closeMenuModal()">Annuler</button>
@@ -1209,11 +1333,65 @@
               placeholder="+228 90 12 34 56" [disabled]="!!editingDriver">
             <small class="text-muted" *ngIf="editingDriver">Le téléphone ne peut pas être modifié</small>
           </div>
+          <!-- Champ email -->
           <div class="col-12">
-            <label class="form-label">Email <small class="text-muted">(optionnel)</small></label>
+            <label class="form-label">Email *</label>
             <input type="email" class="form-control" [(ngModel)]="driverForm.email"
-              placeholder="koffi@email.com" [disabled]="!!editingDriver">
+              placeholder="koffi@email.com" [disabled]="!!editingDriver" required>
+            <small class="text-muted">
+              <i class="bi bi-info-circle"></i>
+              Nécessaire pour la récupération de mot de passe en cas d'oubli
+            </small>
           </div>
+
+          <!-- Dans le modal Livreur, après le champ email -->
+          <div class="col-12">
+            <label class="form-label">
+              <i class="bi bi-geo-alt-fill"></i> Zone de livraison
+            </label>
+            <select class="form-select" [(ngModel)]="driverForm.district">
+              <option value="">-- Sélectionner une zone --</option>
+              <option *ngFor="let d of lomeDistricts" [value]="d.value">{{ d.label }}</option>
+            </select>
+            <small class="text-muted">
+              <i class="bi bi-info-circle"></i>
+              Zone géographique couverte par ce livreur
+            </small>
+          </div>
+
+          <!-- ✅ Champ mot de passe avec bouton Générer -->
+          <div class="col-12" *ngIf="!editingDriver">
+            <label class="form-label fw-bold">
+              <i class="bi bi-key-fill text-warning me-1"></i>
+              Mot de passe *
+            </label>
+            <div class="input-group">
+              <input
+                [type]="showDriverPassword ? 'text' : 'password'"
+                class="form-control"
+                [(ngModel)]="driverForm.password"
+                placeholder="Mot de passe du livreur"
+                autocomplete="new-password">
+              <!-- Afficher/Masquer -->
+              <button class="btn btn-outline-secondary" type="button"
+                (click)="showDriverPassword = !showDriverPassword"
+                title="Afficher/Masquer">
+                <i class="bi" [class.bi-eye]="!showDriverPassword" [class.bi-eye-slash]="showDriverPassword"></i>
+              </button>
+              <!-- Générer automatiquement -->
+              <button class="btn btn-outline-primary" type="button"
+                (click)="generateDriverPassword()" title="Générer un mot de passe">
+                <i class="bi bi-shuffle"></i> Générer
+              </button>
+            </div>
+            <div class="form-text">
+              <i class="bi bi-info-circle me-1"></i>
+              Le livreur utilisera ce mot de passe pour se connecter sur
+              <strong>/driver/login</strong>.
+              Il pourra le changer après sa 1ère connexion.
+            </div>
+          </div>
+          
           <div class="col-6">
             <label class="form-label">Véhicule</label>
             <select class="form-select" [(ngModel)]="driverForm.vehicle_type">
@@ -1266,44 +1444,81 @@
       <div class="modal-header">
         <h5 class="modal-title">
           <i class="bi bi-bicycle"></i>
-          Assigner un livreur — Commande #{{ orderToAssign?.id }}
+          Assigner un livreur — Commande {{ orderToAssign?.id }}
         </h5>
         <button type="button" class="btn-close" (click)="closeAssignModal()"></button>
       </div>
       <div class="modal-body" *ngIf="orderToAssign">
 
+        <!-- Dans le modal d'assignation, section infos commande -->
         <div class="assign-order-info">
-          <i class="bi bi-person-fill"></i>
-          <div>
-            <strong>{{ orderToAssign.client_name }}</strong>
-            <small class="d-block text-muted">{{ orderToAssign.delivery_address || 'Adresse non précisée' }}</small>
+          <div><strong>Client :</strong> {{ orderToAssign?.client_name }}</div>
+          <div><strong>Téléphone :</strong> {{ orderToAssign?.client_phone }}</div>
+          <div *ngIf="orderToAssign?.delivery_address">
+            <strong>Adresse :</strong> {{ orderToAssign.delivery_address }}
           </div>
-          <span class="ms-auto fw-bold" style="color:var(--rt-green)">
-            {{ formatMontant(orderToAssign.total_amount) }} FCFA
-          </span>
+
+          <!-- ✅ GPS si disponible -->
+          <div *ngIf="orderToAssign?.delivery_lat && orderToAssign?.delivery_lng"
+            class="gps-assign-block mt-2">
+            <i class="bi bi-geo-fill text-success me-1"></i>
+            <strong>Position GPS :</strong>
+            {{ orderToAssign.delivery_lat | number:'1.4-6' }}°N,
+            {{ orderToAssign.delivery_lng | number:'1.4-6' }}°E
+            <a [href]="'https://maps.google.com/?q=' + orderToAssign.delivery_lat + ',' + orderToAssign.delivery_lng"
+              target="_blank" rel="noopener" class="btn btn-sm btn-outline-success ms-2">
+              <i class="bi bi-map-fill"></i> Voir sur Maps
+            </a>
+          </div>
+          <div *ngIf="!orderToAssign?.delivery_lat" class="text-muted small mt-1">
+            <i class="bi bi-geo-alt me-1"></i> Position GPS non partagée par le client
+          </div>
         </div>
 
         <p class="form-label mt-3">Choisir un livreur :</p>
 
         <div class="assign-drivers-list">
+
+          <!-- Indicateur de zone de l'établissement -->
+          <div *ngIf="business?.district" class="assign-zone-info"
+            style="background:var(--rt-blue-s);border:1px solid rgba(43,127,191,.25);border-radius:8px;padding:8px 12px;margin-bottom:10px;font-size:.78rem;color:var(--rt-blue);">
+            <i class="bi bi-geo-alt-fill"></i>
+            Zone de l'établissement : <strong>{{ business?.district }}</strong>
+          </div>
+
           <div class="assign-driver-item"
             *ngFor="let d of drivers"
             [class.selected]="selectedDriverId === d.id"
             [class.disabled]="d.real_status !== 'available'"
+            [class.same-zone]="d.district && d.district === (business?.district)"
             (click)="d.real_status === 'available' ? selectedDriverId = (d.id ?? null) : null">
 
             <div class="adi-avatar">{{ d.first_name?.charAt(0) }}{{ d.last_name?.charAt(0) }}</div>
             <div class="adi-info">
-              <div class="adi-name">{{ d.first_name }} {{ d.last_name }}</div>
+              <div class="adi-name">
+                {{ d.first_name }} {{ d.last_name }}
+                <!-- Badge plateforme -->
+                <span *ngIf="(d).driver_type === 'platform'"
+                  style="font-size:.58rem;padding:1px 6px;background:var(--rt-blue-s);color:var(--rt-blue);border-radius:4px;border:1px solid rgba(43,127,191,.3);margin-left:4px;">
+                  🌍 Plateforme
+                </span>
+                <!-- ✅ Badge même zone -->
+                <span *ngIf="d.district && d.district === (business?.district)"
+                  style="font-size:.58rem;padding:1px 6px;background:var(--rt-green-s);color:var(--rt-green);border-radius:4px;border:1px solid rgba(42,157,92,.3);margin-left:4px;">
+                  📍 Même zone
+                </span>
+              </div>
               <div class="adi-meta">
-                <i class="bi"
-                  [class.bi-bicycle]="d.vehicle_type==='velo'"
-                  [class.bi-truck]="d.vehicle_type==='moto'"
-                  [class.bi-car-front]="d.vehicle_type==='voiture'"
-                  [class.bi-person-walking]="d.vehicle_type==='pied'"
-                  style="font-size:.75rem;"></i>
-                {{ vehicleLabel(d.vehicle_type) }} ·
-                {{ d.active_orders_count }}/{{ d.max_concurrent_orders }} cmds
+                <i class="bi bi-bicycle" style="font-size:.75rem;"></i>
+                {{ vehicleLabel(d.vehicle_type) }} · {{ d.active_orders_count }}/{{ d.max_concurrent_orders }} cmds
+                <!-- ✅ Afficher la zone du livreur -->
+                <span *ngIf="d.district" style="margin-left:6px;">
+                  <i class="bi bi-geo-alt-fill" style="font-size:.65rem;color:var(--rt-t3);"></i>
+                  {{ d.district }}
+                </span>
+                <span *ngIf="!d.district" style="margin-left:6px;color:var(--rt-t4);font-size:.68rem;">
+                  <i class="bi bi-geo-alt"></i> Zone non définie
+                </span>
               </div>
             </div>
             <div class="adi-status">

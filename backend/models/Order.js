@@ -40,29 +40,32 @@ class Order {
       // ✅ MODIFIÉ : Ajout des nouveaux champs de frais
       const orderResult = await client.query(
         `INSERT INTO orders
-         (business_id, client_id, client_name, client_phone, client_email,
+        (business_id, client_id, client_name, client_phone, client_email,
           status, payment_status, payment_type, payment_method, notes,
           subtotal_amount, delivery_fee, payment_fee, total_amount,
-          delivery_address, delivery_distance)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
-         RETURNING *`,
+          delivery_address, delivery_distance,
+          delivery_lat, delivery_lng)
+        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18)
+        RETURNING *`,
         [
           orderData.business_id,
-          orderData.client_id || null,
+          orderData.client_id    || null,
           orderData.client_name,
           orderData.client_phone,
-          orderData.client_email,
-          orderData.status || 'pending',
+          orderData.client_email || null,
+          orderData.status       || 'pending',
           orderData.payment_status || 'pending',
-          orderData.payment_type || 'online',           // ✅ NOUVEAU
+          orderData.payment_type   || 'online',
           orderData.payment_method,
-          orderData.notes,
-          orderData.subtotal_amount || orderData.total_amount,  // ✅ NOUVEAU
-          orderData.delivery_fee || 0,                  // ✅ NOUVEAU
-          orderData.payment_fee || 0,                   // ✅ NOUVEAU
+          orderData.notes          || null,
+          orderData.subtotal_amount || orderData.total_amount,
+          orderData.delivery_fee    || 0,
+          orderData.payment_fee     || 0,
           orderData.total_amount,
-          orderData.delivery_address,                   // ✅ NOUVEAU
-          orderData.delivery_distance                   // ✅ NOUVEAU
+          orderData.delivery_address  || null,
+          orderData.delivery_distance || null,
+          orderData.delivery_lat      || null,  
+          orderData.delivery_lng      || null   
         ]
       );
 
@@ -132,9 +135,12 @@ class Order {
 
   static async getByBusinessId(businessId, filters = {}) {
     let query = `
-      SELECT o.*, b.name as business_name
+      SELECT o.*, b.name as business_name,
+        dr.rating  AS driver_rating,
+        dr.comment AS driver_comment
       FROM orders o
       JOIN businesses b ON o.business_id = b.id
+      LEFT JOIN driver_reviews dr ON dr.order_id = o.id
       WHERE o.business_id = $1
     `;
 
@@ -164,10 +170,13 @@ class Order {
       SELECT
         o.*,
         b.name AS business_name,
-        COUNT(oi.id) AS items_count
+        COUNT(oi.id) AS items_count,
+        dr.rating  AS driver_rating,
+        dr.comment AS driver_comment
       FROM orders o
       JOIN businesses b ON o.business_id = b.id
       LEFT JOIN order_items oi ON oi.order_id = o.id
+      LEFT JOIN driver_reviews dr ON dr.order_id = o.id
       WHERE 1=1
     `;
 
@@ -186,7 +195,8 @@ class Order {
       paramCount++;
     }
 
-    query += ` GROUP BY o.id, b.name ORDER BY o.created_at DESC`;
+    // ✅ dr.rating et dr.comment doivent être dans le GROUP BY
+    query += ` GROUP BY o.id, b.name, dr.rating, dr.comment ORDER BY o.created_at DESC`;
 
     const result = await pool.query(query, values);
     return result.rows;

@@ -1,7 +1,7 @@
 // src/app/core/services/chat/chat.service.ts
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable, BehaviorSubject } from 'rxjs';
+import { Observable, BehaviorSubject, Subject } from 'rxjs';
 import { io, Socket } from 'socket.io-client';
 import { environment } from '../../../../environments/environment';
 
@@ -63,9 +63,18 @@ export class ChatService {
   private conversationDeletedSubject = new BehaviorSubject<number | null>(null);
   public conversationDeleted$ = this.conversationDeletedSubject.asObservable();
 
-  // ✅ AJOUT: Observable pour les messages lus
+  // Observable pour les messages lus
   private messagesReadSubject = new BehaviorSubject<void>(undefined);
   public messagesRead$ = this.messagesReadSubject.asObservable();
+
+  private newAssignmentSubject = new Subject<any>();
+  public newAssignment$ = this.newAssignmentSubject.asObservable();
+
+  private orderUpdatedSubject = new Subject<any>();
+  public orderUpdated$ = this.orderUpdatedSubject.asObservable();
+
+  // Tracker l'identité d'authentification pour éviter les reconnexions inutiles
+  private currentAuthKey?: string;
 
   constructor(private http: HttpClient) {
     console.log('🔵 ChatService créé');
@@ -76,7 +85,6 @@ export class ChatService {
   // ========================================
   // API REST
   // ========================================
-
   getOrCreateConversation(businessId: number, guestInfo?: { client_name: string; client_phone: string }): Observable<any> {
     console.log('🟢 getOrCreateConversation appelé', { businessId, guestInfo });
     return this.http.post(`${this.apiUrl}/conversations`, {
@@ -84,28 +92,22 @@ export class ChatService {
       ...guestInfo
     });
   }
-
   getBusinessConversations(businessId: number): Observable<any> {
     return this.http.get(`${this.apiUrl}/conversations/business/${businessId}`);
   }
-
   getClientConversations(): Observable<any> {
     return this.http.get(`${this.apiUrl}/conversations/client`);
   }
-
   getMessages(conversationId: number): Observable<any> {
     console.log('🟢 getMessages appelé', { conversationId });
     return this.http.get(`${this.apiUrl}/conversations/${conversationId}/messages`);
   }
-
   getUnreadCount(): Observable<any> {
     return this.http.get(`${this.apiUrl}/unread-count`);
   }
-
   deleteConversation(conversationId: number): Observable<any> {
     return this.http.delete(`${this.apiUrl}/conversations/${conversationId}`);
   }
-
   deleteMessage(messageId: number): Observable<any> {
     return this.http.delete(`${this.apiUrl}/messages/${messageId}`);
   }
@@ -113,23 +115,25 @@ export class ChatService {
   // ========================================
   // SOCKET.IO
   // ========================================
-
   connectSocket(token?: string, guestInfo?: { guestName: string; guestPhone: string }) {
     console.log('🔵 connectSocket appelé', { hasToken: !!token, guestInfo });
+
+    // ✅ Calculer une clé d'identité pour détecter les vraies reconnexions
+    const authKey = token ? `token:${token}` : guestInfo ? `guest:${guestInfo.guestPhone}` : undefined;
+
+    if (this.socket?.connected && authKey === this.currentAuthKey) {
+      console.log('⚠️ Socket déjà connecté avec les mêmes identifiants — réutilisation');
+      return;
+    }
     
     if (this.socket?.connected) {
-      console.log('⚠️ Socket déjà connecté');
-      
-      if ((token || guestInfo)) {
-        console.log('🔄 Déconnexion pour reconnexion avec nouvelles credentials');
-        this.socket.disconnect();
-        this.socket = undefined;
-      } else {
-        console.log('⚠️ Réutilisation du socket existant');
-        return;
-      }
+      console.log('🔄 Déconnexion pour reconnexion avec nouvelles credentials');
+      this.socket.disconnect();
+      this.socket = undefined;
     }
 
+    this.currentAuthKey = authKey;
+    
     const auth: any = {};
     
     if (token) {
@@ -189,6 +193,7 @@ export class ChatService {
       } else {
         console.log('⚠️ Message déjà dans la liste, ignoré');
       }
+
     });
 
     // Message supprimé
@@ -242,8 +247,23 @@ export class ChatService {
     this.socket.on('unread_count_updated', () => {
       this.loadUnreadCount();
     });
+
+    // ── ✅ NOUVEAUX évènements COMMANDES/LIVREURS (même connexion) ──
+    this.socket.on('new_assignment', (data: any) => {
+      console.log('🆕 [SOCKET] Nouvelle assignation reçue:', data);
+      this.newAssignmentSubject.next(data);
+    });
+
+    this.socket.on('order_updated', (data: any) => {
+      console.log('🔄 [SOCKET] Commande mise à jour:', data);
+      this.orderUpdatedSubject.next(data);
+    });
+
   }
 
+  joinBusiness(businessId: number) {
+    this.socket?.emit('join_business', businessId);
+  }
   disconnectSocket() {
     console.log('🔴 Déconnexion du socket');
     if (this.socket) {

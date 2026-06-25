@@ -27,7 +27,8 @@
             "inlineStyleLanguage": "scss",
             "assets": [
               "src/favicon.ico",
-              "src/assets"
+              "src/assets",
+              "src/sw-push.js"
             ],
             "styles": [
               "node_modules/bootstrap/scss/bootstrap.scss",
@@ -91,7 +92,8 @@
             "inlineStyleLanguage": "scss",
             "assets": [
               "src/favicon.ico",
-              "src/assets"
+              "src/assets",
+              "src/sw-push.js"
             ],
             "styles": [
               "src/styles.scss"

@@ -36,6 +36,8 @@ const analyticsRoutes     = require('./routes/analytics');
 const contactRoutes       = require('./routes/contact');
 const paymentAccountRoutes = require('./routes/paymentAccounts');
 const driverRoutes        = require('./routes/drivers');
+const orderSocket = require('./socket/orderSocket');
+const pushRoutes = require('./routes/push');
 
 // Utilitaires
 const { logger }                      = require('./utils/logger');
@@ -145,6 +147,7 @@ io.use(async (socket, next) => {
 });
 
 chatSocket(io);
+orderSocket(io);
 app.set('io', io);
 
 // ─────────────────────────────────────────────────────────────
@@ -244,6 +247,7 @@ app.use('/api/analytics',        analyticsRoutes);
 app.use('/api/contact',          contactRoutes);
 app.use('/api/payment-accounts', paymentAccountRoutes); 
 app.use('/api/drivers',          driverRoutes);
+app.use('/api/push',             pushRoutes);
 
 // ─────────────────────────────────────────────────────────────
 // Frontend Angular (production build)

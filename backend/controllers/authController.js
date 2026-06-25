@@ -430,6 +430,12 @@ const resetPassword = asyncHandler(async (req, res) => {
     await PasswordResetToken.markAsUsed(token);
     await PasswordResetToken.invalidateUserTokens(tokenData.user_id);
 
+    // ✅ Si c'est un livreur, marquer le mot de passe temporaire comme changé
+    await pool.query(
+      `UPDATE drivers SET temp_password_used = false, updated_at = NOW() WHERE user_id = $1`,
+      [tokenData.user_id]
+    );
+
     try {
       await emailService.sendPasswordChangedEmail(tokenData.email, tokenData.first_name);
     } catch (error) {

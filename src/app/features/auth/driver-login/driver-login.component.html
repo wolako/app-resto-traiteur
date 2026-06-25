@@ -2,7 +2,7 @@
 
   <!-- Brand -->
   <div class="dl-brand">
-    <div class="dl-brand-icon">🚴</div>
+    <div class="dl-brand-icon">🏍️</div>
     <div class="dl-brand-text">
       <span class="dl-brand-name">RestoTraiteur</span>
       <span class="dl-brand-sub">Espace Livreur</span>
@@ -13,6 +13,15 @@
     <div class="dl-card-head">
       <h1>Connexion Livreur</h1>
       <p>Accédez à votre interface de livraison</p>
+    </div>
+
+    <div class="alert alert-warning d-flex align-items-center gap-2"
+      *ngIf="sessionExpiredMessage">
+      <i class="bi bi-clock-history fs-5"></i>
+      <div>
+        <strong>Session expirée</strong><br>
+        <small>Votre session a expiré. Veuillez vous reconnecter pour continuer.</small>
+      </div>
     </div>
 
     <!-- Erreur -->
@@ -67,7 +76,10 @@
 
     <!-- Footer de la carte -->
     <div class="dl-card-foot">
-      <p>Vous n'êtes pas livreur ?</p>
+      <a routerLink="/driver/forgot-password" class="dl-forgot-link">
+        <i class="bi bi-question-circle"></i> Mot de passe oublié ?
+      </a>
+      <p style="margin-top:10px;">Vous n'êtes pas livreur ?</p>
       <a routerLink="/business/login">Connexion établissement</a>
       &nbsp;·&nbsp;
       <a routerLink="/login">Connexion client</a>

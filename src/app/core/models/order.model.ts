@@ -35,9 +35,17 @@ export interface Order {
   items_count?: number;
   user_id?: number;
   updated_at?: Date | string;
-  // ✅ Ajouts pour la livraison
   current_assignment_id?: number;
   delivery_status?: 'pending' | 'ready_for_pickup' | 'assigned' | 'in_transit' | 'delivered' | 'failed';
   delivery_address?: string;
   delivery_distance?: number;
+  delivery_lat?: number | null;       
+  delivery_lng?: number | null;       
+  delivery_confirmed?: boolean;       
+  delivery_confirmed_at?: string;   
+  last_delivery_failure_reason?: string;
+  driver_rating?: number;
+  driver_comment?: string;
+  driver_accepted_at?: string;
+
 }

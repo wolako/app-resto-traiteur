@@ -1,6 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
-import { Router, RouterModule } from '@angular/router';
+import { Router, RouterModule, ActivatedRoute } from '@angular/router';
 import { AuthService } from '../../../core/services/auth/auth.service';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators, AbstractControl, ValidationErrors } from '@angular/forms';
 
@@ -17,14 +17,22 @@ export class LoginComponent implements OnInit {
   error = '';
   showPassword = false;
   loginMode: 'email' | 'phone' = 'email';
+  sessionExpiredMessage = false;
 
   constructor(
     private fb: FormBuilder,
     private authService: AuthService,
+    private route: ActivatedRoute,
     private router: Router
   ) {}
 
   ngOnInit(): void {
+    this.route.queryParams.subscribe(params => {
+      if (params['reason'] === 'session_expired') {
+        this.sessionExpiredMessage = true;
+      }
+    });
+
     this.loginForm = this.fb.group({
       identifier: ['', [Validators.required, this.identifierValidator.bind(this)]],
       password:   ['', Validators.required]

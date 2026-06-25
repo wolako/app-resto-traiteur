@@ -6,6 +6,9 @@ const { asyncHandler } = require('../middleware/errorHandler');
 const logger = require('../utils/logger');
 const { pool } = require('../config/db');
 const orderReceiptService = require('../services/orderReceiptService');
+const DriverReview = require('../models/DriverReview');
+const { notifyBusiness } = require('../utils/socketEmit');
+const notificationService = require('../services/notificationService');
 
 /**
  * Obtenir le profil complet du client
@@ -231,58 +234,49 @@ const getClientSpecialOrders = asyncHandler(async (req, res) => {
  * Confirmer la livraison d'une commande
  * POST /api/client/orders/:orderId/confirm-delivery
  */
+
 const confirmDelivery = asyncHandler(async (req, res) => {
   const { orderId } = req.params;
+  const clientId = req.user.id;
 
-  // Vérifier que la commande existe et appartient au client
-  const order = await Order.findById(orderId);
-  
-  if (!order) {
-    return res.status(HTTP_STATUS.NOT_FOUND).json({
-      success: false,
-      message: 'Commande introuvable',
-      code: ERROR_CODES.NOT_FOUND
-    });
-  }
-
-  if (order.client_id !== req.user.id) {
-    return res.status(HTTP_STATUS.FORBIDDEN).json({
-      success: false,
-      message: 'Vous n\'êtes pas autorisé à confirmer cette livraison',
-      code: ERROR_CODES.FORBIDDEN
-    });
-  }
-
+  const { rows: [order] } = await pool.query(
+    `SELECT * FROM orders WHERE id = $1 AND client_id = $2`,
+    [orderId, clientId]
+  );
+  if (!order) return res.status(404).json({ success: false, error: 'Commande introuvable' });
   if (order.status !== 'delivered') {
-    return res.status(HTTP_STATUS.BAD_REQUEST).json({
-      success: false,
-      message: 'La commande doit être en statut "delivered" pour être confirmée',
-      code: ERROR_CODES.VALIDATION_ERROR
-    });
+    return res.status(400).json({ success: false, error: 'Cette commande n\'a pas encore été livrée' });
   }
-
   if (order.delivery_confirmed) {
-    return res.status(HTTP_STATUS.BAD_REQUEST).json({
-      success: false,
-      message: 'Cette livraison a déjà été confirmée',
-      code: ERROR_CODES.VALIDATION_ERROR
-    });
+    return res.status(400).json({ success: false, error: 'Déjà confirmée' });
   }
 
-  // Confirmer la livraison
-  const updatedOrder = await ClientProfile.confirmDelivery(orderId, req.user.id);
+  await pool.query(
+    `UPDATE orders
+     SET delivery_confirmed = true, delivery_confirmed_at = NOW(), updated_at = NOW()
+     WHERE id = $1`,
+    [orderId]
+  );
 
-  logger.info('Livraison confirmée par le client', {
-    orderId,
-    userId: req.user.id,
-    businessId: order.business_id
+  const io = req.app.get('io');
+  notifyBusiness(io, order.business_id, 'order_updated', {
+    orderId: parseInt(orderId),
+    delivery_confirmed: true,
+    delivery_confirmed_at: new Date()
   });
 
-  res.json({
-    success: true,
-    message: 'Livraison confirmée avec succès',
-    data: updatedOrder
+  await notificationService.createNotification({
+    business_id:    order.business_id,
+    type:           'delivery_confirmed',
+    title:          '✅ Client a confirmé la réception',
+    message:        `${order.client_name} a confirmé avoir reçu la commande #${orderId}`,
+    priority:       'normal',
+    reference_id:   parseInt(orderId),
+    reference_type: 'order',
+    metadata:       { order_id: orderId }
   });
+
+  res.json({ success: true, message: 'Réception confirmée' });
 });
 
 /**
@@ -406,6 +400,58 @@ const downloadSpecialOrderReceipt = asyncHandler(async (req, res) => {
   res.send(pdfBuffer);
 });
 
+const rateDriver = asyncHandler(async (req, res) => {
+  const { orderId } = req.params;
+  const { rating, comment } = req.body;
+  const clientId = req.user.id;
+
+  if (!rating || rating < 1 || rating > 5) {
+    return res.status(400).json({ success: false, error: 'Note invalide (1 à 5)' });
+  }
+
+  const { rows: [order] } = await pool.query(
+    `SELECT id, client_id, status, delivery_confirmed, current_assignment_id
+     FROM orders WHERE id = $1`,
+    [orderId]
+  );
+
+  if (!order || order.client_id !== clientId) {
+    return res.status(404).json({ success: false, error: 'Commande introuvable' });
+  }
+  if (order.status !== 'delivered' || !order.delivery_confirmed) {
+    return res.status(400).json({ success: false, error: 'Vous ne pouvez noter le livreur qu\'après confirmation de réception' });
+  }
+  if (!order.current_assignment_id) {
+    return res.status(400).json({ success: false, error: 'Aucun livreur associé à cette commande' });
+  }
+
+  const { rows: [assignment] } = await pool.query(
+    `SELECT driver_id FROM delivery_assignments WHERE id = $1`,
+    [order.current_assignment_id]
+  );
+
+  if (!assignment) return res.status(404).json({ success: false, error: 'Livreur introuvable' });
+
+  const review = await DriverReview.create({
+    driver_id: assignment.driver_id, order_id: orderId,
+    client_id: clientId, rating, comment
+  });
+
+  // const io = req.app.get('io');
+  // notifyBusiness(io, order.business_id, 'driver_rated', {
+  //   orderId: parseInt(orderId),
+  //   driver_id: assignment.driver_id,
+  //   rating, comment
+  // });
+
+  res.json({ success: true, message: 'Merci pour votre avis !', data: review });
+});
+
+const getDriverReview = asyncHandler(async (req, res) => {
+  const review = await DriverReview.findByOrderId(req.params.orderId);
+  res.json({ success: true, data: review });
+});
+
 module.exports = {
   getClientProfile,
   updateClientProfile,
@@ -422,4 +468,5 @@ module.exports = {
   deleteNotification,
   downloadOrderReceipt,
   downloadSpecialOrderReceipt,
+  rateDriver, getDriverReview,
 };

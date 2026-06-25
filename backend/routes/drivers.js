@@ -6,14 +6,28 @@ const { authenticateToken, requireRole } = require('../middleware/auth');
 const { USER_ROLES } = require('../config/constants');
 
 // ── Routes LIVREUR (interface mobile) ──────────────────────
-router.use('/me', authenticateToken, requireRole('driver'));
+// router.use('/me', authenticateToken, requireRole('driver'));
 
-router.get('/me/orders',            ctrl.getMyOrders);
-router.patch('/me/status',          ctrl.toggleStatus);
-router.patch('/me/change-password', ctrl.changePassword);
-router.patch('/me/orders/:orderId/pickup',  ctrl.pickupOrder);
-router.patch('/me/orders/:orderId/deliver', ctrl.deliverOrder);
-router.patch('/me/orders/:orderId/fail',    ctrl.failOrder);
+// router.get('/me/orders',            ctrl.getMyOrders);
+// router.patch('/me/status',          ctrl.toggleStatus);
+// router.patch('/me/change-password', ctrl.changePassword);
+// router.patch('/me/orders/:orderId/pickup',  ctrl.pickupOrder);
+// router.patch('/me/orders/:orderId/deliver', ctrl.deliverOrder);
+// router.patch('/me/orders/:orderId/fail',    ctrl.failOrder);
+
+const meRouter = express.Router();
+meRouter.use(authenticateToken, requireRole('driver'));
+
+meRouter.get('/orders',                   ctrl.getMyOrders);
+meRouter.patch('/status',                 ctrl.toggleStatus);
+meRouter.patch('/change-password',        ctrl.changePassword);
+meRouter.patch('/orders/:orderId/accept',  ctrl.acceptOrder);
+meRouter.patch('/orders/:orderId/refuse', ctrl.refuseOrder);
+meRouter.patch('/orders/:orderId/pickup', ctrl.pickupOrder);
+meRouter.patch('/orders/:orderId/deliver',ctrl.deliverOrder);
+meRouter.patch('/orders/:orderId/fail',   ctrl.failOrder);
+
+router.use('/me', meRouter);
 
 // ── Routes ÉTABLISSEMENT & ADMIN ────────────────────────────
 // Créer un livreur
@@ -47,6 +61,22 @@ router.delete('/:id',
   authenticateToken,
   requireRole(USER_ROLES.RESTAURANT, USER_ROLES.TRAITEUR, USER_ROLES.SUPER_ADMIN),
   ctrl.deleteDriver
+);
+
+// Toggle activer/désactiver un livreur
+router.patch(
+  '/:driverId/toggle-active',
+  authenticateToken,
+  requireRole(USER_ROLES.RESTAURANT, USER_ROLES.TRAITEUR, USER_ROLES.SUPER_ADMIN),
+  ctrl.toggleDriverActive
+);
+
+// ✅ Suppression définitive d'un livreur
+router.delete(
+  '/:driverId/permanent',
+  authenticateToken,
+  requireRole(USER_ROLES.RESTAURANT, USER_ROLES.TRAITEUR, USER_ROLES.SUPER_ADMIN),
+  ctrl.deleteDriverPermanently
 );
 
 // Assigner / désassigner à une commande

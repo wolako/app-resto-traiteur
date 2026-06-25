@@ -250,4 +250,13 @@ export class ClientService {
       this.unreadCountSubject.next(0);
     }
   }
+
+  rateDriver(orderId: number, rating: number, comment?: string): Observable<any> {
+    return this.http.post<any>(`${environment.apiUrl}/client/orders/${orderId}/rate-driver`, { rating, comment });
+  }
+
+  getDriverReview(orderId: number): Observable<any> {
+    return this.http.get<any>(`${environment.apiUrl}/client/orders/${orderId}/driver-review`);
+  }
+
 }

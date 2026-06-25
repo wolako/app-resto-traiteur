@@ -21,6 +21,8 @@ import { MenuPageComponent } from './features/menu-page/menu-page.component';
 import { PayDepositComponent } from './features/orders/pay-deposit/pay-deposit.component';
 import { DriverDashboardComponent } from './features/driver-dashboard/driver-dashboard.component';
 import { DriverLoginComponent } from './features/auth/driver-login/driver-login.component';
+import { DriverForgotPasswordComponent } from './features/auth/driver-forgot-password/driver-forgot-password.component';
+import { DriverResetPasswordComponent } from './features/auth/driver-reset-password/driver-reset-password.component';
 
 
 export const routes: Routes = [
@@ -74,6 +76,14 @@ export const routes: Routes = [
     path: 'driver/login',
     component: DriverLoginComponent,
     title: 'Connexion Livreur - RestoTraiteur'
+  },
+  { path: 'driver/forgot-password', 
+    component: DriverForgotPasswordComponent,
+    title: 'Mot de passe oublié - RestoTraiteur' 
+  },
+  { path: 'driver/reset-password/:token', 
+    component: DriverResetPasswordComponent, 
+    title: 'Réinitialiser le mot de passe - RestoTraiteur'
   },
   { 
     path: 'register', 

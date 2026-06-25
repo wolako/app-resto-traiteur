@@ -79,6 +79,61 @@
           </div>
         </div>
 
+        <!-- ── Image de l'article ────────────────── -->
+        <div class="mim-f-grp mim-image-section">
+          <label class="mim-lbl"><i class="bi bi-image"></i> Image du plat</label>
+
+          <!-- Tabs URL / Upload -->
+          <div class="mim-img-tabs">
+            <button type="button" class="mim-img-tab"
+              [class.active]="imageMode === 'url'"
+              (click)="setImageMode('url')">
+              <i class="bi bi-link-45deg"></i> URL
+            </button>
+            <button type="button" class="mim-img-tab"
+              [class.active]="imageMode === 'upload'"
+              (click)="setImageMode('upload')">
+              <i class="bi bi-cloud-upload"></i> Fichier local
+            </button>
+          </div>
+
+          <!-- Mode URL -->
+          <ng-container *ngIf="imageMode === 'url'">
+            <input type="url" class="mim-inp"
+              formControlName="image_url"
+              placeholder="https://example.com/image.jpg"
+              (input)="onUrlChange($event)">
+            <small class="mim-hint">Coller l'URL directe de l'image</small>
+          </ng-container>
+
+          <!-- Mode Upload -->
+          <ng-container *ngIf="imageMode === 'upload'">
+            <label class="mim-upload-zone" [class.has-file]="!!selectedFile">
+              <input type="file" #fileInput accept="image/jpeg,image/png,image/webp,image/gif"
+                (change)="onFileSelected($event)" style="display:none">
+              <ng-container *ngIf="!selectedFile">
+                <i class="bi bi-cloud-arrow-up-fill"></i>
+                <span>Cliquer pour choisir une image</span>
+                <small>JPEG, PNG, WebP, GIF — max 5 Mo</small>
+              </ng-container>
+              <ng-container *ngIf="selectedFile">
+                <i class="bi bi-check-circle-fill text-success"></i>
+                <span>{{ selectedFile.name }}</span>
+                <small>{{ (selectedFile.size / 1024 / 1024).toFixed(2) }} Mo</small>
+              </ng-container>
+            </label>
+          </ng-container>
+
+          <!-- Aperçu -->
+          <div class="mim-img-preview" *ngIf="imagePreview">
+            <img [src]="imagePreview" alt="Aperçu"
+              (error)="clearImage()">
+            <button type="button" class="mim-img-clear" (click)="clearImage()" title="Supprimer l'image">
+              <i class="bi bi-x-lg"></i>
+            </button>
+          </div>
+        </div>
+
         <!-- Actions formulaire -->
         <div class="mim-form-acts">
           <button type="button" class="mim-btn-ghost" (click)="closeForm()" [disabled]="saving">

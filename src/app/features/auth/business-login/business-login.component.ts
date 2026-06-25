@@ -1,6 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnInit } from '@angular/core';
-import { Router, RouterModule } from '@angular/router';
+import { Router, RouterModule, ActivatedRoute } from '@angular/router';
 import { AuthService } from '../../../core/services/auth/auth.service';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 
@@ -16,14 +16,22 @@ export class BusinessLoginComponent implements OnInit {
   loading = false;
   error = '';
   showPassword = false;
+  sessionExpiredMessage = false;
 
   constructor(
     private fb: FormBuilder,
     private authService: AuthService,
-    private router: Router
+    private router: Router,
+    private route: ActivatedRoute
   ) {}
 
   ngOnInit(): void {
+    this.route.queryParams.subscribe(params => {
+      if (params['reason'] === 'session_expired') {
+        this.sessionExpiredMessage = true;
+      }
+    });
+    
     // Rediriger si déjà connecté en tant qu'établissement
     const user = this.authService.getCurrentUser();
     if (user?.role === 'restaurant') {

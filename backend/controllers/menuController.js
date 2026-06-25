@@ -4,6 +4,9 @@ const { HTTP_STATUS, ERROR_CODES } = require('../config/constants');
 const { asyncHandler } = require('../middleware/errorHandler');
 const logger = require('../utils/logger');
 
+const path = require('path');
+const fs   = require('fs');
+
 // Obtenir un menu par ID
 const getMenuById = asyncHandler(async (req, res) => {
   const { id } = req.params;
@@ -230,6 +233,30 @@ const deleteMenuItem = asyncHandler(async (req, res) => {
   });
 });
 
+const uploadMenuItemImage = asyncHandler(async (req, res) => {
+  if (!req.file) {
+    return res.status(400).json({
+      success: false,
+      message: 'Aucun fichier fourni'
+    });
+  }
+
+  const baseUrl   = process.env.APP_URL || 'http://localhost:3000';
+  const imageUrl  = `${baseUrl}/uploads/menu-items/${req.file.filename}`;
+
+  logger.info('Image article uploadée', {
+    filename: req.file.filename,
+    size:     req.file.size,
+    userId:   req.user.id
+  });
+
+  res.json({
+    success:   true,
+    message:   'Image uploadée avec succès',
+    data:      { image_url: imageUrl }
+  });
+});
+
 module.exports = {
   getMenuById,
   updateMenu,
@@ -238,4 +265,5 @@ module.exports = {
   createMenuItem,
   updateMenuItem,
   deleteMenuItem,
+  uploadMenuItemImage
 };
